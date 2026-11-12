@@ -3,9 +3,13 @@
       th:replace="~{fragments/layout :: page('Employee dashboard', 'dashboard', ~{::main})}">
 <body>
 <main>
-    <div class="mb-4">
-        <h1 class="h3 mb-1">Welcome, <span th:text="${employee.name}">Employee</span></h1>
-        <p class="text-body-secondary mb-0">Employee workspace · follow the IT incidents you have reported.</p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Welcome, <span th:text="${employee.name}">Employee</span></h1>
+            <p class="text-body-secondary mb-0">Employee workspace · report IT incidents and follow their progress.</p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/employee/incidents/new}">
+            <i class="bi bi-plus-circle me-1"></i>Report an incident</a>
     </div>
 
     <div class="row g-3 mb-4">
@@ -25,7 +29,7 @@
             <div class="card h-100">
                 <div class="card-header">My incidents</div>
                 <div class="card-body p-0">
-                    <div th:replace="~{fragments/ui :: incidentTable(${incidents}, 'You have not reported any incidents yet.', true)}"></div>
+                    <div th:replace="~{fragments/ui :: incidentTable(${incidents}, 'You have not reported any incidents yet.', 'service,priority,status,reported', '/employee/incidents')}"></div>
                 </div>
             </div>
         </div>

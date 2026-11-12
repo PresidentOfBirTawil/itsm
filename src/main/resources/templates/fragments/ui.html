@@ -29,7 +29,7 @@
 
 <!-- Incident status. -->
 <span th:fragment="statusBadge(status)" class="badge"
-      th:classappend="${status.open} ? 'text-bg-primary' : (${status.name() == 'CLOSED'} ? 'text-bg-secondary' : 'text-bg-success')"
+      th:classappend="${status.name() == 'AWAITING_INFO'} ? 'text-bg-warning' : (${status.open} ? 'text-bg-primary' : (${status.name() == 'CLOSED'} ? 'text-bg-secondary' : 'text-bg-success'))"
       th:text="${status.label}">New</span>
 
 <!-- A length of time given in minutes, written the way people say it: "5 min", "2 h", "1 h 30 min". -->
@@ -38,9 +38,13 @@
 
 <!--
   A table of incidents, or a friendly message when there are none.
-  compact = true leaves out the category, reporter and assignee columns, for the narrower dashboard cards.
+
+  columns  - which optional columns to show, as one string. Any of:
+             service, category, priority, status, reporter, assignee, reported, due
+  basePath - where this role's incident pages live, e.g. '/employee/incidents'.
+             Each code links to basePath + '/' + code.
 -->
-<div th:fragment="incidentTable(incidents, emptyMessage, compact)">
+<div th:fragment="incidentTable(incidents, emptyMessage, columns, basePath)">
     <div th:if="${#lists.isEmpty(incidents)}" class="text-center text-body-secondary py-5">
         <i class="bi bi-inbox fs-1 d-block mb-2"></i>
         <span th:text="${emptyMessage}">No incidents.</span>
@@ -51,31 +55,52 @@
             <tr>
                 <th scope="col">Code</th>
                 <th scope="col">Title</th>
-                <th scope="col">Service</th>
-                <th scope="col" th:unless="${compact}">Category</th>
-                <th scope="col">Priority</th>
-                <th scope="col">Status</th>
-                <th scope="col" th:unless="${compact}">Reporter</th>
-                <th scope="col" th:unless="${compact}">Assignee</th>
-                <th scope="col">Reported</th>
+                <th scope="col" th:if="${#strings.contains(columns, 'service')}">Service</th>
+                <th scope="col" th:if="${#strings.contains(columns, 'category')}">Category</th>
+                <th scope="col" th:if="${#strings.contains(columns, 'priority')}">Priority</th>
+                <th scope="col" th:if="${#strings.contains(columns, 'status')}">Status</th>
+                <th scope="col" th:if="${#strings.contains(columns, 'reporter')}">Reporter</th>
+                <th scope="col" th:if="${#strings.contains(columns, 'assignee')}">Assignee</th>
+                <th scope="col" th:if="${#strings.contains(columns, 'reported')}">Reported</th>
+                <th scope="col" th:if="${#strings.contains(columns, 'due')}">Resolve by</th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="incident : ${incidents}">
-                <td class="fw-semibold text-nowrap" th:text="${incident.code}">INC-0001</td>
+                <td class="fw-semibold text-nowrap">
+                    <a th:href="@{|${basePath}/${incident.code}|}" th:text="${incident.code}">INC-0001</a>
+                </td>
                 <td th:text="${incident.title}">Title</td>
-                <td th:text="${incident.service.name}">Service</td>
-                <td th:unless="${compact}" th:text="${incident.category != null} ? ${incident.category.name} : '—'">Category</td>
-                <td><th:block th:replace="~{fragments/ui :: priorityBadge(${incident.priority})}"></th:block></td>
-                <td><span th:replace="~{fragments/ui :: statusBadge(${incident.status})}"></span></td>
-                <td th:unless="${compact}" th:text="${incident.reporter.name}">Reporter</td>
-                <td th:unless="${compact}" th:text="${incident.assignee != null} ? ${incident.assignee.name} : '—'">Assignee</td>
-                <td class="text-nowrap" th:text="${#temporals.format(incident.createdAt, 'dd MMM yyyy, HH:mm')}">01 Jan 2026, 10:05</td>
+                <td th:if="${#strings.contains(columns, 'service')}" th:text="${incident.service.name}">Service</td>
+                <td th:if="${#strings.contains(columns, 'category')}"
+                    th:text="${incident.category != null} ? ${incident.category.name} : '—'">Category</td>
+                <td th:if="${#strings.contains(columns, 'priority')}">
+                    <th:block th:replace="~{fragments/ui :: priorityBadge(${incident.priority})}"></th:block>
+                </td>
+                <td th:if="${#strings.contains(columns, 'status')}">
+                    <span th:replace="~{fragments/ui :: statusBadge(${incident.status})}"></span>
+                </td>
+                <td th:if="${#strings.contains(columns, 'reporter')}" th:text="${incident.reporter.name}">Reporter</td>
+                <td th:if="${#strings.contains(columns, 'assignee')}"
+                    th:text="${incident.assignee != null} ? ${incident.assignee.name} : '—'">Assignee</td>
+                <td th:if="${#strings.contains(columns, 'reported')}" class="text-nowrap"
+                    th:text="${#temporals.format(incident.createdAt, 'dd MMM yyyy, HH:mm')}">01 Jan 2026, 10:05</td>
+                <td th:if="${#strings.contains(columns, 'due')}" class="text-nowrap">
+                    <th:block th:replace="~{fragments/ui :: deadline(${incident.resolutionDue}, ${incident.overdue})}"></th:block>
+                </td>
             </tr>
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- A deadline. Shown in red with an "overdue" badge once it has passed and the work is not done. -->
+<th:block th:fragment="deadline(when, overdue)">
+    <span th:if="${when != null}" th:classappend="${overdue} ? 'text-danger fw-semibold'"
+          th:text="${#temporals.format(when, 'dd MMM yyyy, HH:mm')}">01 Jan 2026, 10:35</span>
+    <span th:if="${when != null and overdue}" class="badge text-bg-danger ms-1">overdue</span>
+    <span th:if="${when == null}">—</span>
+</th:block>
 
 </body>
 </html>

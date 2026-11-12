@@ -24,6 +24,16 @@
 <th:block th:replace="~{fragments/navbar :: navbar(${active})}"></th:block>
 
 <div class="container py-4 flex-grow-1">
+    <!-- One-off messages set by the previous request, e.g. "INC-0001 is now resolved." -->
+    <div class="alert alert-success alert-dismissible fade show" role="status" th:if="${success}">
+        <i class="bi bi-check-circle me-1"></i><span th:text="${success}">Done.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${error}">
+        <i class="bi bi-exclamation-triangle me-1"></i><span th:text="${error}">Something went wrong.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <main th:replace="${content}">Page content goes here.</main>
 </div>
 

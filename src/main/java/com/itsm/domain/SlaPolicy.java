@@ -27,7 +27,7 @@ public class SlaPolicy {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true, length = 5)
+    @Column(nullable = false, unique = true, columnDefinition = "varchar(5)")
     private Priority priority;
 
     @Positive

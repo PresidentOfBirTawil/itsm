@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Report an incident', 'report', ~{::main})}">
+<body>
+<main>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="mb-4">
+                <h1 class="h3 mb-1">Report an incident</h1>
+                <p class="text-body-secondary mb-0">
+                    Tell us what is wrong. The priority is worked out from your answers and a technician is assigned
+                    straight away.
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="card-body p-4">
+                    <form th:action="@{/employee/incidents}" th:object="${form}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" th:field="*{title}"
+                                   th:errorclass="is-invalid" maxlength="150" autofocus
+                                   placeholder="For example: Payment application is unavailable">
+                            <div class="invalid-feedback" th:errors="*{title}">Title error</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">What is happening?</label>
+                            <textarea class="form-control" id="description" rows="4" th:field="*{description}"
+                                      th:errorclass="is-invalid" maxlength="4000"
+                                      placeholder="What did you try to do, what happened, and who is affected?"></textarea>
+                            <div class="invalid-feedback" th:errors="*{description}">Description error</div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="serviceId" class="form-label">Affected service</label>
+                                <select class="form-select" id="serviceId" th:field="*{serviceId}"
+                                        th:errorclass="is-invalid">
+                                    <option value="">Choose a service…</option>
+                                    <option th:each="service : ${services}" th:value="${service.id}"
+                                            th:text="${service.name}">Service</option>
+                                </select>
+                                <div class="invalid-feedback" th:errors="*{serviceId}">Service error</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="categoryId" class="form-label">Category</label>
+                                <select class="form-select" id="categoryId" th:field="*{categoryId}"
+                                        th:errorclass="is-invalid">
+                                    <option value="">Choose a category…</option>
+                                    <option th:each="category : ${categories}" th:value="${category.id}"
+                                            th:text="${category.name}">Category</option>
+                                </select>
+                                <div class="invalid-feedback" th:errors="*{categoryId}">Category error</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="impact" class="form-label">Impact: who is affected?</label>
+                                <select class="form-select" id="impact" th:field="*{impact}" th:errorclass="is-invalid">
+                                    <option value="">Choose the impact…</option>
+                                    <option th:each="impact : ${impacts}" th:value="${impact}"
+                                            th:text="|${impact.label} · ${impact.hint}|">High</option>
+                                </select>
+                                <div class="invalid-feedback" th:errors="*{impact}">Impact error</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="urgency" class="form-label">Urgency: how soon must it be fixed?</label>
+                                <select class="form-select" id="urgency" th:field="*{urgency}"
+                                        th:errorclass="is-invalid">
+                                    <option value="">Choose the urgency…</option>
+                                    <option th:each="urgency : ${urgencies}" th:value="${urgency}"
+                                            th:text="|${urgency.label} · ${urgency.hint}|">High</option>
+                                </select>
+                                <div class="invalid-feedback" th:errors="*{urgency}">Urgency error</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Report incident</button>
+                            <a class="btn btn-outline-secondary" th:href="@{/employee/incidents}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

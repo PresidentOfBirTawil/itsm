@@ -11,6 +11,7 @@ import com.itsm.domain.ITService;
 import com.itsm.domain.Impact;
 import com.itsm.domain.Incident;
 import com.itsm.domain.Priority;
+import com.itsm.domain.PriorityAssessment;
 import com.itsm.domain.SlaPolicy;
 import com.itsm.domain.Status;
 import com.itsm.domain.Technician;
@@ -72,8 +73,9 @@ class DomainModelTests {
         Incident incident = new Incident("Payment page is down", "Customers cannot pay.", reporter, service,
                 Impact.HIGH, Urgency.HIGH);
         incident.setCategory(category);
-        incident.setAssignee(technician);
-        incident.setStatus(Status.ASSIGNED);
+        incident.prioritise(new PriorityAssessment(Priority.P1, 27, 3, 3, 3),
+                slaPolicies.findByPriority(Priority.P1).orElseThrow());
+        incident.assignTo(technician);
         String code = incidents.save(incident).getCode();
 
         // Write to the database and forget the object, so the next read really comes from the tables.
@@ -90,8 +92,11 @@ class DomainModelTests {
         assertThat(loaded.getUrgency()).isEqualTo(Urgency.HIGH);
         assertThat(loaded.getStatus()).isEqualTo(Status.ASSIGNED);
         assertThat(loaded.getCreatedAt()).isNotNull();
-        assertThat(incidents.findByReporterIdOrderByCreatedAtDesc(reporter.getId())).containsExactly(loaded);
-        assertThat(incidents.findByAssigneeIdOrderByCreatedAtDesc(technician.getId())).containsExactly(loaded);
+        assertThat(loaded.getPriority()).isEqualTo(Priority.P1);
+        assertThat(loaded.getAssessment()).isEqualTo(new PriorityAssessment(Priority.P1, 27, 3, 3, 3));
+        assertThat(incidents.findByReporterIdOrderByCreatedAtDescIdDesc(reporter.getId())).containsExactly(loaded);
+        assertThat(incidents.findByAssigneeIdAndStatusInOrderByResolutionDueAscIdAsc(technician.getId(),
+                Status.openStatuses())).containsExactly(loaded);
         assertThat(incidents.countByAssigneeIdAndStatusIn(technician.getId(), Status.openStatuses())).isEqualTo(1);
     }
 
@@ -107,15 +112,27 @@ class DomainModelTests {
     }
 
     @Test
-    void applyingAnSlaPolicySetsThePriorityAndBothDeadlines() {
+    void settingThePrioritySetsBothDeadlinesFromTheSlaPolicy() {
         Incident incident = newIncident("Payment page is down");
         SlaPolicy p1 = slaPolicies.findByPriority(Priority.P1).orElseThrow();
 
-        incident.applySla(p1);
+        incident.prioritise(new PriorityAssessment(Priority.P1, 27, 3, 3, 3), p1);
 
         assertThat(incident.getPriority()).isEqualTo(Priority.P1);
         assertThat(incident.getResponseDue()).isEqualTo(incident.getCreatedAt().plusMinutes(5));
         assertThat(incident.getResolutionDue()).isEqualTo(incident.getCreatedAt().plusMinutes(30));
+    }
+
+    @Test
+    void anIncidentWithoutAPriorityIsStoredAndReadBackWithoutOne() {
+        String code = incidents.save(newIncident("Printer is jammed")).getCode();
+        entityManager.flush();
+        entityManager.clear();
+
+        Incident loaded = incidents.findByCode(code).orElseThrow();
+
+        assertThat(loaded.getAssessment()).isNull();
+        assertThat(loaded.getPriority()).isNull();
     }
 
     @Test

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Settings', 'settings', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Settings</h1>
+        <p class="text-body-secondary mb-0">Changes take effect straight away. No restart is needed.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">Assignment strategy</div>
+                <div class="card-body">
+                    <p class="text-body-secondary">
+                        How the system chooses a technician when an incident is reported. Whichever strategy is
+                        active, a technician who is not available or already at their maximum workload is never chosen.
+                    </p>
+
+                    <form method="post" th:action="@{/admin/settings/assignment-strategy}">
+                        <div class="list-group mb-3">
+                            <label class="list-group-item d-flex gap-3" th:each="strategy : ${strategies}">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="key"
+                                       th:value="${strategy.key}" th:checked="${strategy.key == activeStrategy.key}">
+                                <span>
+                                    <span class="fw-semibold" th:text="${strategy.name}">Skill-based</span>
+                                    <span class="badge text-bg-success ms-1"
+                                          th:if="${strategy.key == activeStrategy.key}">active</span>
+                                    <span class="d-block small text-body-secondary" th:text="${strategy.description}">How it chooses.</span>
+                                </span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Use this strategy</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

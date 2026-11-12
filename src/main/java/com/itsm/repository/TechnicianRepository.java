@@ -13,6 +13,10 @@ public interface TechnicianRepository extends JpaRepository<Technician, Long> {
     @EntityGraph(attributePaths = "skills")
     List<Technician> findAllByOrderByNameAsc();
 
+    /** In id order: the turn order used by the round-robin assignment strategy. */
+    @EntityGraph(attributePaths = "skills")
+    List<Technician> findAllByOrderByIdAsc();
+
     @EntityGraph(attributePaths = "skills")
     Optional<Technician> findWithSkillsById(Long id);
 }

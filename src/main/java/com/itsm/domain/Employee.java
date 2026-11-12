@@ -20,4 +20,10 @@ public class Employee extends User {
     public Role getRole() {
         return Role.EMPLOYEE;
     }
+
+    /** An employee sees the incidents they reported themselves. */
+    @Override
+    public boolean canAccess(Incident incident) {
+        return equals(incident.getReporter());
+    }
 }
