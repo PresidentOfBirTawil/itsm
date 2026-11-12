@@ -1,5 +1,6 @@
 package com.itsm.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.itsm.domain.User;
@@ -11,4 +12,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    List<User> findAllByOrderByNameAsc();
 }

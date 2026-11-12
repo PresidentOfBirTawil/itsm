@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
  *   <li>escalated: the administrators</li>
  *   <li>a note: the reporter and the technician</li>
  *   <li>a rating: the technician</li>
+ *   <li>the priority changed: the reporter and the technician</li>
  * </ul>
  * Apart from that first confirmation, nobody is notified about something they did themselves.
  */
@@ -100,6 +101,13 @@ public class NotificationListener implements IncidentEventListener {
                         : event.actor().getName());
                 outbox.add(NotificationType.NOTE_ADDED, incident.getReporter(), title, event.note());
                 outbox.add(NotificationType.NOTE_ADDED, incident.getAssignee(), title, event.note());
+            }
+
+            case PRIORITY_CHANGED -> {
+                outbox.add(NotificationType.PRIORITY_CHANGED, incident.getReporter(),
+                        "%s: the priority is now %s".formatted(code, incident.getPriority()), event.note());
+                outbox.add(NotificationType.PRIORITY_CHANGED, incident.getAssignee(),
+                        "%s: the priority is now %s".formatted(code, incident.getPriority()), event.note());
             }
 
             case RATED -> outbox.add(NotificationType.RATED, incident.getAssignee(),

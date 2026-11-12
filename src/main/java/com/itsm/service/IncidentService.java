@@ -2,6 +2,7 @@ package com.itsm.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.itsm.assignment.AssignmentService;
@@ -12,6 +13,7 @@ import com.itsm.domain.ITService;
 import com.itsm.domain.Impact;
 import com.itsm.domain.Incident;
 import com.itsm.domain.IncidentAction;
+import com.itsm.domain.Priority;
 import com.itsm.domain.PriorityAssessment;
 import com.itsm.domain.Role;
 import com.itsm.domain.SlaPolicy;
@@ -229,6 +231,57 @@ public class IncidentService {
         }
         events.publish(new IncidentEvent(incident, actor, IncidentAction.NOTE_ADDED,
                 incident.getStatus(), incident.getStatus(), note));
+        return incident;
+    }
+
+    /**
+     * A technician or an administrator corrects the classification of an open
+     * incident: its category, impact or urgency. The priority and the SLA
+     * deadlines are worked out again, and if the priority comes out different,
+     * the reporter and the technician are told.
+     *
+     * @throws UnauthorizedOperationException if this user may not change the incident
+     * @throws InvalidInputException          if nothing was changed, or the incident is no longer open
+     */
+    @Transactional
+    public Incident reclassify(String code, User actor, Long categoryId, Impact impact, Urgency urgency) {
+        Incident incident = getFor(code, actor);
+        if (actor.getRole() == Role.EMPLOYEE || !actor.canWorkOn(incident)) {
+            throw new UnauthorizedOperationException("You may not change the classification of %s.".formatted(code));
+        }
+        Category category = categories.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("The chosen category does not exist."));
+
+        List<String> changes = new ArrayList<>();
+        if (!category.equals(incident.getCategory())) {
+            changes.add("category %s → %s".formatted(
+                    incident.getCategory() == null ? "none" : incident.getCategory().getName(), category.getName()));
+        }
+        if (impact != incident.getImpact()) {
+            changes.add("impact %s → %s".formatted(incident.getImpact().getLabel(), impact.getLabel()));
+        }
+        if (urgency != incident.getUrgency()) {
+            changes.add("urgency %s → %s".formatted(incident.getUrgency().getLabel(), urgency.getLabel()));
+        }
+        if (changes.isEmpty()) {
+            throw new InvalidInputException("Nothing was changed.");
+        }
+
+        Priority before = incident.getPriority();
+        incident.reclassify(category, impact, urgency);
+        events.publish(new IncidentEvent(incident, actor, IncidentAction.CLASSIFICATION_CHANGED,
+                incident.getStatus(), incident.getStatus(), "Changed " + String.join(", ", changes) + "."));
+
+        PriorityAssessment assessment = priorityCalculator.calculate(incident);
+        incident.prioritise(assessment, slaService.policyFor(assessment.priority()));
+        if (assessment.priority() != before) {
+            events.publish(new IncidentEvent(incident, actor, IncidentAction.PRIORITY_CHANGED,
+                    incident.getStatus(), incident.getStatus(),
+                    "Priority changed from %s to %s (score %s). Respond by %s, resolve by %s.".formatted(
+                            before, assessment.priority(), assessment.formula(),
+                            DEADLINE.format(incident.getResponseDue()), DEADLINE.format(incident.getResolutionDue()))));
+        }
+        slaService.refresh(incident, LocalDateTime.now());
         return incident;
     }
 

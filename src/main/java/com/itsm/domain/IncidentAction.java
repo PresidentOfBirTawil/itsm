@@ -15,7 +15,9 @@ public enum IncidentAction {
     DUPLICATE_SUSPECTED("Possible duplicate found"),
     CATEGORY_SUGGESTED("Category chosen automatically"),
     NOTE_ADDED("Note added"),
-    RATED("Resolution rated");
+    RATED("Resolution rated"),
+    CLASSIFICATION_CHANGED("Classification changed"),
+    PRIORITY_CHANGED("Priority changed");
 
     private final String label;
 

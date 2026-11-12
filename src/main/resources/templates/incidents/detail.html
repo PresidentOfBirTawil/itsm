@@ -236,6 +236,43 @@
                 </div>
             </div>
 
+            <!-- Technician (own incidents) and administrators: correct the classification -->
+            <div class="card mb-4" th:if="${canReclassify}">
+                <div class="card-header">Change classification</div>
+                <div class="card-body">
+                    <form method="post" th:action="@{|${basePath}/${incident.code}/classification|}">
+                        <div class="mb-2">
+                            <label for="reclassifyCategory" class="form-label">Category</label>
+                            <select class="form-select" id="reclassifyCategory" name="categoryId" required>
+                                <option th:each="choice : ${categories}" th:value="${choice.id}" th:text="${choice.name}"
+                                        th:selected="${incident.category != null and choice.id == incident.category.id}">Category</option>
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label for="reclassifyImpact" class="form-label">Impact</label>
+                                <select class="form-select" id="reclassifyImpact" name="impact" required>
+                                    <option th:each="choice : ${impacts}" th:value="${choice}" th:text="${choice.label}"
+                                            th:selected="${choice == incident.impact}">High</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label for="reclassifyUrgency" class="form-label">Urgency</label>
+                                <select class="form-select" id="reclassifyUrgency" name="urgency" required>
+                                    <option th:each="choice : ${urgencies}" th:value="${choice}" th:text="${choice.label}"
+                                            th:selected="${choice == incident.urgency}">High</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-text mb-2">
+                            The priority and the SLA deadlines are worked out again. If the priority changes, the
+                            reporter and the technician are told.
+                        </div>
+                        <button type="submit" class="btn btn-outline-secondary w-100">Save classification</button>
+                    </form>
+                </div>
+            </div>
+
             <!-- Administrators only: assign or reassign -->
             <div class="card mb-4" th:if="${viewerRole.name() == 'ADMIN'}">
                 <div class="card-header">Assignment</div>

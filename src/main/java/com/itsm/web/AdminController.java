@@ -21,6 +21,7 @@ import com.itsm.repository.IncidentRepository;
 import com.itsm.repository.ServiceIncidentCount;
 import com.itsm.search.IncidentSearchCriteria;
 import com.itsm.security.ItsmUserDetails;
+import com.itsm.seed.DemoDataService;
 import com.itsm.service.IncidentService;
 import com.itsm.sla.SlaService;
 import jakarta.validation.Valid;
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
@@ -54,11 +56,13 @@ public class AdminController {
     private final SlaService slaService;
     private final IncidentPages incidentPages;
     private final SlaRiskRanker slaRiskRanker;
+    private final DemoDataService demoDataService;
 
     public AdminController(AdministratorRepository administrators, IncidentRepository incidents,
                            AuditEntryRepository auditEntries, EmailMessageRepository emails,
                            IncidentService incidentService, AssignmentService assignmentService,
-                           SlaService slaService, IncidentPages incidentPages, SlaRiskRanker slaRiskRanker) {
+                           SlaService slaService, IncidentPages incidentPages, SlaRiskRanker slaRiskRanker,
+                           DemoDataService demoDataService) {
         this.administrators = administrators;
         this.incidents = incidents;
         this.auditEntries = auditEntries;
@@ -68,6 +72,7 @@ public class AdminController {
         this.slaService = slaService;
         this.incidentPages = incidentPages;
         this.slaRiskRanker = slaRiskRanker;
+        this.demoDataService = demoDataService;
     }
 
     @GetMapping
@@ -134,6 +139,12 @@ public class AdminController {
     public String changeStatus(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
                                @Valid @ModelAttribute TransitionForm form, RedirectAttributes redirect) {
         return incidentPages.changeStatus(code, form, currentAdministrator(user), INCIDENTS, redirect);
+    }
+
+    @PostMapping("/incidents/{code}/classification")
+    public String reclassify(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
+                             @Valid @ModelAttribute ClassificationForm form, RedirectAttributes redirect) {
+        return incidentPages.reclassify(code, form, currentAdministrator(user), INCIDENTS, redirect);
     }
 
     @PostMapping("/incidents/{code}/notes")
@@ -209,6 +220,20 @@ public class AdminController {
                 ? "The SLA check has run: 1 open incident checked."
                 : "The SLA check has run: %d open incidents checked.".formatted(checked));
         return "redirect:/admin/settings";
+    }
+
+    /**
+     * Resets the demo data: removes every incident and, unless "empty" was
+     * asked for, adds the sample incidents.
+     */
+    @PostMapping("/settings/reset-demo-data")
+    public String resetDemoData(@RequestParam(defaultValue = "true") boolean samples, RedirectAttributes redirect) {
+        return incidentPages.perform("/admin/settings", redirect, () -> {
+            int added = demoDataService.reset(samples);
+            return samples
+                    ? "The demo data has been reset: %d sample incidents were added.".formatted(added)
+                    : "All incidents have been removed. The next incident will be INC-0001.";
+        });
     }
 
     // ---- email outbox ----

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Add a user', 'users', ~{::main})}">
+<body>
+<main>
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <h1 class="h3 mb-4">Add a user</h1>
+            <div class="card">
+                <div class="card-body p-4">
+                    <form th:action="@{/admin/users}" th:object="${form}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" id="role" th:field="*{role}" th:errorclass="is-invalid">
+                                <option value="EMPLOYEE">Employee</option>
+                                <option value="ADMIN">Administrator</option>
+                            </select>
+                            <div class="invalid-feedback" th:errors="*{role}">Role error</div>
+                            <div class="form-text">
+                                Technicians are added on the <a th:href="@{/admin/technicians/new}">Technicians page</a>,
+                                where their skills are set.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full name</label>
+                            <input type="text" class="form-control" id="name" th:field="*{name}"
+                                   th:errorclass="is-invalid" maxlength="100" autofocus>
+                            <div class="invalid-feedback" th:errors="*{name}">Name error</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" th:field="*{email}"
+                                   th:errorclass="is-invalid" autocomplete="off">
+                            <div class="invalid-feedback" th:errors="*{email}">Email error</div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="password" class="form-label">First password</label>
+                            <input type="password" class="form-control" id="password" th:field="*{password}"
+                                   th:errorclass="is-invalid" autocomplete="new-password">
+                            <div class="invalid-feedback" th:errors="*{password}">Password error</div>
+                            <div class="form-text">At least 8 characters.</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Add user</button>
+                            <a class="btn btn-outline-secondary" th:href="@{/admin/users}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

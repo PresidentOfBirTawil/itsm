@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Reports', 'reports', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Reports</h1>
+        <p class="text-body-secondary mb-0">Figures over all incidents ever reported.</p>
+    </div>
+
+    <div class="card" th:if="${reports.total == 0}">
+        <div class="text-center text-body-secondary py-5">
+            <i class="bi bi-bar-chart fs-1 d-block mb-2"></i>
+            There are no incidents to report on yet. To see the reports with sample data, use
+            <a th:href="@{/admin/settings}">Settings → Demo data</a>.
+        </div>
+    </div>
+
+    <th:block th:unless="${reports.total == 0}">
+        <div class="row row-cols-2 row-cols-lg-4 g-3 mb-4">
+            <div class="col">
+                <div th:replace="~{fragments/ui :: stat('Incidents', ${reports.total}, 'bi-card-list')}"></div>
+            </div>
+            <div class="col">
+                <div th:replace="~{fragments/ui :: stat('SLA met, of those settled', ${reports.slaCompliancePercent() != null} ? |${reports.slaCompliancePercent()}%| : '—', 'bi-stopwatch')}"></div>
+            </div>
+            <div class="col">
+                <div th:replace="~{fragments/ui :: stat('SLA breaches', ${reports.slaBreached}, 'bi-alarm')}"></div>
+            </div>
+            <div class="col">
+                <div th:replace="~{fragments/ui :: stat(|Average rating (${reports.ratedCount} rated)|, ${reports.averageRating != null} ? ${#numbers.formatDecimal(reports.averageRating, 1, 1)} : '—', 'bi-star')}"></div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-4">
+                <div th:replace="~{:: bars('By status', ${reports.byStatus}, ${largestStatus})}"></div>
+            </div>
+            <div class="col-lg-4">
+                <div th:replace="~{:: bars('By priority', ${reports.byPriority}, ${largestPriority})}"></div>
+            </div>
+            <div class="col-lg-4">
+                <div th:replace="~{:: bars('By category', ${reports.byCategory}, ${largestCategory})}"></div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card h-100">
+                    <div class="card-header">Technicians</div>
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                            <tr>
+                                <th scope="col">Technician</th>
+                                <th scope="col" class="text-end">Assigned</th>
+                                <th scope="col" class="text-end">Open</th>
+                                <th scope="col" class="text-end">Finished</th>
+                                <th scope="col" class="text-end">SLA breaches</th>
+                                <th scope="col" class="text-end">Average rating</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="line : ${reports.technicians}">
+                                <td th:text="${line.name}">Name</td>
+                                <td class="text-end" th:text="${line.assigned}">0</td>
+                                <td class="text-end" th:text="${line.open}">0</td>
+                                <td class="text-end" th:text="${line.resolved}">0</td>
+                                <td class="text-end" th:classappend="${line.slaBreached > 0} ? 'text-danger fw-semibold'"
+                                    th:text="${line.slaBreached}">0</td>
+                                <td class="text-end"
+                                    th:text="${line.averageRating != null} ? ${#numbers.formatDecimal(line.averageRating, 1, 1)} : '—'">4.5</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card h-100">
+                    <div class="card-header">Average time to resolve</div>
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                            <tr>
+                                <th scope="col">Priority</th>
+                                <th scope="col" class="text-end">Resolved</th>
+                                <th scope="col" class="text-end">Average</th>
+                                <th scope="col" class="text-end">Target</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="row : ${reports.resolutionTimes}">
+                                <td th:text="|${row.priority} · ${row.priority.label}|">P1 · Critical</td>
+                                <td class="text-end" th:text="${row.resolved}">0</td>
+                                <td class="text-end" th:classappend="${row.resolved > 0 and !row.withinTarget} ? 'text-danger fw-semibold'">
+                                    <span th:if="${row.resolved > 0}" th:replace="~{fragments/ui :: duration(${row.averageMinutes})}"></span>
+                                    <span th:if="${row.resolved == 0}">—</span>
+                                </td>
+                                <td class="text-end text-body-secondary">
+                                    <span th:if="${row.targetMinutes != null}" th:replace="~{fragments/ui :: duration(${row.targetMinutes})}"></span>
+                                    <span th:if="${row.targetMinutes == null}">—</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer bg-transparent small text-body-secondary">
+                        From report to resolution, not counting time the clock was paused. The target is the resolution
+                        time of the SLA policy.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
+
+    <!-- A list of labelled bars, used three times above. -->
+    <div th:remove="all">
+        <div th:fragment="bars(title, counts, largest)" class="card h-100">
+            <div class="card-header" th:text="${title}">By status</div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item" th:each="row : ${counts}">
+                    <div class="d-flex justify-content-between">
+                        <span th:text="${row.label}">Label</span>
+                        <span class="fw-semibold" th:text="${row.count}">0</span>
+                    </div>
+                    <div class="progress mt-1" style="height: .4rem" role="progressbar" aria-valuemin="0"
+                         th:attr="aria-label=${row.label}, aria-valuenow=${row.count}, aria-valuemax=${largest}">
+                        <div class="progress-bar" th:style="|width: ${largest > 0 ? row.count * 100 / largest : 0}%|"></div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</main>
+</body>
+</html>

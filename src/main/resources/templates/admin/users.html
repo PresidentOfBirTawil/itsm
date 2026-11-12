@@ -3,81 +3,61 @@
       th:replace="~{fragments/layout :: page('Users', 'users', ~{::main})}">
 <body>
 <main>
-    <div class="mb-4">
-        <h1 class="h3 mb-1">Users</h1>
-        <p class="text-body-secondary mb-0">Everyone who can sign in, grouped by role.</p>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header">Administrators <span class="badge text-bg-light border ms-1" th:text="${administrators.size()}">1</span></div>
-        <div class="table-responsive">
-            <table class="table mb-0">
-                <thead>
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Email</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="administrator : ${administrators}">
-                    <td th:text="${administrator.name}">Name</td>
-                    <td th:text="${administrator.email}">Email</td>
-                </tr>
-                </tbody>
-            </table>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Users</h1>
+            <p class="text-body-secondary mb-0">
+                Everyone who can sign in, grouped by role. A disabled account cannot sign in; nothing is deleted.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary" th:href="@{/admin/users/new}"><i class="bi bi-plus-circle me-1"></i>Add user</a>
+            <a class="btn btn-outline-primary" th:href="@{/admin/technicians/new}">Add technician</a>
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header">Technicians <span class="badge text-bg-light border ms-1" th:text="${technicians.size()}">4</span></div>
-        <div class="table-responsive">
-            <table class="table mb-0">
-                <thead>
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Skills</th>
-                    <th scope="col" class="text-end">Max workload</th>
-                    <th scope="col">Availability</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="technician : ${technicians}">
-                    <td class="text-nowrap" th:text="${technician.name}">Name</td>
-                    <td th:text="${technician.email}">Email</td>
-                    <td>
-                        <span class="badge text-bg-light border me-1" th:each="skill : ${technician.skills}"
-                              th:text="${skill.name}">Skill</span>
-                    </td>
-                    <td class="text-end" th:text="${technician.maxWorkload}">5</td>
-                    <td>
-                        <span class="badge"
-                              th:classappend="${technician.available} ? 'text-bg-success' : 'text-bg-secondary'"
-                              th:text="${technician.available} ? 'Available' : 'Not available'">Available</span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <!-- One table per role. The three tables share the fragment at the bottom of this file. -->
+    <div th:replace="~{:: userTable('Administrators', ${administrators})}"></div>
+    <div th:replace="~{:: userTable('Technicians', ${technicians})}"></div>
+    <div th:replace="~{:: userTable('Employees', ${employees})}"></div>
 
-    <div class="card">
-        <div class="card-header">Employees <span class="badge text-bg-light border ms-1" th:text="${employees.size()}">4</span></div>
-        <div class="table-responsive">
-            <table class="table mb-0">
-                <thead>
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Email</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="employee : ${employees}">
-                    <td th:text="${employee.name}">Name</td>
-                    <td th:text="${employee.email}">Email</td>
-                </tr>
-                </tbody>
-            </table>
+    <div th:remove="all">
+        <div th:fragment="userTable(title, people)" class="card mb-4">
+            <div class="card-header">
+                <span th:text="${title}">Role</span>
+                <span class="badge text-bg-light border ms-1" th:text="${people.size()}">1</span>
+            </div>
+            <div class="text-center text-body-secondary py-4" th:if="${#lists.isEmpty(people)}">Nobody yet.</div>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(people)}">
+                <table class="table mb-0">
+                    <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Account</th>
+                        <th scope="col" class="text-end">Change</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="person : ${people}">
+                        <td th:text="${person.name}">Name</td>
+                        <td th:text="${person.email}">Email</td>
+                        <td>
+                            <span class="badge" th:classappend="${person.enabled} ? 'text-bg-success' : 'text-bg-secondary'"
+                                  th:text="${person.enabled} ? 'Active' : 'Disabled'">Active</span>
+                        </td>
+                        <td class="text-end">
+                            <form method="post" class="d-inline" th:action="@{|/admin/users/${person.id}/enabled|}">
+                                <input type="hidden" name="enabled" th:value="${!person.enabled}">
+                                <button type="submit" class="btn btn-sm"
+                                        th:classappend="${person.enabled} ? 'btn-outline-danger' : 'btn-outline-success'"
+                                        th:text="${person.enabled} ? 'Disable' : 'Enable'">Disable</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </main>

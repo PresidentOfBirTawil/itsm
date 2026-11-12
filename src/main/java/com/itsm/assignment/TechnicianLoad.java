@@ -8,8 +8,8 @@ import com.itsm.domain.Technician;
  */
 public record TechnicianLoad(Technician technician, long openIncidents) {
 
-    /** True if the technician is available and still below their maximum workload. */
+    /** True if the technician's account is enabled, they are available and still below their maximum workload. */
     public boolean canTakeMore() {
-        return technician.isAvailable() && openIncidents < technician.getMaxWorkload();
+        return technician.isEnabled() && technician.isAvailable() && openIncidents < technician.getMaxWorkload();
     }
 }

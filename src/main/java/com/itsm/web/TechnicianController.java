@@ -93,6 +93,12 @@ public class TechnicianController {
         return incidentPages.changeStatus(code, form, currentTechnician(user), INCIDENTS, redirect);
     }
 
+    @PostMapping("/incidents/{code}/classification")
+    public String reclassify(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
+                             @Valid @ModelAttribute ClassificationForm form, RedirectAttributes redirect) {
+        return incidentPages.reclassify(code, form, currentTechnician(user), INCIDENTS, redirect);
+    }
+
     @PostMapping("/incidents/{code}/notes")
     public String addNote(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
                           @Valid @ModelAttribute NoteForm form, RedirectAttributes redirect) {

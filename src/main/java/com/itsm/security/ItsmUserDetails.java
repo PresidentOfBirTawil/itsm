@@ -2,6 +2,7 @@ package com.itsm.security;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 import com.itsm.domain.Role;
 import com.itsm.domain.User;
@@ -23,6 +24,7 @@ public class ItsmUserDetails implements UserDetails {
     private final String email;
     private final String passwordHash;
     private final Role role;
+    private final boolean enabled;
 
     public ItsmUserDetails(User user) {
         this.id = user.getId();
@@ -30,6 +32,7 @@ public class ItsmUserDetails implements UserDetails {
         this.email = user.getEmail();
         this.passwordHash = user.getPasswordHash();
         this.role = user.getRole();
+        this.enabled = user.isEnabled();
     }
 
     public Long getId() {
@@ -55,9 +58,26 @@ public class ItsmUserDetails implements UserDetails {
         return passwordHash;
     }
 
+    /** Spring Security refuses the sign-in of an account that an administrator has disabled. */
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
     /** People sign in with their email address. */
     @Override
     public String getUsername() {
         return email;
+    }
+
+    /** Two snapshots of the same user are the same principal, which is how a user's sessions are found. */
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof ItsmUserDetails that && id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }
