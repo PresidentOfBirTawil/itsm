@@ -1,6 +1,9 @@
 package com.itsm.domain;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.itsm.BusinessRuleException;
 import com.itsm.domain.state.IncidentState;
@@ -41,6 +44,9 @@ import jakarta.validation.constraints.Size;
 public class Incident {
 
     private static final String CODE_FORMAT = "INC-%04d";
+
+    /** The share of an SLA's time after which the incident counts as "at risk". */
+    public static final double AT_RISK_FRACTION = 0.75;
 
     /** The id comes from a database sequence. Allocation size 1 keeps the numbers going 1, 2, 3, … */
     @Id
@@ -127,6 +133,27 @@ public class Incident {
     @Column(name = "resolution_due")
     private LocalDateTime resolutionDue;
 
+    /** Where the incident stands against its SLA. Kept up to date by {@link #refreshSla}. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sla_status", columnDefinition = "varchar(10)")
+    private SlaStatus slaStatus;
+
+    /** When the resolution clock was stopped, while the incident is waiting for information. */
+    @Column(name = "sla_paused_at")
+    private LocalDateTime slaPausedAt;
+
+    /** How long the resolution clock has stood still in total, in pauses that are over. */
+    @Column(name = "sla_paused_seconds")
+    private Long slaPausedSeconds;
+
+    /** When a missed response deadline was noticed. Recorded once, never changed. */
+    @Column(name = "response_breached_at")
+    private LocalDateTime responseBreachedAt;
+
+    /** When a missed resolution deadline was noticed. Recorded once, never changed. */
+    @Column(name = "resolution_breached_at")
+    private LocalDateTime resolutionBreachedAt;
+
     /** Required by JPA. */
     protected Incident() {
     }
@@ -181,15 +208,22 @@ public class Incident {
      * @throws InvalidStateTransitionException if the lifecycle does not allow the move
      */
     public void transitionTo(Status target) {
-        if (target == null || !getState().canTransitionTo(target)) {
+        transitionTo(target, LocalDateTime.now());
+    }
+
+    /** The same, at a given moment. The moment is used for the times the states record. */
+    public void transitionTo(Status target, LocalDateTime now) {
+        IncidentState current = getState();
+        if (target == null || !current.canTransitionTo(target)) {
             throw new InvalidStateTransitionException(this, target);
         }
         IncidentState next = IncidentStates.of(target);
         next.checkEntry(this);
 
         Status previous = status;
+        current.onExit(this, target, now);
         status = target;
-        next.onEnter(this, previous, LocalDateTime.now());
+        next.onEnter(this, previous, now);
     }
 
     /**
@@ -207,7 +241,11 @@ public class Incident {
         }
         this.assessment = assessment;
         this.responseDue = policy.responseDueFrom(createdAt);
-        this.resolutionDue = policy.resolutionDueFrom(createdAt);
+        // Time the clock has already stood still does not count against the new deadline either.
+        this.resolutionDue = policy.resolutionDueFrom(createdAt).plusSeconds(getSlaPausedSeconds());
+        if (slaStatus == null) {
+            slaStatus = SlaStatus.ON_TRACK;
+        }
         getState().onPrioritised(this);
     }
 
@@ -242,14 +280,134 @@ public class Incident {
         resolvedAt = when;
     }
 
-    /** Forgets the resolution time because the incident was reopened. Called by the IN_PROGRESS state. */
-    public void clearResolved() {
+    /**
+     * The incident was reopened, so it is no longer resolved. The technician
+     * was not working on it while it counted as resolved, so the resolution
+     * deadline moves back by that time. Called by the RESOLVED state.
+     */
+    public void reopen(LocalDateTime when) {
+        if (resolvedAt != null) {
+            extendResolutionDeadline(Duration.between(resolvedAt, when));
+        }
         resolvedAt = null;
     }
 
     /** Records when the incident was closed. Called by the CLOSED state. */
     public void stampClosed(LocalDateTime when) {
         closedAt = when;
+    }
+
+    // ---- SLA ----
+
+    /** The response deadline: met when a technician acknowledges the incident. It is never paused. */
+    public SlaTarget responseTarget() {
+        return new SlaTarget("response", createdAt, responseDue, acknowledgedAt, Duration.ZERO, null);
+    }
+
+    /** The resolution deadline: met when the incident is resolved. It pauses while waiting for information. */
+    public SlaTarget resolutionTarget() {
+        return new SlaTarget("resolution", createdAt, resolutionDue, resolvedAt,
+                Duration.ofSeconds(getSlaPausedSeconds()), slaPausedAt);
+    }
+
+    /** Stops the resolution clock. Called by the AWAITING_INFO state when the incident enters it. */
+    public void pauseSlaClock(LocalDateTime when) {
+        if (slaPausedAt == null) {
+            slaPausedAt = when;
+        }
+    }
+
+    /**
+     * Starts the resolution clock again and moves the deadline back by the
+     * time it stood still. Called by the AWAITING_INFO state when the incident leaves it.
+     */
+    public void resumeSlaClock(LocalDateTime when) {
+        if (slaPausedAt != null) {
+            extendResolutionDeadline(Duration.between(slaPausedAt, when));
+            slaPausedAt = null;
+        }
+    }
+
+    private void extendResolutionDeadline(Duration standstill) {
+        long seconds = Math.max(0, standstill.getSeconds());
+        if (resolutionDue != null) {
+            resolutionDue = resolutionDue.plusSeconds(seconds);
+        }
+        slaPausedSeconds = getSlaPausedSeconds() + seconds;
+    }
+
+    /**
+     * Brings the SLA status up to date for the moment {@code now} and reports
+     * what is new. A missed deadline is recorded once, with the time it was
+     * noticed; later calls do not report it again.
+     *
+     * @return what people should be told about: empty if nothing changed
+     */
+    public List<SlaSignal> refreshSla(LocalDateTime now) {
+        if (assessment == null) {
+            return List.of(); // no priority yet, so no deadlines
+        }
+        List<SlaSignal> signals = new ArrayList<>();
+        SlaTarget response = responseTarget();
+        SlaTarget resolution = resolutionTarget();
+
+        if (responseBreachedAt == null && response.isLate(now)) {
+            responseBreachedAt = now;
+            signals.add(SlaSignal.breached(response));
+        }
+        if (resolutionBreachedAt == null && resolution.isLate(now)) {
+            resolutionBreachedAt = now;
+            signals.add(SlaSignal.breached(resolution));
+        }
+
+        SlaStatus before = slaStatus;
+        SlaTarget closeToDeadline = isCloseToDeadline(response, now) ? response
+                : isCloseToDeadline(resolution, now) ? resolution : null;
+        if (isSlaBreached()) {
+            slaStatus = SlaStatus.BREACHED;
+        } else if (slaPausedAt != null) {
+            slaStatus = SlaStatus.PAUSED;
+        } else if (resolvedAt != null) {
+            slaStatus = SlaStatus.MET;
+        } else if (closeToDeadline != null) {
+            slaStatus = SlaStatus.AT_RISK;
+        } else {
+            slaStatus = SlaStatus.ON_TRACK;
+        }
+        if (slaStatus == SlaStatus.AT_RISK && before != SlaStatus.AT_RISK) {
+            signals.add(SlaSignal.atRisk(closeToDeadline));
+        }
+        return signals;
+    }
+
+    private static boolean isCloseToDeadline(SlaTarget target, LocalDateTime now) {
+        return target.isRunning() && target.fractionUsed(now) >= AT_RISK_FRACTION;
+    }
+
+    public SlaStatus getSlaStatus() {
+        return slaStatus;
+    }
+
+    /** True if either deadline was missed. */
+    public boolean isSlaBreached() {
+        return responseBreachedAt != null || resolutionBreachedAt != null;
+    }
+
+    public LocalDateTime getResponseBreachedAt() {
+        return responseBreachedAt;
+    }
+
+    public LocalDateTime getResolutionBreachedAt() {
+        return resolutionBreachedAt;
+    }
+
+    public LocalDateTime getSlaPausedAt() {
+        return slaPausedAt;
+    }
+
+    /** Total time the resolution clock has stood still in pauses that are over, in seconds. */
+    public long getSlaPausedSeconds() {
+        return slaPausedSeconds == null ? 0 : slaPausedSeconds;
     }
 
     @PreUpdate
@@ -355,7 +513,7 @@ public class Incident {
 
     /** True if the incident is still open and its resolution deadline has passed. */
     public boolean isOverdue() {
-        return status.isOpen() && resolutionDue != null && LocalDateTime.now().isAfter(resolutionDue);
+        return status.isOpen() && resolutionDue != null && resolutionTarget().isLate(LocalDateTime.now());
     }
 
     @Override

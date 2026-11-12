@@ -1,5 +1,6 @@
 package com.itsm.domain;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -65,9 +66,15 @@ public class Technician extends User {
         return Role.TECHNICIAN;
     }
 
-    /** A technician sees the incidents assigned to them. */
+    /** A technician can look at every incident, for example when searching for similar ones. */
     @Override
-    public boolean canAccess(Incident incident) {
+    public boolean canView(Incident incident) {
+        return true;
+    }
+
+    /** But a technician acts only on the incidents assigned to them. */
+    @Override
+    public boolean canWorkOn(Incident incident) {
         return equals(incident.getAssignee());
     }
 
@@ -81,6 +88,12 @@ public class Technician extends User {
             throw new IllegalArgumentException("A skill must be a category");
         }
         skills.add(category);
+    }
+
+    /** Replaces all skills with the given ones. */
+    public void replaceSkills(Collection<Category> newSkills) {
+        skills.clear();
+        newSkills.forEach(this::addSkill);
     }
 
     public void removeSkill(Category category) {

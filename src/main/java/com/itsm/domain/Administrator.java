@@ -23,7 +23,12 @@ public class Administrator extends User {
 
     /** An administrator sees every incident. */
     @Override
-    public boolean canAccess(Incident incident) {
+    public boolean canView(Incident incident) {
+        return true;
+    }
+
+    @Override
+    public boolean canWorkOn(Incident incident) {
         return true;
     }
 }

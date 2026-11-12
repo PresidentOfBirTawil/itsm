@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${heading}, 'categories', ~{::main})}">
+<body>
+<main>
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <h1 class="h3 mb-4" th:text="${heading}">Add a category</h1>
+            <div class="card">
+                <div class="card-body p-4">
+                    <form th:action="@{${action}}" th:object="${form}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" th:field="*{name}"
+                                   th:errorclass="is-invalid" maxlength="60" autofocus>
+                            <div class="invalid-feedback" th:errors="*{name}">Name error</div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="keywords" class="form-label">Keywords</label>
+                            <textarea class="form-control" id="keywords" rows="3" th:field="*{keywords}"
+                                      th:errorclass="is-invalid" placeholder="vpn, wifi, router"></textarea>
+                            <div class="invalid-feedback" th:errors="*{keywords}">Keywords error</div>
+                            <div class="form-text">Separate keywords with commas.</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <a class="btn btn-outline-secondary" th:href="@{/admin/categories}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

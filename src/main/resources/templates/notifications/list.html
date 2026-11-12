@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Notifications', 'notifications', ~{::main})}">
+<body>
+<main>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Notifications</h1>
+            <p class="text-body-secondary mb-0">What has happened on the incidents that concern you. Newest first.</p>
+        </div>
+        <form method="post" th:action="@{/notifications/read-all}" th:if="${unreadNotifications > 0}">
+            <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-check2-all me-1"></i>Mark all as read</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="text-center text-body-secondary py-5" th:if="${#lists.isEmpty(notifications)}">
+            <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
+            You have no notifications yet.
+        </div>
+        <div class="list-group list-group-flush" th:unless="${#lists.isEmpty(notifications)}">
+            <a class="list-group-item list-group-item-action" th:each="notification : ${notifications}"
+               th:href="@{|/notifications/${notification.id}|}"
+               th:classappend="${notification.read} ? '' : 'notification-unread'">
+                <div class="d-flex flex-wrap justify-content-between gap-2">
+                    <span th:classappend="${notification.read} ? '' : 'fw-semibold'">
+                        <span class="badge text-bg-primary me-1" th:unless="${notification.read}">new</span>
+                        <span th:text="${notification.title}">INC-0001 has been assigned to you</span>
+                    </span>
+                    <span class="small text-body-secondary text-nowrap"
+                          th:text="${#temporals.format(notification.createdAt, 'dd MMM yyyy, HH:mm')}">01 Jan 2026, 10:05</span>
+                </div>
+                <div class="small text-body-secondary" th:if="${notification.message != null}"
+                     th:text="${notification.message}">Details</div>
+            </a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

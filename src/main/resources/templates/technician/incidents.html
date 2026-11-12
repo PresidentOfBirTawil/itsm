@@ -13,14 +13,14 @@
     <div class="card mb-4">
         <div class="card-header">Open</div>
         <div class="card-body p-0">
-            <div th:replace="~{fragments/ui :: incidentTable(${queue}, 'Your queue is empty.', 'service,category,priority,status,reporter,due', '/technician/incidents')}"></div>
+            <div th:replace="~{fragments/ui :: incidentTable(${queue}, 'Your queue is empty.', 'service,priority,status,sla,reporter,due', '/technician/incidents')}"></div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">Resolved, verified and closed</div>
         <div class="card-body p-0">
-            <div th:replace="~{fragments/ui :: incidentTable(${finished}, 'Nothing here yet.', 'service,category,priority,status,reporter', '/technician/incidents')}"></div>
+            <div th:replace="~{fragments/ui :: incidentTable(${finished}, 'Nothing here yet.', 'service,priority,status,sla,reporter', '/technician/incidents')}"></div>
         </div>
     </div>
 </main>

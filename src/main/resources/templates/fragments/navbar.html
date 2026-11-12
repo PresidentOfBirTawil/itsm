@@ -47,7 +47,7 @@
                            th:href="@{/employee/incidents}"><i class="bi bi-card-list me-1"></i>My incidents</a>
                     </li>
                 </ul>
-                <div th:replace="~{fragments/navbar :: userMenu}"></div>
+                <div th:replace="~{fragments/navbar :: userMenu(${active})}"></div>
             </div>
         </div>
     </nav>
@@ -70,8 +70,12 @@
                         <a class="nav-link" th:classappend="${active == 'incidents'} ? 'active'"
                            th:href="@{/technician/incidents}"><i class="bi bi-tools me-1"></i>My queue</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'search'} ? 'active'"
+                           th:href="@{/technician/search}"><i class="bi bi-search me-1"></i>Search</a>
+                    </li>
                 </ul>
-                <div th:replace="~{fragments/navbar :: userMenu}"></div>
+                <div th:replace="~{fragments/navbar :: userMenu(${active})}"></div>
             </div>
         </div>
     </nav>
@@ -91,43 +95,56 @@
                            th:href="@{/admin/dashboard}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" th:classappend="${active == 'incidents'} ? 'active'"
+                        <a class="nav-link" th:classappend="${active == 'search' or active == 'incidents'} ? 'active'"
                            th:href="@{/admin/incidents}"><i class="bi bi-card-list me-1"></i>Incidents
                             <!-- Warning: incidents that no technician could be found for. -->
                             <span class="badge text-bg-warning ms-1" th:if="${waitingCount != null and waitingCount > 0}"
                                   th:text="${waitingCount}" title="Incidents waiting for a technician">1</span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:classappend="${active == 'users'} ? 'active'"
-                           th:href="@{/admin/users}"><i class="bi bi-people me-1"></i>Users</a>
-                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                            aria-expanded="false"
-                           th:classappend="${active == 'services' or active == 'categories' or active == 'sla'} ? 'active'"><i class="bi bi-collection me-1"></i>Catalogue</a>
+                           th:classappend="${active == 'users' or active == 'technicians' or active == 'services' or active == 'categories' or active == 'sla'} ? 'active'"><i class="bi bi-sliders me-1"></i>Manage</a>
                         <ul class="dropdown-menu" data-bs-theme="light">
+                            <li><a class="dropdown-item" th:classappend="${active == 'technicians'} ? 'active'"
+                                   th:href="@{/admin/technicians}"><i class="bi bi-person-gear me-2"></i>Technicians</a></li>
                             <li><a class="dropdown-item" th:classappend="${active == 'services'} ? 'active'"
                                    th:href="@{/admin/services}"><i class="bi bi-hdd-network me-2"></i>Services</a></li>
                             <li><a class="dropdown-item" th:classappend="${active == 'categories'} ? 'active'"
                                    th:href="@{/admin/categories}"><i class="bi bi-tags me-2"></i>Categories</a></li>
                             <li><a class="dropdown-item" th:classappend="${active == 'sla'} ? 'active'"
                                    th:href="@{/admin/sla-policies}"><i class="bi bi-stopwatch me-2"></i>SLA policies</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" th:classappend="${active == 'users'} ? 'active'"
+                                   th:href="@{/admin/users}"><i class="bi bi-people me-2"></i>All users</a></li>
                         </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'emails'} ? 'active'"
+                           th:href="@{/admin/emails}"><i class="bi bi-envelope me-1"></i>Email outbox</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'settings'} ? 'active'"
                            th:href="@{/admin/settings}"><i class="bi bi-gear me-1"></i>Settings</a>
                     </li>
                 </ul>
-                <div th:replace="~{fragments/navbar :: userMenu}"></div>
+                <div th:replace="~{fragments/navbar :: userMenu(${active})}"></div>
             </div>
         </div>
     </nav>
 
 </th:block>
 
-<!-- Who is signed in, their role, and the sign-out button. Shared by the three role navbars. -->
-<div th:fragment="userMenu" class="d-flex align-items-center gap-3 py-2 py-lg-0">
+<!-- The bell, who is signed in, their role, and the sign-out button. Shared by the three role navbars. -->
+<div th:fragment="userMenu(active)" class="d-flex align-items-center gap-3 py-2 py-lg-0">
+    <a class="navbar-bell position-relative" th:href="@{/notifications}" title="Notifications"
+       th:classappend="${active == 'notifications'} ? 'active'">
+        <i class="bi bi-bell-fill"></i>
+        <span class="badge rounded-pill text-bg-danger navbar-bell-count"
+              th:if="${unreadNotifications != null and unreadNotifications > 0}"
+              th:text="${unreadNotifications}">3</span>
+        <span class="visually-hidden">Notifications</span>
+    </a>
     <span class="navbar-text">
         <i class="bi bi-person-circle me-1"></i><span sec:authentication="principal.name">Name</span>
         <span class="badge text-bg-light ms-1" sec:authentication="principal.role.label">Role</span>

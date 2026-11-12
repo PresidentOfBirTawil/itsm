@@ -3,20 +3,29 @@
       th:replace="~{fragments/layout :: page('Categories', 'categories', ~{::main})}">
 <body>
 <main>
-    <div class="mb-4">
-        <h1 class="h3 mb-1">Incident categories</h1>
-        <p class="text-body-secondary mb-0">
-            The kinds of incident, with the keywords that hint an incident belongs to each one.
-        </p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Incident categories</h1>
+            <p class="text-body-secondary mb-0">
+                The kinds of incident. A technician's skills are categories, and the keywords hint which category
+                an incident belongs to.
+            </p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/admin/categories/new}"><i class="bi bi-plus-circle me-1"></i>Add category</a>
     </div>
 
     <div class="card">
-        <div class="table-responsive">
+        <div class="text-center text-body-secondary py-5" th:if="${#lists.isEmpty(categories)}">
+            <i class="bi bi-tags fs-1 d-block mb-2"></i>
+            There are no categories yet.
+        </div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(categories)}">
             <table class="table mb-0">
                 <thead>
                 <tr>
                     <th scope="col">Category</th>
                     <th scope="col">Keywords</th>
+                    <th scope="col" class="text-end">Change</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -25,6 +34,10 @@
                     <td>
                         <span class="badge text-bg-light border me-1" th:each="keyword : ${category.keywords}"
                               th:text="${keyword}">keyword</span>
+                        <span class="text-body-secondary small" th:if="${category.keywords.isEmpty()}">no keywords</span>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" th:href="@{|/admin/categories/${category.id}/edit|}">Edit</a>
                     </td>
                 </tr>
                 </tbody>

@@ -1,5 +1,8 @@
 package com.itsm.web;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import com.itsm.BusinessRuleException;
 import com.itsm.assignment.AssignmentService;
 import com.itsm.assignment.AssignmentStrategy;
@@ -7,21 +10,23 @@ import com.itsm.domain.Administrator;
 import com.itsm.domain.AuditEntry;
 import com.itsm.domain.Incident;
 import com.itsm.domain.IncidentAction;
+import com.itsm.domain.Priority;
+import com.itsm.domain.SlaStatus;
 import com.itsm.domain.Status;
 import com.itsm.repository.AdministratorRepository;
 import com.itsm.repository.AuditEntryRepository;
-import com.itsm.repository.CategoryRepository;
-import com.itsm.repository.EmployeeRepository;
-import com.itsm.repository.ITServiceRepository;
+import com.itsm.repository.EmailMessageRepository;
 import com.itsm.repository.IncidentRepository;
-import com.itsm.repository.SlaPolicyRepository;
-import com.itsm.repository.TechnicianRepository;
-import com.itsm.repository.UserRepository;
+import com.itsm.repository.ServiceIncidentCount;
+import com.itsm.search.IncidentSearchCriteria;
 import com.itsm.security.ItsmUserDetails;
 import com.itsm.service.IncidentService;
+import com.itsm.sla.SlaService;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,53 +35,37 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/** Pages for administrators. Everything under /admin needs the ADMIN role (see SecurityConfig). */
+/**
+ * The administrator's dashboard, incidents, settings and email outbox.
+ * Everything under /admin needs the ADMIN role (see SecurityConfig).
+ */
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
 
     private static final String INCIDENTS = "/admin/incidents";
 
-    private final UserRepository users;
     private final AdministratorRepository administrators;
-    private final TechnicianRepository technicians;
-    private final EmployeeRepository employees;
-    private final ITServiceRepository services;
-    private final CategoryRepository categories;
-    private final SlaPolicyRepository slaPolicies;
     private final IncidentRepository incidents;
     private final AuditEntryRepository auditEntries;
+    private final EmailMessageRepository emails;
     private final IncidentService incidentService;
     private final AssignmentService assignmentService;
+    private final SlaService slaService;
     private final IncidentPages incidentPages;
 
-    public AdminController(UserRepository users, AdministratorRepository administrators,
-                           TechnicianRepository technicians, EmployeeRepository employees,
-                           ITServiceRepository services, CategoryRepository categories,
-                           SlaPolicyRepository slaPolicies, IncidentRepository incidents,
-                           AuditEntryRepository auditEntries, IncidentService incidentService,
-                           AssignmentService assignmentService, IncidentPages incidentPages) {
-        this.users = users;
+    public AdminController(AdministratorRepository administrators, IncidentRepository incidents,
+                           AuditEntryRepository auditEntries, EmailMessageRepository emails,
+                           IncidentService incidentService, AssignmentService assignmentService,
+                           SlaService slaService, IncidentPages incidentPages) {
         this.administrators = administrators;
-        this.technicians = technicians;
-        this.employees = employees;
-        this.services = services;
-        this.categories = categories;
-        this.slaPolicies = slaPolicies;
         this.incidents = incidents;
         this.auditEntries = auditEntries;
+        this.emails = emails;
         this.incidentService = incidentService;
         this.assignmentService = assignmentService;
+        this.slaService = slaService;
         this.incidentPages = incidentPages;
-    }
-
-    /**
-     * Added to every admin page: how many incidents are waiting because no
-     * technician could be found. The navbar shows it as a warning badge.
-     */
-    @ModelAttribute("waitingCount")
-    public long waitingCount() {
-        return assignmentService.countWaitingForTechnician();
     }
 
     @GetMapping
@@ -84,30 +73,37 @@ public class AdminController {
         return "redirect:/admin/dashboard";
     }
 
+    // ---- dashboard ----
+
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        model.addAttribute("userCount", users.count());
-        model.addAttribute("serviceCount", services.count());
-        model.addAttribute("categoryCount", categories.count());
-        model.addAttribute("incidentCount", incidents.count());
-        model.addAttribute("waiting", assignmentService.waitingForTechnician());
+        // The totals at the top.
+        model.addAttribute("totalCount", incidents.count());
+        model.addAttribute("openCount", incidents.countByStatusIn(Status.openStatuses()));
+        model.addAttribute("criticalCount", incidents.countByPriorityAndStatusIn(Priority.P1, Status.openStatuses()));
+        model.addAttribute("resolvedCount", incidents.countByStatusIn(Status.finishedStatuses()));
+        model.addAttribute("breachCount", incidents.countBySlaStatus(SlaStatus.BREACHED));
+
+        // Technician workload and incidents per service.
         model.addAttribute("loads", assignmentService.technicianLoads());
+        List<ServiceIncidentCount> perService = incidents.countIncidentsPerService();
+        model.addAttribute("perService", perService);
+        model.addAttribute("busiestService",
+                perService.stream().mapToLong(ServiceIncidentCount::incidents).max().orElse(0));
+
+        model.addAttribute("waiting", assignmentService.waitingForTechnician());
         model.addAttribute("activeStrategy", assignmentService.getActiveStrategy());
-        model.addAttribute("slaPolicies", slaPolicies.findAllByOrderByPriorityAsc());
         return "admin/dashboard";
     }
 
     // ---- incidents ----
 
+    /** The incident list. With no filters it shows everything; the form above the list narrows it down. */
     @GetMapping("/incidents")
-    public String incidents(Model model) {
-        model.addAttribute("heading", "All incidents");
-        model.addAttribute("subheading", "Every incident in the system, newest first.");
-        model.addAttribute("emptyMessage", "No incidents have been reported yet.");
-        model.addAttribute("columns", "service,priority,status,reporter,assignee,reported");
-        model.addAttribute("basePath", INCIDENTS);
-        model.addAttribute("incidents", incidents.findAllByOrderByCreatedAtDescIdDesc());
-        return "incidents/list";
+    public String incidents(@Valid @ModelAttribute("criteria") IncidentSearchCriteria criteria,
+                            BindingResult result, Model model) {
+        model.addAttribute("heading", "Incidents");
+        return incidentPages.search(model, criteria, result, INCIDENTS, INCIDENTS);
     }
 
     @GetMapping("/incidents/{code}")
@@ -172,6 +168,8 @@ public class AdminController {
     public String settings(Model model) {
         model.addAttribute("strategies", assignmentService.getStrategies());
         model.addAttribute("activeStrategy", assignmentService.getActiveStrategy());
+        model.addAttribute("demoSla", slaService.isDemoMode());
+        model.addAttribute("demoPolicies", slaService.demoPolicies());
         return "admin/settings";
     }
 
@@ -188,32 +186,33 @@ public class AdminController {
         return "redirect:/admin/settings";
     }
 
-    // ---- reference data ----
-
-    @GetMapping("/users")
-    public String users(Model model) {
-        model.addAttribute("administrators", administrators.findAllByOrderByNameAsc());
-        model.addAttribute("technicians", technicians.findAllByOrderByNameAsc());
-        model.addAttribute("employees", employees.findAllByOrderByNameAsc());
-        return "admin/users";
+    /** Switches the short demo SLA deadlines on or off. */
+    @PostMapping("/settings/demo-sla")
+    public String demoSla(@RequestParam boolean enabled, RedirectAttributes redirect) {
+        slaService.setDemoMode(enabled);
+        redirect.addFlashAttribute("success", enabled
+                ? "Demo SLA is on. Incidents reported from now on get the short demo deadlines."
+                : "Demo SLA is off. Incidents reported from now on get the normal SLA policies.");
+        return "redirect:/admin/settings";
     }
 
-    @GetMapping("/services")
-    public String services(Model model) {
-        model.addAttribute("services", services.findAllByOrderByCriticalityDescNameAsc());
-        return "admin/services";
+    /** Runs the SLA check now instead of waiting for the next minute. Handy while recording a demo. */
+    @PostMapping("/settings/check-sla")
+    public String checkSlaNow(RedirectAttributes redirect) {
+        int checked = slaService.checkOpenIncidents(LocalDateTime.now());
+        redirect.addFlashAttribute("success", checked == 1
+                ? "The SLA check has run: 1 open incident checked."
+                : "The SLA check has run: %d open incidents checked.".formatted(checked));
+        return "redirect:/admin/settings";
     }
 
-    @GetMapping("/categories")
-    public String categories(Model model) {
-        model.addAttribute("categories", categories.findAllByOrderByNameAsc());
-        return "admin/categories";
-    }
+    // ---- email outbox ----
 
-    @GetMapping("/sla-policies")
-    public String slaPolicies(Model model) {
-        model.addAttribute("slaPolicies", slaPolicies.findAllByOrderByPriorityAsc());
-        return "admin/sla-policies";
+    /** The emails the system would have sent. They are simulated, so this page is where they can be read. */
+    @GetMapping("/emails")
+    public String emails(Model model) {
+        model.addAttribute("emails", emails.findTop200ByOrderByCreatedAtDescIdDesc());
+        return "admin/emails";
     }
 
     private Administrator currentAdministrator(ItsmUserDetails user) {

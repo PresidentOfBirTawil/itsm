@@ -21,9 +21,14 @@ public class Employee extends User {
         return Role.EMPLOYEE;
     }
 
-    /** An employee sees the incidents they reported themselves. */
+    /** An employee sees only the incidents they reported themselves. */
     @Override
-    public boolean canAccess(Incident incident) {
+    public boolean canView(Incident incident) {
+        return equals(incident.getReporter());
+    }
+
+    @Override
+    public boolean canWorkOn(Incident incident) {
         return equals(incident.getReporter());
     }
 }

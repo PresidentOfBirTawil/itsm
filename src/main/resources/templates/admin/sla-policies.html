@@ -6,7 +6,8 @@
     <div class="mb-4">
         <h1 class="h3 mb-1">SLA policies</h1>
         <p class="text-body-secondary mb-0">
-            For each priority: how quickly someone must respond, and how quickly the incident must be resolved.
+            For each priority: how quickly a technician must acknowledge the incident (response), and how quickly it
+            must be resolved. Changes apply to incidents reported from now on.
         </p>
     </div>
 
@@ -16,15 +17,35 @@
                 <thead>
                 <tr>
                     <th scope="col">Priority</th>
-                    <th scope="col">Response target</th>
-                    <th scope="col">Resolution target</th>
+                    <th scope="col">Now</th>
+                    <th scope="col">Response target (minutes)</th>
+                    <th scope="col">Resolution target (minutes)</th>
+                    <th scope="col" class="text-end">Change</th>
                 </tr>
                 </thead>
                 <tbody>
+                <!-- Each row is its own small form. -->
                 <tr th:each="policy : ${slaPolicies}">
                     <td><th:block th:replace="~{fragments/ui :: priorityBadge(${policy.priority})}"></th:block></td>
-                    <td><span th:replace="~{fragments/ui :: duration(${policy.responseMinutes})}"></span></td>
-                    <td><span th:replace="~{fragments/ui :: duration(${policy.resolutionMinutes})}"></span></td>
+                    <td class="text-nowrap small text-body-secondary">
+                        <span th:replace="~{fragments/ui :: duration(${policy.responseMinutes})}"></span> /
+                        <span th:replace="~{fragments/ui :: duration(${policy.resolutionMinutes})}"></span>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" name="responseMinutes" min="1"
+                               required th:value="${policy.responseMinutes}" th:form="|sla-${policy.id}|"
+                               th:attr="aria-label=|Response minutes for ${policy.priority}|">
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" name="resolutionMinutes" min="1"
+                               required th:value="${policy.resolutionMinutes}" th:form="|sla-${policy.id}|"
+                               th:attr="aria-label=|Resolution minutes for ${policy.priority}|">
+                    </td>
+                    <td class="text-end">
+                        <form method="post" th:id="|sla-${policy.id}|" th:action="@{|/admin/sla-policies/${policy.id}|}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                        </form>
+                    </td>
                 </tr>
                 </tbody>
             </table>

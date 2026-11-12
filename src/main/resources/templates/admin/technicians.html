@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Technicians', 'technicians', ~{::main})}">
+<body>
+<main>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Technicians</h1>
+            <p class="text-body-secondary mb-0">
+                Skills, availability and maximum workload decide who can be given an incident.
+            </p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/admin/technicians/new}"><i class="bi bi-plus-circle me-1"></i>Add technician</a>
+    </div>
+
+    <div class="card">
+        <div class="text-center text-body-secondary py-5" th:if="${#lists.isEmpty(loads)}">
+            <i class="bi bi-person-gear fs-1 d-block mb-2"></i>
+            There are no technicians yet. Add one so that incidents can be assigned.
+        </div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(loads)}">
+            <table class="table mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Skills</th>
+                    <th scope="col" class="text-end">Open incidents</th>
+                    <th scope="col">Availability</th>
+                    <th scope="col" class="text-end">Change</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="load : ${loads}">
+                    <td class="text-nowrap" th:text="${load.technician.name}">Name</td>
+                    <td th:text="${load.technician.email}">Email</td>
+                    <td>
+                        <span class="badge text-bg-light border me-1" th:each="skill : ${load.technician.skills}"
+                              th:text="${skill.name}">Skill</span>
+                        <span class="text-body-secondary small" th:if="${load.technician.skills.isEmpty()}">no skills</span>
+                    </td>
+                    <td class="text-end text-nowrap"
+                        th:classappend="${load.openIncidents >= load.technician.maxWorkload} ? 'text-danger fw-semibold'"
+                        th:text="|${load.openIncidents} of ${load.technician.maxWorkload}|">0 of 5</td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${load.technician.available} ? 'text-bg-success' : 'text-bg-secondary'"
+                              th:text="${load.technician.available} ? 'Available' : 'Not available'">Available</span>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary"
+                           th:href="@{|/admin/technicians/${load.technician.id}/edit|}">Edit</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

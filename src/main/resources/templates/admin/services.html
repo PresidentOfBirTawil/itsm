@@ -3,26 +3,38 @@
       th:replace="~{fragments/layout :: page('IT services', 'services', ~{::main})}">
 <body>
 <main>
-    <div class="mb-4">
-        <h1 class="h3 mb-1">IT services</h1>
-        <p class="text-body-secondary mb-0">
-            The services incidents can be reported against. Criticality says how much the business depends on each one.
-        </p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1">IT services</h1>
+            <p class="text-body-secondary mb-0">
+                The services incidents are reported against. Criticality (1 to 3) says how much the business depends
+                on a service, and is one of the three numbers the priority is calculated from.
+            </p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/admin/services/new}"><i class="bi bi-plus-circle me-1"></i>Add service</a>
     </div>
 
     <div class="card">
-        <div class="table-responsive">
+        <div class="text-center text-body-secondary py-5" th:if="${#lists.isEmpty(services)}">
+            <i class="bi bi-hdd-network fs-1 d-block mb-2"></i>
+            There are no services yet. Add one so that incidents can be reported.
+        </div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(services)}">
             <table class="table mb-0">
                 <thead>
                 <tr>
                     <th scope="col">Service</th>
                     <th scope="col">Criticality</th>
+                    <th scope="col" class="text-end">Change</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="service : ${services}">
                     <td th:text="${service.name}">Service</td>
                     <td><span th:replace="~{fragments/ui :: criticalityBadge(${service.criticality})}"></span></td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" th:href="@{|/admin/services/${service.id}/edit|}">Edit</a>
+                    </td>
                 </tr>
                 </tbody>
             </table>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${heading}, 'technicians', ~{::main})}">
+<body>
+<main>
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <h1 class="h3 mb-4" th:text="${heading}">Add a technician</h1>
+            <div class="card">
+                <div class="card-body p-4">
+                    <form th:action="@{${action}}" th:object="${form}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full name</label>
+                            <input type="text" class="form-control" id="name" th:field="*{name}"
+                                   th:errorclass="is-invalid" maxlength="100" autofocus>
+                            <div class="invalid-feedback" th:errors="*{name}">Name error</div>
+                        </div>
+
+                        <!-- Only when adding: the sign-in details -->
+                        <div class="row g-3 mb-3" th:if="${isNew}">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" th:field="*{email}"
+                                       th:errorclass="is-invalid" autocomplete="off">
+                                <div class="invalid-feedback" th:errors="*{email}">Email error</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">First password</label>
+                                <input type="password" class="form-control" id="password" th:field="*{password}"
+                                       th:errorclass="is-invalid" autocomplete="new-password">
+                                <div class="invalid-feedback" th:errors="*{password}">Password error</div>
+                                <div class="form-text">At least 8 characters.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <span class="form-label d-block">Skills</span>
+                            <div class="row row-cols-2 row-cols-md-3 g-1">
+                                <div class="col" th:each="category : ${categories}">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" th:field="*{skillIds}"
+                                               th:value="${category.id}">
+                                        <label class="form-check-label" th:for="${#ids.prev('skillIds')}"
+                                               th:text="${category.name}">Category</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text">The categories of incident this technician can handle.</div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="maxWorkload" class="form-label">Maximum workload</label>
+                                <input type="number" class="form-control" id="maxWorkload" th:field="*{maxWorkload}"
+                                       th:errorclass="is-invalid" min="1" max="50">
+                                <div class="invalid-feedback" th:errors="*{maxWorkload}">Workload error</div>
+                                <div class="form-text">The most open incidents they should hold at once.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="form-label d-block">Availability</span>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="available"
+                                           th:field="*{available}">
+                                    <label class="form-check-label" for="available">Available for new incidents</label>
+                                </div>
+                                <div class="form-text">Switch off while they are away.</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <a class="btn btn-outline-secondary" th:href="@{/admin/technicians}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

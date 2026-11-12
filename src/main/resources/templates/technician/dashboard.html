@@ -32,7 +32,7 @@
                     <span class="small fw-normal text-body-secondary">soonest deadline first</span>
                 </div>
                 <div class="card-body p-0">
-                    <div th:replace="~{fragments/ui :: incidentTable(${queue}, 'Your queue is empty.', 'priority,status,due', '/technician/incidents')}"></div>
+                    <div th:replace="~{fragments/ui :: incidentTable(${queue}, 'Your queue is empty.', 'priority,status,sla,due', '/technician/incidents')}"></div>
                 </div>
             </div>
         </div>

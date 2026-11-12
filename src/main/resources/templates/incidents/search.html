@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!-- The searchable incident list for administrators and technicians. Every filter is optional. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${heading}, 'search', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1" th:text="${heading}">Incidents</h1>
+        <p class="text-body-secondary mb-0">Fill in any of the filters. An incident must match all of the ones you use.</p>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" th:action="@{${searchPath}}" th:object="${criteria}">
+                <div class="row g-3">
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="code" class="form-label">Code</label>
+                        <input type="text" class="form-control" id="code" th:field="*{code}" th:errorclass="is-invalid"
+                               placeholder="INC-0007 or 7">
+                        <div class="invalid-feedback" th:errors="*{code}">Code error</div>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" th:field="*{status}">
+                            <option value="">Any</option>
+                            <option th:each="choice : ${statuses}" th:value="${choice}" th:text="${choice.label}">New</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select class="form-select" id="priority" th:field="*{priority}">
+                            <option value="">Any</option>
+                            <option th:each="choice : ${priorities}" th:value="${choice}"
+                                    th:text="|${choice.name()} · ${choice.label}|">P1 · Critical</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="slaStatus" class="form-label">SLA status</label>
+                        <select class="form-select" id="slaStatus" th:field="*{slaStatus}">
+                            <option value="">Any</option>
+                            <option th:each="choice : ${slaStatuses}" th:value="${choice}" th:text="${choice.label}">On track</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="categoryId" class="form-label">Category</label>
+                        <select class="form-select" id="categoryId" th:field="*{categoryId}">
+                            <option value="">Any</option>
+                            <option th:each="choice : ${categories}" th:value="${choice.id}" th:text="${choice.name}">Network</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="serviceId" class="form-label">Service</label>
+                        <select class="form-select" id="serviceId" th:field="*{serviceId}">
+                            <option value="">Any</option>
+                            <option th:each="choice : ${services}" th:value="${choice.id}" th:text="${choice.name}">Service</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="technicianId" class="form-label">Technician</label>
+                        <select class="form-select" id="technicianId" th:field="*{technicianId}">
+                            <option value="">Any</option>
+                            <option th:each="choice : ${technicians}" th:value="${choice.id}" th:text="${choice.name}">Technician</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="from" class="form-label">Reported from</label>
+                        <input type="date" class="form-control" id="from" th:field="*{from}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('from')}">Please enter a date.</div>
+                    </div>
+                    <div class="col-sm-6 col-lg-4">
+                        <label for="to" class="form-label">Reported to</label>
+                        <input type="date" class="form-control" id="to" th:field="*{to}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('to')}">Please enter a date.</div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Search</button>
+                    <a class="btn btn-outline-secondary" th:href="@{${searchPath}}">Clear filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span th:text="${filtered} ? 'Matching incidents' : 'All incidents'">All incidents</span>
+            <span class="badge text-bg-light border" th:text="${incidents.size()}">0</span>
+        </div>
+        <div class="card-body p-0">
+            <div th:replace="~{fragments/ui :: incidentTable(${incidents}, ${filtered} ? 'No incident matches these filters.' : 'No incidents have been reported yet.', 'service,priority,status,sla,reporter,assignee,reported', ${basePath})}"></div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

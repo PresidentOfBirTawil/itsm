@@ -32,6 +32,14 @@
       th:classappend="${status.name() == 'AWAITING_INFO'} ? 'text-bg-warning' : (${status.open} ? 'text-bg-primary' : (${status.name() == 'CLOSED'} ? 'text-bg-secondary' : 'text-bg-success'))"
       th:text="${status.label}">New</span>
 
+<!-- Where the incident stands against its SLA. Shows a dash when it has no deadlines yet. -->
+<th:block th:fragment="slaBadge(sla)">
+    <span th:if="${sla != null}" class="badge"
+          th:classappend="${sla.name() == 'BREACHED'} ? 'text-bg-danger' : (${sla.name() == 'AT_RISK'} ? 'text-bg-warning' : (${sla.name() == 'PAUSED'} ? 'text-bg-secondary' : (${sla.name() == 'MET'} ? 'text-bg-success' : 'bg-success-subtle text-success-emphasis border border-success-subtle')))"
+          th:text="${sla.label}">On track</span>
+    <span th:if="${sla == null}">—</span>
+</th:block>
+
 <!-- A length of time given in minutes, written the way people say it: "5 min", "2 h", "1 h 30 min". -->
 <span th:fragment="duration(minutes)"
       th:text="${minutes < 60} ? (${minutes} + ' min') : (${minutes % 60 == 0} ? (${minutes / 60} + ' h') : (${minutes / 60} + ' h ' + ${minutes % 60} + ' min'))">5 min</span>
@@ -40,7 +48,7 @@
   A table of incidents, or a friendly message when there are none.
 
   columns  - which optional columns to show, as one string. Any of:
-             service, category, priority, status, reporter, assignee, reported, due
+             service, category, priority, status, sla, reporter, assignee, reported, due
   basePath - where this role's incident pages live, e.g. '/employee/incidents'.
              Each code links to basePath + '/' + code.
 -->
@@ -59,6 +67,7 @@
                 <th scope="col" th:if="${#strings.contains(columns, 'category')}">Category</th>
                 <th scope="col" th:if="${#strings.contains(columns, 'priority')}">Priority</th>
                 <th scope="col" th:if="${#strings.contains(columns, 'status')}">Status</th>
+                <th scope="col" th:if="${#strings.contains(columns, 'sla')}">SLA</th>
                 <th scope="col" th:if="${#strings.contains(columns, 'reporter')}">Reporter</th>
                 <th scope="col" th:if="${#strings.contains(columns, 'assignee')}">Assignee</th>
                 <th scope="col" th:if="${#strings.contains(columns, 'reported')}">Reported</th>
@@ -79,6 +88,9 @@
                 </td>
                 <td th:if="${#strings.contains(columns, 'status')}">
                     <span th:replace="~{fragments/ui :: statusBadge(${incident.status})}"></span>
+                </td>
+                <td th:if="${#strings.contains(columns, 'sla')}">
+                    <th:block th:replace="~{fragments/ui :: slaBadge(${incident.slaStatus})}"></th:block>
                 </td>
                 <td th:if="${#strings.contains(columns, 'reporter')}" th:text="${incident.reporter.name}">Reporter</td>
                 <td th:if="${#strings.contains(columns, 'assignee')}"

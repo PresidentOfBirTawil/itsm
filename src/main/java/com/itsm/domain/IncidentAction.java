@@ -8,7 +8,9 @@ public enum IncidentAction {
     ASSIGNED("Technician assigned"),
     REASSIGNED("Technician changed"),
     ASSIGNMENT_FAILED("Automatic assignment failed"),
-    STATUS_CHANGED("Status changed");
+    STATUS_CHANGED("Status changed"),
+    SLA_AT_RISK("SLA at risk"),
+    SLA_BREACHED("SLA breached");
 
     private final String label;
 
