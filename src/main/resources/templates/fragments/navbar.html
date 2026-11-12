@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--
+  One navbar per kind of visitor. Only the one that matches the signed-in
+  user's role is rendered. Hiding links here is a convenience only: the real
+  protection is in SecurityConfig, which checks every URL on the server.
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<th:block th:fragment="navbar(active)">
+
+    <!-- Visitor: not signed in -->
+    <nav class="navbar navbar-expand navbar-guest" data-bs-theme="dark" sec:authorize="isAnonymous()">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" th:href="@{/}"><i class="bi bi-life-preserver me-2"></i>I-ITSM</a>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${active == 'login'} ? 'active'" th:href="@{/login}">Sign in</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${active == 'register'} ? 'active'" th:href="@{/register}">Register</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Employee -->
+    <nav class="navbar navbar-expand-lg navbar-employee" data-bs-theme="dark" sec:authorize="hasRole('EMPLOYEE')">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" th:href="@{/employee/dashboard}"><i class="bi bi-life-preserver me-2"></i>I-ITSM</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'dashboard'} ? 'active'"
+                           th:href="@{/employee/dashboard}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'incidents'} ? 'active'"
+                           th:href="@{/employee/incidents}"><i class="bi bi-card-list me-1"></i>My incidents</a>
+                    </li>
+                </ul>
+                <div th:replace="~{fragments/navbar :: userMenu}"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Technician -->
+    <nav class="navbar navbar-expand-lg navbar-technician" data-bs-theme="dark" sec:authorize="hasRole('TECHNICIAN')">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" th:href="@{/technician/dashboard}"><i class="bi bi-life-preserver me-2"></i>I-ITSM</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'dashboard'} ? 'active'"
+                           th:href="@{/technician/dashboard}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'incidents'} ? 'active'"
+                           th:href="@{/technician/incidents}"><i class="bi bi-tools me-1"></i>My queue</a>
+                    </li>
+                </ul>
+                <div th:replace="~{fragments/navbar :: userMenu}"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Administrator -->
+    <nav class="navbar navbar-expand-lg navbar-admin" data-bs-theme="dark" sec:authorize="hasRole('ADMIN')">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" th:href="@{/admin/dashboard}"><i class="bi bi-life-preserver me-2"></i>I-ITSM</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'dashboard'} ? 'active'"
+                           th:href="@{/admin/dashboard}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'incidents'} ? 'active'"
+                           th:href="@{/admin/incidents}"><i class="bi bi-card-list me-1"></i>Incidents</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'users'} ? 'active'"
+                           th:href="@{/admin/users}"><i class="bi bi-people me-1"></i>Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'services'} ? 'active'"
+                           th:href="@{/admin/services}"><i class="bi bi-hdd-network me-1"></i>Services</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'categories'} ? 'active'"
+                           th:href="@{/admin/categories}"><i class="bi bi-tags me-1"></i>Categories</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'sla'} ? 'active'"
+                           th:href="@{/admin/sla-policies}"><i class="bi bi-stopwatch me-1"></i>SLA policies</a>
+                    </li>
+                </ul>
+                <div th:replace="~{fragments/navbar :: userMenu}"></div>
+            </div>
+        </div>
+    </nav>
+
+</th:block>
+
+<!-- Who is signed in, their role, and the sign-out button. Shared by the three role navbars. -->
+<div th:fragment="userMenu" class="d-flex align-items-center gap-3 py-2 py-lg-0">
+    <span class="navbar-text">
+        <i class="bi bi-person-circle me-1"></i><span sec:authentication="principal.name">Name</span>
+        <span class="badge text-bg-light ms-1" sec:authentication="principal.role.label">Role</span>
+    </span>
+    <form th:action="@{/logout}" method="post" class="m-0">
+        <button type="submit" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right me-1"></i>Sign out</button>
+    </form>
+</div>
+
+</body>
+</html>

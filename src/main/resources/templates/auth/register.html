@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Register', 'register', ~{::main})}">
+<body>
+<main>
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6 col-xl-5">
+            <div class="card mt-lg-4">
+                <div class="card-body p-4">
+                    <h1 class="h4 mb-1">Create an employee account</h1>
+                    <p class="text-body-secondary">
+                        Register to report IT incidents and follow their progress.
+                    </p>
+
+                    <form th:action="@{/register}" th:object="${form}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full name</label>
+                            <input type="text" class="form-control" id="name" th:field="*{name}"
+                                   th:errorclass="is-invalid" autocomplete="name" autofocus>
+                            <div class="invalid-feedback" th:errors="*{name}">Name error</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" th:field="*{email}"
+                                   th:errorclass="is-invalid" autocomplete="username">
+                            <div class="invalid-feedback" th:errors="*{email}">Email error</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" th:field="*{password}"
+                                   th:errorclass="is-invalid" autocomplete="new-password">
+                            <div class="invalid-feedback" th:errors="*{password}">Password error</div>
+                            <div class="form-text">At least 8 characters.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm password</label>
+                            <input type="password" class="form-control" id="confirmPassword"
+                                   th:field="*{confirmPassword}" th:errorclass="is-invalid"
+                                   autocomplete="new-password">
+                            <div class="invalid-feedback" th:errors="*{confirmPassword}">Confirm error</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Create account</button>
+                    </form>
+
+                    <p class="text-center small mt-3 mb-0">
+                        Already have an account? <a th:href="@{/login}">Sign in</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

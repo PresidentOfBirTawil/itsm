@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('SLA policies', 'sla', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">SLA policies</h1>
+        <p class="text-body-secondary mb-0">
+            For each priority: how quickly someone must respond, and how quickly the incident must be resolved.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">Priority</th>
+                    <th scope="col">Response target</th>
+                    <th scope="col">Resolution target</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="policy : ${slaPolicies}">
+                    <td><th:block th:replace="~{fragments/ui :: priorityBadge(${policy.priority})}"></th:block></td>
+                    <td><span th:replace="~{fragments/ui :: duration(${policy.responseMinutes})}"></span></td>
+                    <td><span th:replace="~{fragments/ui :: duration(${policy.resolutionMinutes})}"></span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

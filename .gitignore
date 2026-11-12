@@ -1,0 +1,17 @@
+# Build output
+target/
+
+# Local H2 database files (created on first run, rebuilt from seed data if deleted)
+data/
+
+# Maven wrapper downloads
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE and OS files
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store

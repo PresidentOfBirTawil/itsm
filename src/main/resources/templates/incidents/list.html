@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<!-- One incident list for all three roles. The controller decides which incidents and which wording to show. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${heading}, 'incidents', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1" th:text="${heading}">Incidents</h1>
+        <p class="text-body-secondary mb-0" th:text="${subheading}">Newest first.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div th:replace="~{fragments/ui :: incidentTable(${incidents}, ${emptyMessage}, false)}"></div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

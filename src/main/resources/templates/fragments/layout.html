@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!--
+  The page frame every screen shares: <head>, the navbar for the current role,
+  the page content and the footer. A page uses it like this:
+
+    <html th:replace="~{fragments/layout :: page('Title', 'navKey', ~{::main})}">
+
+  title   - shown in the browser tab
+  active  - which navbar link to highlight (for example 'dashboard')
+  content - the <main> element of the page
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="page(title, active, content)">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|${title} · I-ITSM|">I-ITSM</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+
+<th:block th:replace="~{fragments/navbar :: navbar(${active})}"></th:block>
+
+<div class="container py-4 flex-grow-1">
+    <main th:replace="${content}">Page content goes here.</main>
+</div>
+
+<footer class="border-top bg-body py-3 small text-body-secondary">
+    <div class="container">I-ITSM · Intelligent IT Service Management &amp; Incident Resolution System</div>
+</footer>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

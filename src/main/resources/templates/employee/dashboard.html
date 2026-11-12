@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Employee dashboard', 'dashboard', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Welcome, <span th:text="${employee.name}">Employee</span></h1>
+        <p class="text-body-secondary mb-0">Employee workspace · follow the IT incidents you have reported.</p>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-4">
+            <div th:replace="~{fragments/ui :: stat('Incidents reported', ${incidents.size()}, 'bi-card-list')}"></div>
+        </div>
+        <div class="col-sm-4">
+            <div th:replace="~{fragments/ui :: stat('Still open', ${openCount}, 'bi-hourglass-split')}"></div>
+        </div>
+        <div class="col-sm-4">
+            <div th:replace="~{fragments/ui :: stat('Resolved or closed', ${doneCount}, 'bi-check2-circle')}"></div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">My incidents</div>
+                <div class="card-body p-0">
+                    <div th:replace="~{fragments/ui :: incidentTable(${incidents}, 'You have not reported any incidents yet.', true)}"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">IT services</div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center"
+                        th:each="service : ${services}">
+                        <span th:text="${service.name}">Service</span>
+                        <span th:replace="~{fragments/ui :: criticalityBadge(${service.criticality})}"></span>
+                    </li>
+                </ul>
+                <div class="card-footer bg-transparent small text-body-secondary">
+                    The badge shows how critical each service is to the business.
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

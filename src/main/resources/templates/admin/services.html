@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('IT services', 'services', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">IT services</h1>
+        <p class="text-body-secondary mb-0">
+            The services incidents can be reported against. Criticality says how much the business depends on each one.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">Service</th>
+                    <th scope="col">Criticality</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="service : ${services}">
+                    <td th:text="${service.name}">Service</td>
+                    <td><span th:replace="~{fragments/ui :: criticalityBadge(${service.criticality})}"></span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Categories', 'categories', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Incident categories</h1>
+        <p class="text-body-secondary mb-0">
+            The kinds of incident, with the keywords that hint an incident belongs to each one.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">Category</th>
+                    <th scope="col">Keywords</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="category : ${categories}">
+                    <td class="fw-semibold" th:text="${category.name}">Category</td>
+                    <td>
+                        <span class="badge text-bg-light border me-1" th:each="keyword : ${category.keywords}"
+                              th:text="${keyword}">keyword</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>
