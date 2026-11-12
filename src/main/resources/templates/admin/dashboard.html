@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Administrator dashboard', 'dashboard', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Administration</h1>
+        <p class="text-body-secondary mb-0">Administrator workspace · users, services, categories and SLA policies.</p>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <a class="stat-link" th:href="@{/admin/incidents}">
+                <div th:replace="~{fragments/ui :: stat('Incidents', ${incidentCount}, 'bi-card-list')}"></div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="stat-link" th:href="@{/admin/users}">
+                <div th:replace="~{fragments/ui :: stat('Users', ${userCount}, 'bi-people')}"></div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="stat-link" th:href="@{/admin/services}">
+                <div th:replace="~{fragments/ui :: stat('IT services', ${serviceCount}, 'bi-hdd-network')}"></div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a class="stat-link" th:href="@{/admin/categories}">
+                <div th:replace="~{fragments/ui :: stat('Categories', ${categoryCount}, 'bi-tags')}"></div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Technicians</span>
+                    <a class="small fw-normal" th:href="@{/admin/users}">All users</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Skills</th>
+                            <th scope="col" class="text-end">Max workload</th>
+                            <th scope="col">Availability</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="technician : ${technicians}">
+                            <td class="text-nowrap" th:text="${technician.name}">Name</td>
+                            <td>
+                                <span class="badge text-bg-light border me-1" th:each="skill : ${technician.skills}"
+                                      th:text="${skill.name}">Skill</span>
+                            </td>
+                            <td class="text-end" th:text="${technician.maxWorkload}">5</td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${technician.available} ? 'text-bg-success' : 'text-bg-secondary'"
+                                      th:text="${technician.available} ? 'Available' : 'Not available'">Available</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>SLA policies</span>
+                    <a class="small fw-normal" th:href="@{/admin/sla-policies}">Details</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                        <tr>
+                            <th scope="col">Priority</th>
+                            <th scope="col">Respond within</th>
+                            <th scope="col">Resolve within</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="policy : ${slaPolicies}">
+                            <td><th:block th:replace="~{fragments/ui :: priorityBadge(${policy.priority})}"></th:block></td>
+                            <td><span th:replace="~{fragments/ui :: duration(${policy.responseMinutes})}"></span></td>
+                            <td><span th:replace="~{fragments/ui :: duration(${policy.resolutionMinutes})}"></span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

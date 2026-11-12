@@ -1,0 +1,83 @@
+/* I-ITSM: small additions on top of Bootstrap 5. */
+
+/* One navbar colour per role, so it is obvious at a glance who is signed in. */
+.navbar-guest,
+.navbar-employee   { background-color: #0d6efd; } /* blue  */
+.navbar-technician { background-color: #0f766e; } /* teal  */
+.navbar-admin      { background-color: #1f2937; } /* slate */
+
+/* Bootstrap's default navbar text is too faint on these colours: make links and the user name easier to read. */
+.navbar[data-bs-theme="dark"] {
+    --bs-navbar-color: rgba(255, 255, 255, .85);
+    --bs-navbar-hover-color: #fff;
+    --bs-navbar-active-color: #fff;
+}
+
+.navbar .nav-link.active {
+    font-weight: 600;
+}
+
+.card {
+    border: 0;
+    border-radius: .75rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .10);
+}
+
+.card-header {
+    background-color: transparent;
+    font-weight: 600;
+    padding-top: 1rem;
+    padding-bottom: .75rem;
+}
+
+.stat-card .stat-icon {
+    width: 3rem;
+    height: 3rem;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: .75rem;
+    font-size: 1.4rem;
+    color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.stat-card .stat-value {
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+a.stat-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+a.stat-link:hover .card {
+    box-shadow: 0 4px 12px rgba(16, 24, 40, .14);
+}
+
+.table > :not(caption) > * > * {
+    vertical-align: middle;
+}
+
+/* A table that ends a card does not need a line under its last row. */
+.card > .table-responsive:last-child tbody tr:last-child > *,
+.card-body > div > .table-responsive tbody tr:last-child > * {
+    border-bottom: 0;
+}
+
+.table thead th {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--bs-secondary-color);
+    white-space: nowrap;
+}
+
+.error-code {
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--bs-secondary-color);
+}

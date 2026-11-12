@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Technician dashboard', 'dashboard', ~{::main})}">
+<body>
+<main>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Welcome, <span th:text="${technician.name}">Technician</span></h1>
+            <p class="text-body-secondary mb-0">Technician workspace · your queue, workload and skills.</p>
+        </div>
+        <span class="badge fs-6" th:classappend="${technician.available} ? 'text-bg-success' : 'text-bg-secondary'"
+              th:text="${technician.available} ? 'Available' : 'Not available'">Available</span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-4">
+            <div th:replace="~{fragments/ui :: stat('Open incidents in my queue', ${activeCount}, 'bi-tools')}"></div>
+        </div>
+        <div class="col-sm-4">
+            <div th:replace="~{fragments/ui :: stat('Maximum workload', ${technician.maxWorkload}, 'bi-speedometer')}"></div>
+        </div>
+        <div class="col-sm-4">
+            <div th:replace="~{fragments/ui :: stat('Skills', ${technician.skills.size()}, 'bi-award')}"></div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">Assigned to me</div>
+                <div class="card-body p-0">
+                    <div th:replace="~{fragments/ui :: incidentTable(${incidents}, 'No incidents are assigned to you.', true)}"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">Workload</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Open incidents</span>
+                        <span th:text="|${activeCount} of ${technician.maxWorkload}|">0 of 5</span>
+                    </div>
+                    <div class="progress" role="progressbar" aria-label="Workload" aria-valuemin="0" aria-valuemax="100"
+                         th:attr="aria-valuenow=${workloadPercent}">
+                        <div class="progress-bar" th:style="|width: ${workloadPercent}%|"
+                             th:classappend="${workloadPercent >= 100} ? 'bg-danger' : (${workloadPercent >= 80} ? 'bg-warning' : 'bg-success')"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">My skills</div>
+                <div class="card-body">
+                    <span class="badge text-bg-light border me-1 mb-1" th:each="skill : ${technician.skills}"
+                          th:text="${skill.name}">Skill</span>
+                    <p class="small text-body-secondary mt-2 mb-0">
+                        Skills are the incident categories you can handle.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

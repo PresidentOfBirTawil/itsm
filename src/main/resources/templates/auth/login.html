@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Sign in', 'login', ~{::main})}">
+<body>
+<main>
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5 col-xl-4">
+            <div class="card mt-lg-4">
+                <div class="card-body p-4">
+                    <h1 class="h4 mb-1">Sign in</h1>
+                    <p class="text-body-secondary">Use your email address and password.</p>
+
+                    <div class="alert alert-danger" role="alert" th:if="${param.error}">
+                        Wrong email or password. Please try again.
+                    </div>
+                    <div class="alert alert-success" role="status" th:if="${param.logout}">
+                        You have been signed out.
+                    </div>
+                    <div class="alert alert-success" role="status" th:if="${param.registered}">
+                        Your account is ready. You can sign in now.
+                    </div>
+
+                    <form th:action="@{/login}" method="post">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   autocomplete="username" required autofocus>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password"
+                                   autocomplete="current-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Sign in</button>
+                    </form>
+
+                    <p class="text-center small mt-3 mb-0">
+                        New here? <a th:href="@{/register}">Create an employee account</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

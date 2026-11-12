@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!-- Shown for any error that has no page of its own under templates/error/. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Something went wrong', 'none', ~{::main})}">
+<body>
+<main>
+    <div class="text-center py-5">
+        <div class="error-code" th:text="${status}">500</div>
+        <h1 class="h3 mt-3">Something went wrong</h1>
+        <p class="text-body-secondary">The request could not be completed. Please try again.</p>
+        <a class="btn btn-primary" th:href="@{/dashboard}">Back to my dashboard</a>
+    </div>
+</main>
+</body>
+</html>

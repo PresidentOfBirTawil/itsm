@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!-- Small building blocks reused across pages: stat cards, badges and the incident table. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- A number with a label and an icon. -->
+<div th:fragment="stat(label, value, icon)" class="card stat-card h-100">
+    <div class="card-body d-flex align-items-center gap-3">
+        <div class="stat-icon"><i class="bi" th:classappend="${icon}"></i></div>
+        <div>
+            <div class="stat-value" th:text="${value}">0</div>
+            <div class="text-body-secondary small" th:text="${label}">Label</div>
+        </div>
+    </div>
+</div>
+
+<!-- Priority, for example "P1 · Critical". Shows a dash when no priority has been set yet. -->
+<th:block th:fragment="priorityBadge(priority)">
+    <span th:if="${priority != null}" class="badge"
+          th:classappend="${priority.name() == 'P1'} ? 'text-bg-danger' : (${priority.name() == 'P2'} ? 'text-bg-warning' : (${priority.name() == 'P3'} ? 'text-bg-info' : 'text-bg-secondary'))"
+          th:text="|${priority.name()} · ${priority.label}|">P1 · Critical</span>
+    <span th:if="${priority == null}">—</span>
+</th:block>
+
+<!-- Service criticality: 3 = high, 2 = medium, 1 = low. -->
+<span th:fragment="criticalityBadge(level)" class="badge"
+      th:classappend="${level == 3} ? 'text-bg-danger' : (${level == 2} ? 'text-bg-warning' : 'text-bg-secondary')"
+      th:text="${level == 3} ? '3 · High' : (${level == 2} ? '2 · Medium' : '1 · Low')">3 · High</span>
+
+<!-- Incident status. -->
+<span th:fragment="statusBadge(status)" class="badge"
+      th:classappend="${status.open} ? 'text-bg-primary' : (${status.name() == 'CLOSED'} ? 'text-bg-secondary' : 'text-bg-success')"
+      th:text="${status.label}">New</span>
+
+<!-- A length of time given in minutes, written the way people say it: "5 min", "2 h", "1 h 30 min". -->
+<span th:fragment="duration(minutes)"
+      th:text="${minutes < 60} ? (${minutes} + ' min') : (${minutes % 60 == 0} ? (${minutes / 60} + ' h') : (${minutes / 60} + ' h ' + ${minutes % 60} + ' min'))">5 min</span>
+
+<!--
+  A table of incidents, or a friendly message when there are none.
+  compact = true leaves out the category, reporter and assignee columns, for the narrower dashboard cards.
+-->
+<div th:fragment="incidentTable(incidents, emptyMessage, compact)">
+    <div th:if="${#lists.isEmpty(incidents)}" class="text-center text-body-secondary py-5">
+        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+        <span th:text="${emptyMessage}">No incidents.</span>
+    </div>
+    <div th:unless="${#lists.isEmpty(incidents)}" class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+            <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Title</th>
+                <th scope="col">Service</th>
+                <th scope="col" th:unless="${compact}">Category</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Status</th>
+                <th scope="col" th:unless="${compact}">Reporter</th>
+                <th scope="col" th:unless="${compact}">Assignee</th>
+                <th scope="col">Reported</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="incident : ${incidents}">
+                <td class="fw-semibold text-nowrap" th:text="${incident.code}">INC-0001</td>
+                <td th:text="${incident.title}">Title</td>
+                <td th:text="${incident.service.name}">Service</td>
+                <td th:unless="${compact}" th:text="${incident.category != null} ? ${incident.category.name} : '—'">Category</td>
+                <td><th:block th:replace="~{fragments/ui :: priorityBadge(${incident.priority})}"></th:block></td>
+                <td><span th:replace="~{fragments/ui :: statusBadge(${incident.status})}"></span></td>
+                <td th:unless="${compact}" th:text="${incident.reporter.name}">Reporter</td>
+                <td th:unless="${compact}" th:text="${incident.assignee != null} ? ${incident.assignee.name} : '—'">Assignee</td>
+                <td class="text-nowrap" th:text="${#temporals.format(incident.createdAt, 'dd MMM yyyy, HH:mm')}">01 Jan 2026, 10:05</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
