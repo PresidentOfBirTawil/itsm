@@ -12,8 +12,13 @@ Intelligent IT Service Management & Incident Resolution System, built for the CS
 - A background job checks every open incident against its SLA once a minute: at risk at 75%, breached past the deadline, paused while waiting for information.
 - People are notified in the app (the bell) and by simulated email.
 - Four intelligent features, each explaining itself on screen: duplicate detection, automatic escalation, category suggestion and an SLA risk list.
-- Search with eight filters, an administrator dashboard, and pages to manage services, categories, technicians and SLA policies.
-- Every change is recorded in an audit trail, shown as a timeline on the incident page.
+- Search with eight filters, an administrator dashboard, and pages to manage users, technicians, services, categories and SLA policies.
+- Every change is recorded in an audit trail, shown as a timeline on the incident page and, for administrators, as one audit log across all incidents.
+- Reports for administrators: incidents by status, priority and category, SLA compliance, time to resolve against the SLA target, and figures per technician.
+- A technician or administrator can correct an incident's category, impact and urgency; the priority and deadlines are worked out again.
+- One click fills the application with 23 realistic past incidents, so the dashboard and reports have something to show.
+
+**Documents for the report:** [report notes](docs/report-notes.md) · [20 documented test cases](docs/test-cases.md) · [UML and other diagrams](docs/diagrams/)
 
 ## Run it
 
@@ -63,9 +68,22 @@ The seed data also has 6 IT services (criticality 1 to 3), the brief's 9 inciden
 | P3 · Medium   | 1 h            | 8 h            |
 | P4 · Low      | 4 h            | 24 h           |
 
+## Sample data
+
+A new database has users, services, categories and SLA policies, but no incidents. To see the dashboard, reports, search and audit log with realistic content:
+
+1. Sign in as the administrator.
+2. **System** → **Settings** → **Demo data** → **Reset and add sample incidents**.
+
+This removes every incident (with its timeline, notifications and emails), starts the numbering again at INC-0001 and adds 23 incidents spread over the last ten days: 12 finished ones (with resolutions and ratings, one of them resolved late) and 11 open ones in every stage, including one about to breach, one breached and escalated, one paused while waiting for information, a pair of possible duplicates and one that no technician could take. Users, services, categories and SLA policies are kept. The settings go back to their defaults (skill-based assignment, demo SLA off).
+
+The sample incidents are not copied into the tables. Each one is played through the same model methods a real incident uses (`prioritise`, `assignTo`, `transitionTo`, `refreshSla`), only with times in the past, so every one of them obeys the rules. They send no notifications.
+
+**Reset to an empty incident list** does the same without adding the samples. Use it before recording the demo workflows below, so that the first incident you report is INC-0001.
+
 ## Demo scripts
 
-Use separate browser windows that do not share a login (a normal window, a private window, another browser), one per person, so everyone stays signed in. All passwords are in the table above. Start from a fresh database (delete the `data` folder) if you want the same incident codes as below.
+Use separate browser windows that do not share a login (a normal window, a private window, another browser), one per person, so everyone stays signed in. All passwords are in the table above. To get the same incident codes as below, start with no incidents: as the administrator use **System → Settings → Demo data → Reset to an empty incident list** (or stop the app and delete the `data` folder).
 
 ### Workflow 1: employee reports → system prioritises → technician assigned → notification generated
 
@@ -78,7 +96,7 @@ Use separate browser windows that do not share a login (a normal window, a priva
    - Status **Assigned**, assigned to **Sara Thomas** (the only technician with the Application skill).
    - The timeline: reported, category chosen, priority calculated, technician assigned.
 4. In a second window sign in as `tech4@itsm.local`. The bell shows **1**. Click it: "INC-0001 has been assigned to you".
-5. In a third window sign in as `admin@itsm.local`. Click **Email outbox**: the same news as simulated emails to the reporter and the technician.
+5. In a third window sign in as `admin@itsm.local`. Click **System → Email outbox**: the same news as simulated emails to the reporter and the technician.
 
 ### Workflow 2: technician investigates → SLA monitored → incident resolved → user notified
 
@@ -95,23 +113,23 @@ Continue from workflow 1.
 
 ### Workflow 3: several incidents reported → duplicates identified → escalated
 
-1. As the administrator, open **Settings** and click **Switch demo SLA on** (P1: respond within 1 minute).
+1. As the administrator, open **System → Settings** and click **Switch demo SLA on** (P1: respond within 1 minute).
 2. As `emp1@itsm.local`, report `Payment application unavailable` against **Payment Application**, impact and urgency **High**.
 3. As `emp2@itsm.local` (another window), report `Payment transaction failing` against the same service. Its page shows a yellow box: "Possible duplicate of INC-0002 (similarity 0.50, same service, less than a minute apart)".
 4. As `emp3@itsm.local`, report `Unable to make payment` against the same service. Its page shows "Possible duplicate of INC-0002 (similarity 1.00, …)".
 5. As `emp1@itsm.local` again, try to report `Payment application unavailable` a second time. The form refuses: "You have already reported this: INC-0002 is still open."
 6. As the administrator, open **Incidents**: the two later ones carry a **possible duplicate** badge. Open the first one: "Later incidents that look like duplicates of this one" links to both.
 7. Open **Dashboard**. The list **Most likely to breach next** shows the three incidents with the reason, for example "Response due in 40 s · 33% of the time used · not acknowledged yet".
-8. Do not acknowledge anything. Wait until a minute has passed since the first report, then open **Settings** and click **Run the SLA check now** (or wait up to a minute more for the background job).
+8. Do not acknowledge anything. Wait until a minute has passed since the first report, then open **System → Settings** and click **Run the SLA check now** (or wait up to a minute more for the background job).
 9. Open **Dashboard**: SLA breaches has gone up and a black card says "3 escalated incidents need your attention". The bell shows the escalation notifications. Open an incident: badges **Breached** and **Escalated**, and the reason in a grey box and in the timeline.
 10. Switch demo SLA off again on the **Settings** page.
 
 ### Show an SLA breach in under two minutes
 
-1. As the administrator: **Settings** → **Switch demo SLA on**.
+1. As the administrator: **System → Settings** → **Switch demo SLA on**.
 2. As an employee: report any incident with impact **High** and urgency **High** against **Payment Application**. Note the time.
 3. Do nothing for one minute. (After about 45 seconds the SLA badge turns **At risk** once the check has run.)
-4. As the administrator: **Settings** → **Run the SLA check now**.
+4. As the administrator: **System → Settings** → **Run the SLA check now**.
 5. Open the incident: SLA badge **Breached**, "Respond by … **missed**", and "SLA breached" in the timeline. The administrator's bell has the notification.
 
 Without the button, the background job finds the breach by itself within one more minute.
@@ -119,7 +137,7 @@ Without the button, the background job finds the breach by itself within one mor
 Other things worth showing:
 
 - **Nobody can take it.** Report four incidents with category **Security** (give each its own title). Only Arjun has that skill and his maximum is 3, so the fourth stays **Classified**; the administrator sees a warning and assigns it by hand.
-- **Switch strategy.** **Settings** → choose **Least loaded** or **Round robin** → **Use this strategy**. The next incident is assigned differently.
+- **Switch strategy.** **System → Settings** → choose **Least loaded** or **Round robin** → **Use this strategy**. The next incident is assigned differently.
 - **Refused actions.** An employee who opens another employee's incident gets the 403 page with the reason.
 
 ## How it works
@@ -224,7 +242,7 @@ The arithmetic is in `SlaTarget` (how much time is used, how much is left, is it
 | Channel        | What it does |
 |----------------|--------------|
 | `InAppChannel` | Saves a notification row. The bell in the navbar shows the unread count; clicking a notification marks it read and opens the incident. |
-| `EmailChannel` | Simulated. Saves the email in an outbox table (administrators read it under **Email outbox**) and writes it to the log. |
+| `EmailChannel` | Simulated. Saves the email in an outbox table (administrators read it under **System → Email outbox**) and writes it to the log. |
 
 `NotificationChannelFactory` hands out the channels for a kind of news: the app for everything, email as well for the important ones. `NotificationListener` listens to incident events and decides who is told:
 
@@ -258,6 +276,20 @@ All four are in `com.itsm.intelligence`, and each shows its reasoning on screen.
 
 Separately, the very same title from the same person against the same service, while their first report is still open, is refused outright (`DuplicateIncidentException`).
 
+### Changing the classification
+
+The reporter chooses impact and urgency, and may get them wrong. While an incident is open, its technician or an administrator can correct the category, impact and urgency in the **Change classification** box on the incident page. The priority is calculated again and the two deadlines are set again from the SLA policy of the new priority (still counted from the moment of the report, plus any time the clock was paused). The timeline gets "Classification changed" and, if the priority is different, "Priority changed" with the new score. A changed priority is announced to the reporter and the technician in the app and by email. The status and the assigned technician stay as they are.
+
+### Reports and the audit log
+
+**Reports** (administrators): the number of incidents by status, priority and category; the share of settled incidents that met their SLA; the average time from report to resolution for each priority next to its SLA target; and for each technician how many incidents they have, how many are open, how many breached, and their average rating. `ReportService` works these out from the incidents; `Reports` is the result.
+
+**System → Audit log** (administrators): every recorded action on every incident, newest first, with who did it and how the status changed. It can be narrowed to one incident (type `7` or `INC-0007`) and to one kind of action. Entries are written by `AuditTrailListener` in the same transaction as the change, and there is no way to edit or delete one.
+
+### Users
+
+**Manage → Users** (administrators) lists everyone by role. **Add user** creates an employee or another administrator; technicians are added on the Technicians page, where their skills are set. **Disable** stops an account from signing in and ends its open sessions at once; nothing is deleted, so the person's incidents and history stay. A disabled technician is not given new incidents. An administrator cannot disable their own account.
+
 ### Search
 
 Administrators (**Incidents**) and technicians (**Search**) can filter by code, status, priority, category, service, technician, date range and SLA status. Each filter is one small `Specification` in `IncidentSpecifications`; the ones that are filled in are joined with AND.
@@ -276,6 +308,13 @@ Every error the application raises on purpose is an `ItsmException` (package `co
 | `InvalidInputException` | input the form checks could not catch | message |
 | `UnauthorizedOperationException` | an action the user may not take | the 403 page with the reason |
 | `NotFoundException`, `ServiceNotFoundException`, `IncidentNotFoundException` | the thing does not exist | the 404 page with the reason |
+
+Two failures come from outside the application:
+
+| Failure | What happens |
+|---------|--------------|
+| The database cannot be reached (`DataAccessException`) | A page with status 503, "The database could not be reached just now", and no technical detail. Whatever was being saved is rolled back. |
+| A notification cannot be delivered (the "network failure" of the brief) | The incident is already saved. The failing channel is logged and skipped; the other channel still delivers. |
 
 `ErrorHandler` (a `@ControllerAdvice`) turns these into pages and messages for every controller, and does the same for forms that fail their Bean Validation checks. In every case nothing has been changed.
 
@@ -307,7 +346,7 @@ H2 in file mode. The database is the file `./data/itsm.mv.db` and survives resta
 | User Name | `sa`                       |
 | Password  | *(leave empty)*            |
 
-**Reset the database:** stop the app and delete the `data` folder. The next start rebuilds it with the demo data.
+**Reset the database:** stop the app and delete the `data` folder. The next start rebuilds it with the demo data. To remove only the incidents while the app is running, use **Settings → Demo data** (see [Sample data](#sample-data)).
 
 Hibernate adds new tables and columns on its own at startup, but it does not change columns that already exist. Reset after a change the old tables cannot follow, such as a new kind of user or a column that changes type. Adding a value to an enum (a new status, say) does **not** need a reset: enums are stored as plain text.
 
@@ -325,7 +364,9 @@ Hibernate adds new tables and columns on its own at startup, but it does not cha
 ./mvnw test
 ```
 
-425 tests. The files marked "plain objects" need no database and run in milliseconds; the rest start the application against a throw-away in-memory database.
+471 tests. The files marked "plain objects" need no database and run in milliseconds; the rest start the application against a throw-away in-memory database.
+
+[`docs/test-cases.md`](docs/test-cases.md) documents 20 of them in full (ID, area, scenario, input, expected result, type), each with the test method that carries it out, and shows where each exception case of the brief is tested.
 
 | File | What it checks |
 |------|----------------|
@@ -345,6 +386,11 @@ Hibernate adds new tables and columns on its own at startup, but it does not cha
 | `IncidentSearchTests` | One search with all eight filters together, each filter alone, and the search pages. |
 | `ErrorHandlingTests` | One test per kind of error: the right message or page, and nothing changed. |
 | `AdminManagementTests` | Dashboard totals; managing services, categories, technicians and SLA policies; settings. |
+| `ReclassificationTests` | Changing the category, impact and urgency: priority and deadlines recalculated, both changes in the audit trail, who is told, who may do it. |
+| `UserManagementTests` | Adding employees and administrators; a disabled account cannot sign in and its open session ends; a disabled technician gets no incidents. |
+| `AuditLogAndReportTests` | The audit log and its filters; the report figures worked out from known incidents. |
+| `DatabaseFailureTests` | A database failure gives a readable 503 page, saves nothing, and the application carries on. |
+| `DemoDataResetTests` | The reset removes incidents and keeps users and settings data; the 23 samples cover every stage and obey every rule; numbering restarts. |
 | `IncidentWebTests` | Reporting and working on incidents through the pages. |
 | `SecurityTests`, `RegistrationTests` | Sign-in, role checks on every area, self-registration. |
 | `SeedDataTests`, `DomainModelTests`, `ItsmApplicationTests` | The seed data, the JPA mapping, and that the app starts. |
@@ -469,10 +515,11 @@ src/main/java/com/itsm
 ├── intelligence  DuplicateDetector, EscalationPolicy, CategorySuggester, SlaRiskRanker
 ├── search        IncidentSearchCriteria and IncidentSpecifications
 ├── error         ItsmException and its subclasses
-├── service       IncidentService (report, change status, notes, rating), IncidentFactory, RegistrationService
+├── service       IncidentService (report, change status, reclassify, notes, rating), IncidentFactory, RegistrationService
+├── report        ReportService and Reports: the figures on the Reports page
 ├── repository    Spring Data JPA repositories, one per entity
-├── security      SecurityConfig (URL rules, form login, BCrypt) and the user lookup for sign-in
-├── seed          DataSeeder: fills an empty database with the demo data
+├── security      SecurityConfig (URL rules, form login, BCrypt), the user lookup for sign-in, SignedInSessions
+├── seed          DataSeeder: fills an empty database with the demo data; DemoDataService: the sample incidents
 └── web           controllers and form classes, ErrorHandler, GlobalModel
 
 src/main/resources
@@ -484,11 +531,20 @@ src/main/resources
     ├── auth           sign-in and registration pages
     ├── employee       home screen, report form
     ├── technician     home screen, queue
-    ├── admin          dashboard, settings, email outbox, management pages
+    ├── admin          dashboard, reports, audit log, settings, email outbox, management pages
     ├── incidents      incident list, search and the incident page shared by all roles
     ├── notifications  the list behind the bell
     └── error          403, 404 and "that did not work" pages
 ```
+
+## Documentation
+
+| Document | What is in it |
+|----------|---------------|
+| [`docs/brief.pdf`](docs/brief.pdf) | The project brief. |
+| [`docs/report-notes.md`](docs/report-notes.md) | Notes for the report: problem analysis and stakeholders, requirements, business rules, architecture, OOP concepts, design patterns (pattern → class → why), the priority algorithm, intelligent features, security, the nine technology questions, scaling, and what was left out. |
+| [`docs/test-cases.md`](docs/test-cases.md) | 20 documented test cases mapped to test methods, and a table of all test classes. |
+| [`docs/diagrams/`](docs/diagrams/) | PlantUML sources and rendered pictures: use case, two class diagrams, incident state machine, sequence (an employee reports an incident), ER and architecture. |
 
 ## Technology
 

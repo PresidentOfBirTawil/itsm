@@ -17,6 +17,7 @@ package com.itsm.error;
  * ├── DuplicateIncidentException          the same person reported the same thing twice
  * ├── UnauthorizedOperationException      the user may not do this (shown as the 403 page)
  * ├── InvalidInputException               what was typed or sent makes no sense
+ * │   └── EmailAlreadyRegisteredException a second account for the same email address
  * └── NotFoundException                   the thing asked for does not exist (shown as the 404 page)
  *     ├── IncidentNotFoundException
  *     └── ServiceNotFoundException

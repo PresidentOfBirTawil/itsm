@@ -38,6 +38,7 @@ import com.itsm.repository.IncidentRepository;
 import com.itsm.repository.SlaPolicyRepository;
 import com.itsm.repository.UserRepository;
 import com.itsm.seed.DataSeeder;
+import com.itsm.service.EmailAlreadyRegisteredException;
 import com.itsm.service.IncidentService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -125,11 +126,13 @@ class ErrorHandlingTests {
                 WorkloadExceededException.class, MissingSlaConfigurationException.class,
                 DuplicateIncidentException.class, UnauthorizedOperationException.class,
                 InvalidInputException.class, NotFoundException.class,
-                ServiceNotFoundException.class, IncidentNotFoundException.class);
+                ServiceNotFoundException.class, IncidentNotFoundException.class,
+                EmailAlreadyRegisteredException.class);
 
         assertThat(all).allMatch(ItsmException.class::isAssignableFrom);
         assertThat(NotFoundException.class).isAssignableFrom(ServiceNotFoundException.class);
         assertThat(NotFoundException.class).isAssignableFrom(IncidentNotFoundException.class);
+        assertThat(InvalidInputException.class).isAssignableFrom(EmailAlreadyRegisteredException.class);
     }
 
     // ---- invalid state transition ----

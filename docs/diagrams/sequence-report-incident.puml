@@ -1,0 +1,92 @@
+@startuml sequence-report-incident
+' What happens, class by class, when an employee presses "Report incident".
+title I-ITSM · Sequence: an employee reports an incident
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 8
+autonumber
+
+actor Employee
+participant "Spring Security\nfilters" as Security
+participant "EmployeeController" as Controller
+participant "IncidentService" as Service
+participant "IncidentFactory" as Factory
+participant "Incident" as Incident
+participant "IncidentEvent\nPublisher" as Publisher
+participant "DuplicateDetector" as Duplicates
+participant "PriorityCalculator\n(Weighted…)" as Priority
+participant "SlaService" as Sla
+participant "AssignmentService" as Assignment
+participant "AssignmentStrategy\n(SkillBased…)" as Strategy
+participant "AuditTrailListener" as Audit
+participant "NotificationListener" as Notifier
+participant "NotificationDispatcher" as Dispatcher
+database "H2" as DB
+
+Employee -> Security : POST /employee/incidents\n(title, description, service, category, impact, urgency)
+Security -> Security : session valid? role EMPLOYEE? CSRF token?
+Security -> Controller : report(user, form)
+Controller -> Controller : Bean Validation on IncidentForm
+
+group one database transaction
+  Controller -> Service : report(reporter, title, …)
+  Service -> DB : find service; same report already open?
+  note right of Service
+    ServiceNotFoundException or
+    DuplicateIncidentException end it here.
+    No category chosen: CategorySuggester picks one.
+  end note
+
+  Service -> Factory : create(reporter, title, …)
+  Factory -> Incident ** : new Incident(…)  status NEW
+  Factory -> DB : save  (code INC-0007 from the sequence)
+  Factory --> Service : incident
+
+  Service -> Publisher : publish(REPORTED)
+  Publisher -> Audit : onIncidentEvent
+  Audit -> DB : insert audit entry
+  Publisher -> Notifier : onIncidentEvent
+  Notifier -> Dispatcher : sendAfterCommit(messages)
+
+  Service -> Duplicates : findDuplicate(incident, recent open ones)
+  Duplicates --> Service : match or nothing
+  Service -> Priority : calculate(incident)
+  Priority --> Service : PriorityAssessment(P1, score 27)
+  Service -> Sla : policyFor(P1)
+  Sla --> Service : SlaPolicy(5 min, 30 min)
+  Service -> Incident : prioritise(assessment, policy)
+  Incident -> Incident : NewState.onPrioritised():\ntransitionTo(CLASSIFIED)
+  Service -> Publisher : publish(PRIORITISED)
+
+  Service -> Assignment : autoAssign(incident)
+  Assignment -> DB : technicians with their open-incident counts
+  Assignment -> Strategy : choose(incident, loads)
+  Strategy --> Assignment : technician
+  Assignment -> Incident : assignTo(technician)
+  Incident -> Incident : ClassifiedState.onAssigned():\ntransitionTo(ASSIGNED)
+  Assignment -> Publisher : publish(ASSIGNED)
+  note right of Assignment
+    Nobody can take it: the incident stays
+    CLASSIFIED, ASSIGNMENT_FAILED is published
+    and the administrators are told.
+  end note
+
+  Service -> Sla : refresh(incident, now)
+  Service --> Controller : incident
+end
+
+Controller --> Employee : 302 redirect to /employee/incidents/INC-0007
+
+group after the commit, each channel in its own transaction
+  Dispatcher -> DB : in-app notifications for reporter and technician
+  Dispatcher -> DB : simulated emails into the outbox
+  note right of Dispatcher
+    A channel that fails is logged and skipped.
+    The incident and the other channel are unaffected.
+  end note
+end
+
+Employee -> Controller : GET /employee/incidents/INC-0007
+Controller --> Employee : incident page: P1 · Assigned, deadlines, timeline
+@enduml

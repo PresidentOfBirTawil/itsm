@@ -1,0 +1,226 @@
+@startuml class-diagram
+' The domain model, drawn from the classes in com.itsm.domain.
+' Legend:  <|--  inheritance    -->  association    *--  composition    ..>  uses
+title I-ITSM · Class diagram 1: the domain model (com.itsm.domain)
+
+set separator none
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F7F9FC
+  BorderColor #4A5568
+  ArrowColor #2D3748
+}
+hide empty members
+
+abstract class User {
+  - id : Long
+  - name : String
+  - email : String
+  - passwordHash : String
+  - enabled : Boolean
+  + {abstract} getRole() : Role
+  + {abstract} canView(incident) : boolean
+  + {abstract} canWorkOn(incident) : boolean
+  + isEnabled() : boolean
+}
+
+class Employee {
+  + getRole() : EMPLOYEE
+  + canView(): own incidents
+  + canWorkOn(): own incidents
+}
+
+class Technician {
+  - maxWorkload : int
+  - available : boolean
+  + getRole() : TECHNICIAN
+  + canView(): every incident
+  + canWorkOn(): assigned incidents
+  + hasSkill(category) : boolean
+  + replaceSkills(categories)
+}
+
+class Administrator {
+  + getRole() : ADMIN
+  + canView(): every incident
+  + canWorkOn(): every incident
+}
+
+User <|-- Employee
+User <|-- Technician
+User <|-- Administrator
+
+class ITService {
+  - id : Long
+  - name : String
+  - criticality : int  <<1..3>>
+}
+
+class Category {
+  - id : Long
+  - name : String
+  - keywords : Set<String>
+  + replaceKeywords(words)
+}
+
+class Keyword <<value: String>> {
+  a word that suggests
+  the category
+}
+
+class SlaPolicy {
+  - priority : Priority
+  - responseMinutes : int
+  - resolutionMinutes : int
+  + responseDueFrom(start) : LocalDateTime
+  + resolutionDueFrom(start) : LocalDateTime
+}
+
+class Incident {
+  - id : Long
+  - code : String  <<INC-0001>>
+  - title : String
+  - description : String
+  - impact : Impact
+  - urgency : Urgency
+  - status : Status
+  - slaStatus : SlaStatus
+  - createdAt, acknowledgedAt, resolvedAt, closedAt
+  - responseDue, resolutionDue
+  - slaPausedAt, slaPausedSeconds
+  - responseBreachedAt, resolutionBreachedAt
+  - escalatedAt
+  - resolution : String
+  - rating : Integer
+  --
+  + prioritise(assessment, policy)
+  + assignTo(technician)
+  + transitionTo(status)
+  + reclassify(category, impact, urgency)
+  + recordResolution(text)
+  + rate(stars, comment, when)
+  + refreshSla(now) : List<SlaSignal>
+  + escalate(when)
+  + linkPossibleDuplicate(incident, similarity)
+  + responseTarget() : SlaTarget
+  + resolutionTarget() : SlaTarget
+}
+
+class PriorityAssessment <<record, embedded>> {
+  priority : Priority
+  score : int
+  impactWeight : int
+  urgencyWeight : int
+  serviceCriticality : int
+  + formula() : String
+}
+
+class AuditEntry {
+  - occurredAt : LocalDateTime
+  - action : IncidentAction
+  - oldStatus : Status
+  - newStatus : Status
+  - note : String
+  + getActorName() : String
+}
+
+class Notification {
+  - title : String
+  - message : String
+  - createdAt : LocalDateTime
+  - readAt : LocalDateTime
+  + markRead()
+  + isRead() : boolean
+}
+
+class SlaTarget <<record, value>> {
+  name, start, due, metAt
+  + fractionUsed(now) : double
+  + remaining(now) : Duration
+  + isLate(now) : boolean
+}
+
+interface IncidentState <<com.itsm.domain.state>> {
+  + transitions() : List<Transition>
+  + canTransitionTo(status) : boolean
+  + onEnter(incident, from, now)
+  + onExit(incident, to, now)
+}
+
+package "Enumerations (the types of the attributes above)" {
+  enum Role {
+    EMPLOYEE
+    TECHNICIAN
+    ADMIN
+  }
+  enum Priority {
+    P1
+    P2
+    P3
+    P4
+  }
+  enum Impact {
+    LOW
+    MEDIUM
+    HIGH
+    weight : 1..3
+  }
+  enum Urgency {
+    LOW
+    MEDIUM
+    HIGH
+    weight : 1..3
+  }
+  enum Status {
+    NEW
+    CLASSIFIED
+    ASSIGNED
+    ACKNOWLEDGED
+    IN_PROGRESS
+    AWAITING_INFO
+    RESOLVED
+    VERIFIED
+    CLOSED
+  }
+  enum SlaStatus {
+    ON_TRACK
+    AT_RISK
+    PAUSED
+    BREACHED
+    MET
+  }
+}
+
+' ---- associations ----
+Incident "0..*" --> "1" Employee : reporter
+Incident "0..*" --> "0..1" Technician : assignee
+Incident "0..*" --> "1" ITService : service
+Incident "0..*" --> "0..1" Category : category
+Incident "0..*" --> "0..1" Incident : possibleDuplicateOf
+Technician "0..*" --> "0..*" Category : skills
+AuditEntry "0..*" --> "0..1" User : actor (none = system)
+Notification "0..*" --> "1" User : recipient
+Notification "0..*" --> "0..1" Incident : about
+
+' ---- composition: the part cannot exist without the whole ----
+Incident "1" *-- "0..1" PriorityAssessment : assessment
+Incident "1" *-- "0..*" AuditEntry : history
+Category "1" *-- "0..*" Keyword : keywords
+
+' ---- uses ----
+Incident ..> IncidentState : delegates each move to\nthe state for its status
+Incident ..> SlaTarget : creates
+Incident ..> SlaPolicy : deadlines are copied\nfrom the policy
+
+note right of User
+  Single-table inheritance: one table "users"
+  with a "role" column that says which
+  subclass each row is.
+end note
+
+note bottom of Incident
+  The incident guards its own rules: no other
+  class sets its status or deadlines directly.
+end note
+@enduml

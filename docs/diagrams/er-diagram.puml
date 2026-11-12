@@ -1,0 +1,158 @@
+@startuml er-diagram
+' The tables as Hibernate creates them from the entities (H2).
+title I-ITSM · Entity-relationship diagram
+
+hide circle
+hide methods
+skinparam shadowing false
+skinparam linetype ortho
+skinparam class {
+  BackgroundColor #F7F9FC
+  BorderColor #4A5568
+}
+
+entity "users" as users {
+  * id : bigint <<PK>>
+  --
+  * role : varchar(20)  <<discriminator: EMPLOYEE, TECHNICIAN, ADMIN>>
+  * name : varchar(100)
+  * email : varchar(150) <<unique>>
+  * password_hash : varchar(100)  <<BCrypt>>
+  enabled : boolean
+  max_workload : integer  <<technicians only>>
+  available : boolean  <<technicians only>>
+}
+
+entity "categories" as categories {
+  * id : bigint <<PK>>
+  --
+  * name : varchar(60) <<unique>>
+}
+
+entity "category_keywords" as keywords {
+  * category_id : bigint <<FK>>
+  * keyword : varchar(60)
+}
+
+entity "technician_skills" as skills {
+  * technician_id : bigint <<FK>>
+  * category_id : bigint <<FK>>
+}
+
+entity "it_services" as services {
+  * id : bigint <<PK>>
+  --
+  * name : varchar(100) <<unique>>
+  * criticality : integer  <<1 to 3>>
+}
+
+entity "sla_policies" as sla {
+  * id : bigint <<PK>>
+  --
+  * priority : varchar(5) <<unique: P1 to P4>>
+  * response_minutes : integer
+  * resolution_minutes : integer
+}
+
+entity "incidents" as incidents {
+  * id : bigint <<PK, sequence incident_seq>>
+  --
+  * code : varchar(12) <<unique, INC-0001>>
+  * title : varchar(150)
+  * description : varchar(4000)
+  * reporter_id : bigint <<FK users>>
+  * service_id : bigint <<FK it_services>>
+  category_id : bigint <<FK categories>>
+  assignee_id : bigint <<FK users>>
+  possible_duplicate_of_id : bigint <<FK incidents>>
+  * impact : varchar(10)
+  * urgency : varchar(10)
+  * status : varchar(20)
+  .. priority assessment (embedded) ..
+  priority : varchar(5)
+  priority_score : integer
+  priority_impact_weight : integer
+  priority_urgency_weight : integer
+  priority_criticality : integer
+  .. times ..
+  * created_at : timestamp
+  * updated_at : timestamp
+  acknowledged_at : timestamp
+  resolved_at : timestamp
+  closed_at : timestamp
+  .. SLA ..
+  response_due : timestamp
+  resolution_due : timestamp
+  sla_status : varchar(10)
+  sla_paused_at : timestamp
+  sla_paused_seconds : bigint
+  response_breached_at : timestamp
+  resolution_breached_at : timestamp
+  escalated_at : timestamp
+  .. outcome ..
+  duplicate_similarity : double
+  resolution : varchar(1000)
+  rating : integer  <<1 to 5>>
+  rating_comment : varchar(1000)
+  rated_at : timestamp
+}
+
+entity "audit_entries" as audit {
+  * id : bigint <<PK>>
+  --
+  * incident_id : bigint <<FK>>
+  actor_id : bigint <<FK users, null = system>>
+  * occurred_at : timestamp
+  * action : varchar(30)
+  old_status : varchar(20)
+  new_status : varchar(20)
+  note : varchar(1000)
+}
+
+entity "notifications" as notifications {
+  * id : bigint <<PK>>
+  --
+  * recipient_id : bigint <<FK users>>
+  incident_id : bigint <<FK>>
+  * title : varchar(200)
+  message : varchar(1000)
+  * created_at : timestamp
+  read_at : timestamp  <<null = unread>>
+}
+
+entity "email_outbox" as emails {
+  * id : bigint <<PK>>
+  --
+  * to_address : varchar(150)
+  to_name : varchar(100)
+  * subject : varchar(200)
+  body : varchar(2000)
+  * created_at : timestamp
+}
+
+entity "settings" as settings {
+  * name : varchar(60) <<PK>>
+  --
+  * setting_value : varchar(200)
+}
+
+users ||--o{ incidents : reports
+users |o--o{ incidents : is assigned
+services ||--o{ incidents : affects
+categories |o--o{ incidents : classifies
+incidents |o--o{ incidents : possible duplicate of
+incidents ||--o{ audit : history
+users |o--o{ audit : actor
+users ||--o{ notifications : recipient
+incidents |o--o{ notifications : about
+categories ||--o{ keywords : has
+users ||--o{ skills : technician
+categories ||--o{ skills : skill
+sla .. incidents : looked up by priority\n(no foreign key: the deadlines\nare copied onto the incident)
+
+note bottom of emails
+  email_outbox and settings stand alone.
+  Emails are simulated: the outbox is where
+  an administrator can read them.
+end note
+@enduml

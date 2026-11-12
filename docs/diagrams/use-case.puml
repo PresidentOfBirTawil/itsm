@@ -1,0 +1,122 @@
+@startuml use-case
+' Use case diagram: who can do what in I-ITSM.
+title I-ITSM · Use cases
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #F7F9FC
+  BorderColor #4A5568
+}
+
+actor "Visitor" as Visitor
+actor "Employee" as Employee
+actor "Technician" as Technician
+actor "Administrator" as Admin
+actor "Scheduler\n(every minute)" as Timer <<system>>
+
+rectangle "I-ITSM" {
+
+  package "Account" {
+    usecase "Register as an employee" as UC_Register
+    usecase "Sign in / sign out" as UC_Login
+    usecase "Read notifications" as UC_Notifications
+  }
+
+  package "Reporting" {
+    usecase "Report an incident" as UC_Report
+    usecase "Track own incidents" as UC_Track
+    usecase "Answer an information request" as UC_Answer
+    usecase "Confirm the fix or reopen" as UC_Verify
+    usecase "Rate the resolution" as UC_Rate
+  }
+
+  package "Resolution" {
+    usecase "View assigned queue" as UC_Queue
+    usecase "Acknowledge and start work" as UC_Ack
+    usecase "Add an investigation note" as UC_Note
+    usecase "Request information" as UC_Request
+    usecase "Resolve with a resolution note" as UC_Resolve
+    usecase "Change classification" as UC_Reclassify
+    usecase "Search all incidents" as UC_Search
+    usecase "Close an incident" as UC_Close
+  }
+
+  package "Administration" {
+    usecase "Monitor the dashboard" as UC_Dashboard
+    usecase "Assign or reassign a technician" as UC_Assign
+    usecase "Choose the assignment strategy" as UC_Strategy
+    usecase "Manage users and technicians" as UC_Users
+    usecase "Manage services and categories" as UC_Catalogue
+    usecase "Configure SLA policies" as UC_Sla
+    usecase "View reports" as UC_Reports
+    usecase "Read the audit log" as UC_Audit
+    usecase "Reset demo data" as UC_Reset
+  }
+
+  package "Automatic" {
+    usecase "Calculate priority and SLA deadlines" as UC_Priority
+    usecase "Suggest a category" as UC_Suggest
+    usecase "Detect a possible duplicate" as UC_Duplicate
+    usecase "Assign a technician automatically" as UC_AutoAssign
+    usecase "Record the action in the audit trail" as UC_Trail
+    usecase "Notify the people concerned" as UC_Notify
+    usecase "Check SLAs: warn at 75%, record breaches" as UC_Check
+    usecase "Escalate an unacknowledged P1" as UC_Escalate
+  }
+}
+
+Visitor --> UC_Register
+Visitor --> UC_Login
+
+Employee --> UC_Login
+Employee --> UC_Notifications
+Employee --> UC_Report
+Employee --> UC_Track
+Employee --> UC_Answer
+Employee --> UC_Verify
+Employee --> UC_Rate
+
+Technician --> UC_Login
+Technician --> UC_Notifications
+Technician --> UC_Queue
+Technician --> UC_Ack
+Technician --> UC_Note
+Technician --> UC_Request
+Technician --> UC_Resolve
+Technician --> UC_Reclassify
+Technician --> UC_Search
+Technician --> UC_Close
+
+Admin --> UC_Login
+Admin --> UC_Notifications
+Admin --> UC_Dashboard
+Admin --> UC_Assign
+Admin --> UC_Strategy
+Admin --> UC_Users
+Admin --> UC_Catalogue
+Admin --> UC_Sla
+Admin --> UC_Reports
+Admin --> UC_Audit
+Admin --> UC_Reset
+Admin --> UC_Search
+Admin --> UC_Reclassify
+Admin --> UC_Close
+
+Timer --> UC_Check
+
+UC_Report ..> UC_Priority : <<include>>
+UC_Report ..> UC_AutoAssign : <<include>>
+UC_Report ..> UC_Duplicate : <<include>>
+UC_Suggest ..> UC_Report : <<extend>>\nno category chosen
+UC_Reclassify ..> UC_Priority : <<include>>
+UC_Check ..> UC_Escalate : <<include>>
+
+note bottom of UC_Trail
+  Every use case that changes an incident
+  includes "Record the action in the audit trail"
+  and "Notify the people concerned".
+end note
+UC_Trail -[hidden]- UC_Notify
+@enduml
