@@ -5,10 +5,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.itsm.BusinessRuleException;
+import com.itsm.error.InvalidInputException;
 import com.itsm.domain.state.IncidentState;
 import com.itsm.domain.state.IncidentStates;
-import com.itsm.domain.state.InvalidStateTransitionException;
+import com.itsm.error.InvalidStateTransitionException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -44,6 +44,12 @@ import jakarta.validation.constraints.Size;
 public class Incident {
 
     private static final String CODE_FORMAT = "INC-%04d";
+
+    /** The longest resolution text or rating comment that is stored. */
+    public static final int MAX_TEXT_LENGTH = 1000;
+
+    public static final int MIN_RATING = 1;
+    public static final int MAX_RATING = 5;
 
     /** The share of an SLA's time after which the incident counts as "at risk". */
     public static final double AT_RISK_FRACTION = 0.75;
@@ -154,6 +160,32 @@ public class Incident {
     @Column(name = "resolution_breached_at")
     private LocalDateTime resolutionBreachedAt;
 
+    /** An earlier incident this one probably repeats. Set by duplicate detection when the incident is reported. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "possible_duplicate_of_id")
+    private Incident possibleDuplicateOf;
+
+    /** How alike the two titles are, from 0.0 to 1.0. Only set together with {@link #possibleDuplicateOf}. */
+    @Column(name = "duplicate_similarity")
+    private Double duplicateSimilarity;
+
+    /** When the incident was escalated to the administrators. Empty if it never was. */
+    @Column(name = "escalated_at")
+    private LocalDateTime escalatedAt;
+
+    /** What the technician did to fix it. Recorded when the incident is resolved. */
+    @Column(length = MAX_TEXT_LENGTH)
+    private String resolution;
+
+    /** The reporter's verdict on the resolution, from 1 (poor) to 5 (excellent). Empty until they give one. */
+    private Integer rating;
+
+    @Column(name = "rating_comment", length = MAX_TEXT_LENGTH)
+    private String ratingComment;
+
+    @Column(name = "rated_at")
+    private LocalDateTime ratedAt;
+
     /** Required by JPA. */
     protected Incident() {
     }
@@ -254,14 +286,14 @@ public class Incident {
      * ASSIGNED; an incident that already has a technician keeps its status and
      * simply changes hands.
      *
-     * @throws BusinessRuleException if the incident is in a status where it cannot be assigned
+     * @throws InvalidInputException if the incident is in a status where it cannot be assigned
      */
     public void assignTo(Technician technician) {
         if (technician == null) {
             throw new IllegalArgumentException("A technician is required");
         }
         if (!getState().allowsAssignment()) {
-            throw new BusinessRuleException("%s cannot be assigned while it is %s."
+            throw new InvalidInputException("%s cannot be assigned while it is %s."
                     .formatted(code == null ? "The incident" : code, status.getLabel().toLowerCase()));
         }
         this.assignee = technician;
@@ -290,11 +322,92 @@ public class Incident {
             extendResolutionDeadline(Duration.between(resolvedAt, when));
         }
         resolvedAt = null;
+        resolution = null; // that fix did not hold; the timeline still shows what it was
     }
 
     /** Records when the incident was closed. Called by the CLOSED state. */
     public void stampClosed(LocalDateTime when) {
         closedAt = when;
+    }
+
+    // ---- resolution, rating, duplicates, escalation ----
+
+    /** Records what was done to fix the incident. Needed before it can become RESOLVED. */
+    public void recordResolution(String whatWasDone) {
+        if (whatWasDone == null || whatWasDone.isBlank()) {
+            throw new InvalidInputException("Please describe what was done to resolve the incident.");
+        }
+        String trimmed = whatWasDone.trim();
+        resolution = trimmed.length() <= MAX_TEXT_LENGTH ? trimmed : trimmed.substring(0, MAX_TEXT_LENGTH);
+    }
+
+    /**
+     * The reporter rates the resolution from 1 to 5. Possible once the fix is
+     * confirmed (VERIFIED or CLOSED), and only once.
+     */
+    public void rate(int stars, String comment, LocalDateTime when) {
+        if (!getState().allowsRating()) {
+            throw new InvalidInputException("%s can be rated once you have confirmed that it is fixed."
+                    .formatted(code == null ? "The incident" : code));
+        }
+        if (rating != null) {
+            throw new InvalidInputException("%s has already been rated.".formatted(code));
+        }
+        if (stars < MIN_RATING || stars > MAX_RATING) {
+            throw new InvalidInputException("A rating must be between %d and %d.".formatted(MIN_RATING, MAX_RATING));
+        }
+        rating = stars;
+        ratingComment = comment == null || comment.isBlank() ? null
+                : comment.trim().substring(0, Math.min(comment.trim().length(), MAX_TEXT_LENGTH));
+        ratedAt = when;
+    }
+
+    /** Notes that this incident probably repeats an earlier one. */
+    public void linkPossibleDuplicate(Incident original, double similarity) {
+        if (original == null || original == this) {
+            throw new IllegalArgumentException("A possible duplicate needs another incident to point at");
+        }
+        possibleDuplicateOf = original;
+        duplicateSimilarity = similarity;
+    }
+
+    /** Marks the incident as escalated to the administrators. The first time counts; later calls change nothing. */
+    public void escalate(LocalDateTime when) {
+        if (escalatedAt == null) {
+            escalatedAt = when;
+        }
+    }
+
+    public boolean isEscalated() {
+        return escalatedAt != null;
+    }
+
+    public LocalDateTime getEscalatedAt() {
+        return escalatedAt;
+    }
+
+    public Incident getPossibleDuplicateOf() {
+        return possibleDuplicateOf;
+    }
+
+    public Double getDuplicateSimilarity() {
+        return duplicateSimilarity;
+    }
+
+    public String getResolution() {
+        return resolution;
+    }
+
+    public Integer getRating() {
+        return rating;
+    }
+
+    public String getRatingComment() {
+        return ratingComment;
+    }
+
+    public LocalDateTime getRatedAt() {
+        return ratedAt;
     }
 
     // ---- SLA ----

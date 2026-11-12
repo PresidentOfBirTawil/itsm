@@ -28,4 +28,15 @@ public final class ClosedState implements IncidentState {
     public void onEnter(Incident incident, Status from, LocalDateTime now) {
         incident.stampClosed(now);
     }
+
+    @Override
+    public boolean allowsRating() {
+        return true;
+    }
+
+    /** A closed incident is finished: nothing more is added to it. */
+    @Override
+    public boolean allowsNotes() {
+        return false;
+    }
 }

@@ -12,6 +12,20 @@
             <i class="bi bi-plus-circle me-1"></i>Report an incident</a>
     </div>
 
+    <!-- Incidents where the next step is the employee's -->
+    <div class="card border border-primary-subtle mb-4" th:unless="${#lists.isEmpty(waitingForMe)}">
+        <div class="card-header"><i class="bi bi-hand-index me-1"></i>Waiting for you</div>
+        <div class="list-group list-group-flush">
+            <a class="list-group-item list-group-item-action d-flex flex-wrap justify-content-between gap-2"
+               th:each="incident : ${waitingForMe}" th:href="@{|/employee/incidents/${incident.code}|}">
+                <span><span class="fw-semibold" th:text="${incident.code}">INC-0001</span>
+                    <span th:text="${incident.title}">Title</span></span>
+                <span class="text-body-secondary"
+                      th:text="${incident.status.name() == 'RESOLVED'} ? 'Resolved: please confirm that it is fixed' : 'The technician has asked you a question'">What to do</span>
+            </a>
+        </div>
+    </div>
+
     <div class="row g-3 mb-4">
         <div class="col-sm-4">
             <div th:replace="~{fragments/ui :: stat('Incidents reported', ${incidents.size()}, 'bi-card-list')}"></div>

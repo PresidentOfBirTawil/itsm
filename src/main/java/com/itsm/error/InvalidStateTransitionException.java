@@ -1,11 +1,10 @@
-package com.itsm.domain.state;
+package com.itsm.error;
 
-import com.itsm.BusinessRuleException;
 import com.itsm.domain.Incident;
 import com.itsm.domain.Status;
 
 /** Thrown when an incident is asked to make a move its lifecycle does not allow. Nothing is changed. */
-public class InvalidStateTransitionException extends BusinessRuleException {
+public class InvalidStateTransitionException extends ItsmException {
 
     private final Status from;
     private final Status to;

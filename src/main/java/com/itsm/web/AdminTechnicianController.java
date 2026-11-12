@@ -7,13 +7,13 @@ import com.itsm.assignment.AssignmentService;
 import com.itsm.domain.Category;
 import com.itsm.domain.Technician;
 import com.itsm.domain.User;
+import com.itsm.error.NotFoundException;
 import com.itsm.repository.AdministratorRepository;
 import com.itsm.repository.CategoryRepository;
 import com.itsm.repository.EmployeeRepository;
 import com.itsm.repository.TechnicianRepository;
 import com.itsm.repository.UserRepository;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /** Administrators manage the people: a list of all users, and the technicians' skills, availability and workload. */
@@ -134,6 +133,6 @@ public class AdminTechnicianController {
 
     private Technician technician(Long id) {
         return technicians.findWithSkillsById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException("There is no technician with the number " + id + "."));
     }
 }

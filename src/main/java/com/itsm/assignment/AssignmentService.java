@@ -1,10 +1,14 @@
 package com.itsm.assignment;
 
+import com.itsm.error.TechnicianUnavailableException;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.itsm.BusinessRuleException;
+import com.itsm.error.InvalidInputException;
+import com.itsm.error.TechnicianUnavailableException;
+import com.itsm.error.WorkloadExceededException;
 import com.itsm.domain.Incident;
 import com.itsm.domain.IncidentAction;
 import com.itsm.domain.Setting;
@@ -81,7 +85,7 @@ public class AssignmentService {
     public AssignmentStrategy useStrategy(String key) {
         AssignmentStrategy strategy = strategies.get(key);
         if (strategy == null) {
-            throw new BusinessRuleException("There is no assignment strategy called \"" + key + "\".");
+            throw new InvalidInputException("There is no assignment strategy called \"" + key + "\".");
         }
         settings.findById(ACTIVE_STRATEGY_SETTING).ifPresentOrElse(
                 setting -> setting.setValue(key),
@@ -117,7 +121,7 @@ public class AssignmentService {
     @Transactional
     public boolean autoAssign(Incident incident, User actor) {
         if (incident.getAssignee() != null) {
-            throw new BusinessRuleException("%s is already assigned to %s."
+            throw new InvalidInputException("%s is already assigned to %s."
                     .formatted(incident.getCode(), incident.getAssignee().getName()));
         }
         AssignmentStrategy strategy = getActiveStrategy();
@@ -142,22 +146,27 @@ public class AssignmentService {
      * An administrator gives the incident to a technician of their choice,
      * whether or not it already had one.
      *
-     * @throws TechnicianUnavailableException if that technician is unavailable or at their maximum workload
+     * @throws TechnicianUnavailableException if that technician is not available
+     * @throws WorkloadExceededException      if that technician is already at their maximum workload
      */
     @Transactional
     public void assignManually(Incident incident, Long technicianId, User administrator) {
         Technician technician = technicianId == null ? null : technicians.findById(technicianId).orElse(null);
         if (technician == null) {
-            throw new BusinessRuleException("Please choose a technician.");
+            throw new InvalidInputException("Please choose a technician.");
         }
         Technician previous = incident.getAssignee();
         if (technician.equals(previous)) {
-            throw new BusinessRuleException("%s is already assigned to %s."
+            throw new InvalidInputException("%s is already assigned to %s."
                     .formatted(incident.getCode(), technician.getName()));
         }
         TechnicianLoad load = loadOf(technician);
-        if (!load.canTakeMore()) {
-            throw new TechnicianUnavailableException(load.reasonCannotTakeMore() + ".");
+        if (!technician.isAvailable()) {
+            throw new TechnicianUnavailableException(technician.getName() + " is not available.");
+        }
+        if (load.openIncidents() >= technician.getMaxWorkload()) {
+            throw new WorkloadExceededException(technician.getName(), load.openIncidents(),
+                    technician.getMaxWorkload());
         }
 
         Status before = incident.getStatus();

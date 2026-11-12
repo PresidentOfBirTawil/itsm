@@ -196,6 +196,8 @@ class SlaTests {
         startWork();
         incident.refreshSla(at(481));
 
+        incident.recordResolution("Restarted the service.");
+
         incident.transitionTo(Status.RESOLVED, at(490));
         incident.refreshSla(at(491));
 
@@ -205,6 +207,7 @@ class SlaTests {
     @Test
     void resolvingInTimeMeetsTheSla() {
         startWork();
+        incident.recordResolution("Restarted the service.");
         incident.transitionTo(Status.RESOLVED, at(100));
 
         assertThat(incident.refreshSla(at(101))).isEmpty();
@@ -278,6 +281,7 @@ class SlaTests {
     @Test
     void reopeningDoesNotCountTheTimeTheIncidentStoodAsResolved() {
         startWork();
+        incident.recordResolution("Restarted the service.");
         incident.transitionTo(Status.RESOLVED, at(100));
         incident.refreshSla(at(100));
         assertThat(incident.getSlaStatus()).isEqualTo(SlaStatus.MET);

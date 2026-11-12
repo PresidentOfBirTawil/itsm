@@ -1,5 +1,6 @@
 package com.itsm;
 
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -9,7 +10,8 @@ import com.itsm.assignment.AssignmentService;
 import com.itsm.assignment.LeastLoadedStrategy;
 import com.itsm.assignment.RoundRobinStrategy;
 import com.itsm.assignment.SkillBasedStrategy;
-import com.itsm.assignment.TechnicianUnavailableException;
+import com.itsm.error.TechnicianUnavailableException;
+import com.itsm.error.WorkloadExceededException;
 import com.itsm.domain.Administrator;
 import com.itsm.domain.AuditEntry;
 import com.itsm.domain.Employee;
@@ -20,22 +22,23 @@ import com.itsm.domain.Priority;
 import com.itsm.domain.Status;
 import com.itsm.domain.Technician;
 import com.itsm.domain.Urgency;
-import com.itsm.domain.state.InvalidStateTransitionException;
+import com.itsm.error.InvalidStateTransitionException;
 import com.itsm.repository.CategoryRepository;
 import com.itsm.repository.ITServiceRepository;
 import com.itsm.repository.IncidentRepository;
 import com.itsm.repository.SlaPolicyRepository;
 import com.itsm.repository.UserRepository;
 import com.itsm.service.IncidentFactory;
-import com.itsm.service.IncidentNotFoundException;
+import com.itsm.error.IncidentNotFoundException;
+import com.itsm.error.InvalidInputException;
 import com.itsm.service.IncidentService;
-import com.itsm.sla.MissingSlaPolicyException;
+import com.itsm.error.MissingSlaConfigurationException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.access.AccessDeniedException;
+import com.itsm.error.UnauthorizedOperationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,6 +82,9 @@ class IncidentWorkflowTests {
     private Technician arjun;
     private Technician sara;
 
+    /** Counts the reports of one test, to give each its own title. */
+    private int reports;
+
     @BeforeEach
     void loadUsers() {
         priya = (Employee) users.findByEmail("emp1@itsm.local").orElseThrow();
@@ -91,7 +97,7 @@ class IncidentWorkflowTests {
     }
 
     private Incident report(Employee reporter, String service, String category, Impact impact, Urgency urgency) {
-        return incidentService.report(reporter, "Something is wrong with " + service, "Details.",
+        return incidentService.report(reporter, "Report %d about %s".formatted(++reports, service), "Details.",
                 services.findByName(service).orElseThrow().getId(),
                 categories.findByNameIgnoreCase(category).orElseThrow().getId(), impact, urgency);
     }
@@ -186,7 +192,7 @@ class IncidentWorkflowTests {
         entityManager.flush();
 
         assertThatThrownBy(this::reportPaymentOutage)
-                .isInstanceOf(MissingSlaPolicyException.class)
+                .isInstanceOf(MissingSlaConfigurationException.class)
                 .hasMessageContaining("P1");
     }
 
@@ -293,7 +299,7 @@ class IncidentWorkflowTests {
     @Test
     void anUnknownStrategyIsRefusedAndTheActiveOneStays() {
         assertThatThrownBy(() -> assignmentService.useStrategy("coin-toss"))
-                .isInstanceOf(BusinessRuleException.class);
+                .isInstanceOf(InvalidInputException.class);
 
         assertThat(assignmentService.getActiveStrategy()).isInstanceOf(SkillBasedStrategy.class);
     }
@@ -373,7 +379,7 @@ class IncidentWorkflowTests {
         Incident incident = reportPaymentOutage();
 
         assertThatThrownBy(() -> incidentService.assign(incident.getCode(), arjun.getId(), admin))
-                .isInstanceOf(TechnicianUnavailableException.class)
+                .isInstanceOf(WorkloadExceededException.class)
                 .hasMessageContaining("3 of 3");
 
         assertThat(incident.getAssignee()).isEqualTo(sara);
@@ -385,7 +391,7 @@ class IncidentWorkflowTests {
         int entriesBefore = incidentService.history(incident).size();
 
         assertThatThrownBy(() -> incidentService.assign(incident.getCode(), sara.getId(), admin))
-                .isInstanceOf(BusinessRuleException.class)
+                .isInstanceOf(InvalidInputException.class)
                 .hasMessageContaining("already assigned");
 
         assertThat(incidentService.history(incident)).hasSize(entriesBefore);
@@ -399,7 +405,7 @@ class IncidentWorkflowTests {
         incidentService.changeStatus(incident.getCode(), Status.RESOLVED, sara, "Restarted the service.");
 
         assertThatThrownBy(() -> incidentService.assign(incident.getCode(), meera.getId(), admin))
-                .isInstanceOf(BusinessRuleException.class)
+                .isInstanceOf(InvalidInputException.class)
                 .hasMessageContaining("resolved");
 
         assertThat(incident.getAssignee()).isEqualTo(sara);
@@ -447,11 +453,11 @@ class IncidentWorkflowTests {
 
         // Acknowledging is the assigned technician's job: not the reporter's, an admin's or another technician's.
         assertThatThrownBy(() -> incidentService.changeStatus(code, Status.ACKNOWLEDGED, priya, null))
-                .isInstanceOf(AccessDeniedException.class);
+                .isInstanceOf(UnauthorizedOperationException.class);
         assertThatThrownBy(() -> incidentService.changeStatus(code, Status.ACKNOWLEDGED, admin, null))
-                .isInstanceOf(AccessDeniedException.class);
+                .isInstanceOf(UnauthorizedOperationException.class);
         assertThatThrownBy(() -> incidentService.changeStatus(code, Status.ACKNOWLEDGED, meera, null))
-                .isInstanceOf(AccessDeniedException.class);
+                .isInstanceOf(UnauthorizedOperationException.class);
         assertThat(incident.getStatus()).isEqualTo(Status.ASSIGNED);
 
         incidentService.changeStatus(code, Status.ACKNOWLEDGED, sara, null);
@@ -460,9 +466,9 @@ class IncidentWorkflowTests {
 
         // Confirming the fix is the reporter's job: not another employee's and not the technician's.
         assertThatThrownBy(() -> incidentService.changeStatus(code, Status.VERIFIED, rahul, null))
-                .isInstanceOf(AccessDeniedException.class);
+                .isInstanceOf(UnauthorizedOperationException.class);
         assertThatThrownBy(() -> incidentService.changeStatus(code, Status.VERIFIED, sara, null))
-                .isInstanceOf(AccessDeniedException.class);
+                .isInstanceOf(UnauthorizedOperationException.class);
         assertThat(incident.getStatus()).isEqualTo(Status.RESOLVED);
     }
 
@@ -473,7 +479,7 @@ class IncidentWorkflowTests {
         incidentService.changeStatus(incident.getCode(), Status.IN_PROGRESS, sara, null);
 
         assertThatThrownBy(() -> incidentService.changeStatus(incident.getCode(), Status.RESOLVED, sara, "  "))
-                .isInstanceOf(BusinessRuleException.class)
+                .isInstanceOf(InvalidInputException.class)
                 .hasMessageContaining("note");
 
         assertThat(incident.getStatus()).isEqualTo(Status.IN_PROGRESS);
@@ -504,7 +510,7 @@ class IncidentWorkflowTests {
         assertThat(incidentService.getFor(code, admin).getCode()).isEqualTo(code);
         assertThat(incidentService.getFor(code, meera).getCode()).isEqualTo(code); // any technician may look
 
-        assertThatThrownBy(() -> incidentService.getFor(code, rahul)).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> incidentService.getFor(code, rahul)).isInstanceOf(UnauthorizedOperationException.class);
         assertThatThrownBy(() -> incidentService.getFor("INC-9999", admin))
                 .isInstanceOf(IncidentNotFoundException.class);
     }

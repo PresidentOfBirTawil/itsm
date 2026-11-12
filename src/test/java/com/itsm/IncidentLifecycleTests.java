@@ -1,5 +1,7 @@
 package com.itsm;
 
+import com.itsm.error.InvalidInputException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -17,7 +19,7 @@ import com.itsm.domain.Status;
 import com.itsm.domain.Technician;
 import com.itsm.domain.state.IncidentState;
 import com.itsm.domain.state.IncidentStates;
-import com.itsm.domain.state.InvalidStateTransitionException;
+import com.itsm.error.InvalidStateTransitionException;
 import com.itsm.domain.state.Transition;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -81,6 +83,9 @@ class IncidentLifecycleTests {
         } else if (incident.getStatus() == Status.CLASSIFIED && to == Status.ASSIGNED) {
             incident.assignTo(Fixtures.technician(1, "Ravi Kumar", 5));
         } else {
+            if (to == Status.RESOLVED) {
+                incident.recordResolution("Restarted the service."); // an incident needs a resolution to be RESOLVED
+            }
             incident.transitionTo(to);
         }
     }
@@ -244,7 +249,7 @@ class IncidentLifecycleTests {
         Technician before = incident.getAssignee();
 
         assertThatThrownBy(() -> incident.assignTo(Fixtures.technician(7, "Meera Nair", 4)))
-                .isInstanceOf(BusinessRuleException.class);
+                .isInstanceOf(InvalidInputException.class);
 
         assertThat(incident.getStatus()).isEqualTo(status);
         assertThat(incident.getAssignee()).isSameAs(before);
@@ -261,6 +266,7 @@ class IncidentLifecycleTests {
         assertThat(incident.getAcknowledgedAt()).isNotNull();
 
         incident.transitionTo(Status.IN_PROGRESS);
+        incident.recordResolution("Restarted the service.");
         incident.transitionTo(Status.RESOLVED);
         assertThat(incident.getResolvedAt()).isNotNull();
         assertThat(incident.getClosedAt()).isNull();

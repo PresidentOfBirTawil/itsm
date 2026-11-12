@@ -1,5 +1,7 @@
 package com.itsm.assignment;
 
+import com.itsm.error.TechnicianUnavailableException;
+
 import java.util.List;
 
 import com.itsm.domain.Incident;

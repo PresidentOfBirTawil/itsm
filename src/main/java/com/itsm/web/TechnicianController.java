@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /** Pages for technicians. Everything under /technician needs the TECHNICIAN role (see SecurityConfig). */
@@ -90,9 +89,14 @@ public class TechnicianController {
 
     @PostMapping("/incidents/{code}/transition")
     public String changeStatus(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
-                               @RequestParam Status target, @RequestParam(required = false) String note,
-                               RedirectAttributes redirect) {
-        return incidentPages.changeStatus(code, target, note, currentTechnician(user), INCIDENTS, redirect);
+                               @Valid @ModelAttribute TransitionForm form, RedirectAttributes redirect) {
+        return incidentPages.changeStatus(code, form, currentTechnician(user), INCIDENTS, redirect);
+    }
+
+    @PostMapping("/incidents/{code}/notes")
+    public String addNote(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
+                          @Valid @ModelAttribute NoteForm form, RedirectAttributes redirect) {
+        return incidentPages.addNote(code, form, currentTechnician(user), INCIDENTS, redirect);
     }
 
     private Technician currentTechnician(ItsmUserDetails user) {

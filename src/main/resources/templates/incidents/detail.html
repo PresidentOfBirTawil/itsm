@@ -2,6 +2,7 @@
 <!--
   The incident page, shared by all three roles. What differs per role:
     - the status buttons (only the moves this role may make from the current status)
+    - the rating box (the reporter, once the fix is confirmed)
     - the assignment box (administrators only)
 -->
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
@@ -18,13 +19,37 @@
             </h1>
             <p class="text-body-secondary mb-0" th:text="${incident.state.summary()}">What it is waiting for.</p>
         </div>
-        <div class="d-flex gap-2 fs-6">
+        <div class="d-flex flex-wrap gap-2 fs-6">
             <span th:replace="~{fragments/ui :: statusBadge(${incident.status})}"></span>
             <th:block th:replace="~{fragments/ui :: priorityBadge(${incident.priority})}"></th:block>
             <th:block th:if="${incident.slaStatus != null}">
                 <th:block th:replace="~{fragments/ui :: slaBadge(${incident.slaStatus})}"></th:block>
             </th:block>
+            <span class="badge text-bg-dark" th:if="${incident.escalated}"><i class="bi bi-arrow-up-circle me-1"></i>Escalated</span>
         </div>
+    </div>
+
+    <!-- What the automatic checks found, each with its reason -->
+    <div class="alert alert-dark" role="alert" th:if="${incident.escalated}">
+        <i class="bi bi-arrow-up-circle me-1"></i>
+        <span th:text="${escalationNote} ?: 'This incident was escalated to the administrators.'">Escalated.</span>
+    </div>
+    <div class="alert alert-warning" role="alert" th:if="${duplicate != null}">
+        <i class="bi bi-files me-1"></i>Possible duplicate of
+        <a class="alert-link" th:if="${viewerRole.name() != 'EMPLOYEE'}"
+           th:href="@{|${basePath}/${duplicate.original.code}|}" th:text="${duplicate.original.code}">INC-0007</a>
+        <strong th:if="${viewerRole.name() == 'EMPLOYEE'}" th:text="${duplicate.original.code}">INC-0007</strong>
+        <span th:text="${duplicate.evidence()}">(similarity 0.62, same service, 6 min apart)</span>.
+        <span class="small d-block mt-1">
+            Found automatically by comparing the words of this title with open incidents reported against the same
+            service in the last 24 hours.
+        </span>
+    </div>
+    <div class="alert alert-warning" role="alert" th:unless="${#lists.isEmpty(laterDuplicates)}">
+        <i class="bi bi-files me-1"></i>Later incidents that look like duplicates of this one:
+        <th:block th:each="later, row : ${laterDuplicates}">
+            <a class="alert-link" th:href="@{|${basePath}/${later.code}|}" th:text="${later.code}">INC-0008</a><span th:unless="${row.last}">,</span>
+        </th:block>
     </div>
 
     <div class="row g-4">
@@ -46,7 +71,12 @@
                         </dd>
 
                         <dt class="col-sm-4">Category</dt>
-                        <dd class="col-sm-8" th:text="${incident.category != null} ? ${incident.category.name} : '—'">Category</dd>
+                        <dd class="col-sm-8">
+                            <span th:text="${incident.category != null} ? ${incident.category.name} : '—'">Category</span>
+                            <div class="small text-body-secondary" th:if="${categoryNote != null}">
+                                <i class="bi bi-magic me-1"></i><span th:text="${categoryNote}">Chosen automatically.</span>
+                            </div>
+                        </dd>
 
                         <dt class="col-sm-4">Impact · urgency</dt>
                         <dd class="col-sm-8" th:text="|${incident.impact.label} · ${incident.urgency.label}|">High · High</dd>
@@ -86,6 +116,21 @@
                 </div>
             </div>
 
+            <!-- The resolution, and what the reporter thought of it -->
+            <div class="card mb-4 border border-success-subtle" th:if="${incident.resolution != null}">
+                <div class="card-header text-success-emphasis"><i class="bi bi-check2-circle me-1"></i>Resolution</div>
+                <div class="card-body">
+                    <p class="incident-description mb-0" th:text="${incident.resolution}">What was done.</p>
+                    <div class="mt-3" th:if="${incident.rating != null}">
+                        <span class="text-body-secondary small">The reporter's rating:</span>
+                        <span th:replace="~{fragments/ui :: stars(${incident.rating})}"></span>
+                        <span class="small" th:text="|${incident.rating} out of 5|">4 out of 5</span>
+                        <div class="small fst-italic" th:if="${incident.ratingComment != null}"
+                             th:text="|“${incident.ratingComment}”|">Comment</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header">Timeline</div>
                 <ul class="list-group list-group-flush timeline">
@@ -106,7 +151,7 @@
                                 <span th:replace="~{fragments/ui :: statusBadge(${entry.newStatus})}"></span>
                             </th:block>
                         </div>
-                        <div class="mt-1" th:if="${entry.note != null}" th:text="${entry.note}">Note</div>
+                        <div class="mt-1 incident-description" th:if="${entry.note != null}" th:text="${entry.note}">Note</div>
                     </li>
                 </ul>
             </div>
@@ -129,7 +174,8 @@
                     <form th:unless="${#lists.isEmpty(transitions)}" method="post"
                           th:action="@{|${basePath}/${incident.code}/transition|}">
                         <div class="mb-3">
-                            <label for="note" class="form-label">Note</label>
+                            <label for="note" class="form-label"
+                                   th:text="${incident.status.name() == 'IN_PROGRESS'} ? 'Resolution, or your question' : 'Note'">Note</label>
                             <textarea class="form-control" id="note" name="note" rows="3" maxlength="1000"
                                       th:required="${!#strings.isEmpty(noteNeededFor)}"></textarea>
                             <div class="form-text" th:unless="${#strings.isEmpty(noteNeededFor)}"
@@ -146,6 +192,46 @@
                                     th:formnovalidate="${!transition.noteRequired}"
                                     th:text="${transition.labelFor(viewerRole)}">Acknowledge</button>
                         </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- The reporter rates the resolution once the fix is confirmed -->
+            <div class="card mb-4 border border-primary-subtle" th:if="${canRate}">
+                <div class="card-header">Rate the resolution</div>
+                <div class="card-body">
+                    <form method="post" th:action="@{|${basePath}/${incident.code}/rating|}">
+                        <div class="mb-3">
+                            <span class="form-label d-block">How well was this handled?</span>
+                            <div class="btn-group w-100" role="group" aria-label="Rating from 1 to 5">
+                                <th:block th:each="value : ${#numbers.sequence(1, 5)}">
+                                    <input type="radio" class="btn-check" name="rating" required
+                                           th:id="|rating-${value}|" th:value="${value}">
+                                    <label class="btn btn-outline-primary" th:for="|rating-${value}|" th:text="${value}">1</label>
+                                </th:block>
+                            </div>
+                            <div class="form-text d-flex justify-content-between"><span>1 = poor</span><span>5 = excellent</span></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">Comment</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="2" maxlength="1000"></textarea>
+                            <div class="form-text">Optional.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Send rating</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- A note that does not change the status: investigation notes, extra information -->
+            <div class="card mb-4" th:if="${canAddNote}">
+                <div class="card-header"
+                     th:text="${viewerRole.name() == 'EMPLOYEE'} ? 'Add information' : 'Add an investigation note'">Add a note</div>
+                <div class="card-body">
+                    <form method="post" th:action="@{|${basePath}/${incident.code}/notes|}">
+                        <label for="plainNote" class="visually-hidden">Note</label>
+                        <textarea class="form-control mb-2" id="plainNote" name="note" rows="2" maxlength="1000" required
+                                  th:placeholder="${viewerRole.name() == 'EMPLOYEE'} ? 'Anything else the technician should know' : 'What you checked or found'"></textarea>
+                        <button type="submit" class="btn btn-outline-secondary w-100">Add to the timeline</button>
                     </form>
                 </div>
             </div>

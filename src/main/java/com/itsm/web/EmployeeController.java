@@ -2,7 +2,9 @@ package com.itsm.web;
 
 import java.util.List;
 
-import com.itsm.BusinessRuleException;
+import com.itsm.error.InvalidInputException;
+import com.itsm.error.ItsmException;
+import com.itsm.error.NotFoundException;
 import com.itsm.domain.Employee;
 import com.itsm.domain.Impact;
 import com.itsm.domain.Incident;
@@ -24,7 +26,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /** Pages for employees. Everything under /employee needs the EMPLOYEE role (see SecurityConfig). */
@@ -65,6 +66,11 @@ public class EmployeeController {
         model.addAttribute("incidents", mine);
         model.addAttribute("openCount", open);
         model.addAttribute("doneCount", mine.size() - open);
+        // Incidents where the next step is the employee's: a question to answer, or a fix to confirm.
+        model.addAttribute("waitingForMe", mine.stream()
+                .filter(incident -> incident.getStatus() == Status.AWAITING_INFO
+                        || incident.getStatus() == Status.RESOLVED)
+                .toList());
         model.addAttribute("services", services.findAllByOrderByCriticalityDescNameAsc());
         return "employee/dashboard";
     }
@@ -105,8 +111,15 @@ public class EmployeeController {
                     form.getServiceId(), form.getCategoryId(), form.getImpact(), form.getUrgency());
             redirect.addFlashAttribute("success", "Incident %s has been reported.".formatted(incident.getCode()));
             return "redirect:" + INCIDENTS + "/" + incident.getCode();
-        } catch (BusinessRuleException e) {
-            model.addAttribute("error", e.getMessage());
+        } catch (NotFoundException e) {
+            throw e; // a service or category that does not exist: the 404 page
+        } catch (ItsmException e) {
+            // Any other broken rule: back to the form, with what was typed still in it.
+            if (form.getCategoryId() == null && e instanceof InvalidInputException) {
+                result.rejectValue("categoryId", "noSuggestion", e.getMessage());
+            } else {
+                model.addAttribute("error", e.getMessage());
+            }
             addFormChoices(model);
             return "employee/incident-form";
         }
@@ -128,9 +141,24 @@ public class EmployeeController {
 
     @PostMapping("/incidents/{code}/transition")
     public String changeStatus(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
-                               @RequestParam Status target, @RequestParam(required = false) String note,
-                               RedirectAttributes redirect) {
-        return incidentPages.changeStatus(code, target, note, currentEmployee(user), INCIDENTS, redirect);
+                               @Valid @ModelAttribute TransitionForm form, RedirectAttributes redirect) {
+        return incidentPages.changeStatus(code, form, currentEmployee(user), INCIDENTS, redirect);
+    }
+
+    @PostMapping("/incidents/{code}/notes")
+    public String addNote(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
+                          @Valid @ModelAttribute NoteForm form, RedirectAttributes redirect) {
+        return incidentPages.addNote(code, form, currentEmployee(user), INCIDENTS, redirect);
+    }
+
+    /** The reporter says how good the resolution was, from 1 to 5. */
+    @PostMapping("/incidents/{code}/rating")
+    public String rate(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
+                       @Valid @ModelAttribute RatingForm form, RedirectAttributes redirect) {
+        return incidentPages.perform(INCIDENTS + "/" + code, redirect, () -> {
+            incidentService.rate(code, currentEmployee(user), form.getRating(), form.getComment());
+            return "Thank you. Your rating of %s has been recorded.".formatted(code);
+        });
     }
 
     private Employee currentEmployee(ItsmUserDetails user) {

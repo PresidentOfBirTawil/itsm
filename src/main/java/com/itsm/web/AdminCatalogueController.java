@@ -3,11 +3,12 @@ package com.itsm.web;
 import com.itsm.domain.Category;
 import com.itsm.domain.ITService;
 import com.itsm.domain.SlaPolicy;
+import com.itsm.error.NotFoundException;
+import com.itsm.error.ServiceNotFoundException;
 import com.itsm.repository.CategoryRepository;
 import com.itsm.repository.ITServiceRepository;
 import com.itsm.repository.SlaPolicyRepository;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /** Administrators manage the things incidents refer to: IT services, categories and SLA policies. */
@@ -99,7 +99,7 @@ public class AdminCatalogueController {
     }
 
     private ITService service(Long id) {
-        return services.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return services.findById(id).orElseThrow(() -> new ServiceNotFoundException(id));
     }
 
     // ---- categories ----
@@ -166,7 +166,8 @@ public class AdminCatalogueController {
     }
 
     private Category category(Long id) {
-        return categories.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return categories.findById(id)
+                .orElseThrow(() -> new NotFoundException("There is no category with the number " + id + "."));
     }
 
     // ---- SLA policies ----
@@ -182,7 +183,7 @@ public class AdminCatalogueController {
     public String updateSlaPolicy(@PathVariable Long id, @Valid @ModelAttribute SlaPolicyForm form,
                                   BindingResult result, RedirectAttributes redirect) {
         SlaPolicy policy = slaPolicies.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException("There is no SLA policy with the number " + id + "."));
         if (result.hasErrors()) {
             redirect.addFlashAttribute("error", result.getAllErrors().getFirst().getDefaultMessage() + ".");
         } else if (form.getResponseMinutes() > form.getResolutionMinutes()) {

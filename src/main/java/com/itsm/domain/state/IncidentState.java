@@ -1,5 +1,7 @@
 package com.itsm.domain.state;
 
+import com.itsm.error.InvalidStateTransitionException;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -60,6 +62,16 @@ public interface IncidentState {
 
     /** Called when a priority has been set on an incident that is in this state. */
     default void onPrioritised(Incident incident) {
+    }
+
+    /** True if the reporter can rate the resolution while the incident is in this state. */
+    default boolean allowsRating() {
+        return false;
+    }
+
+    /** True if notes can still be added while the incident is in this state. */
+    default boolean allowsNotes() {
+        return true;
     }
 
     /** True if a technician can be assigned, or changed, while the incident is in this state. */

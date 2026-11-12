@@ -1,5 +1,7 @@
 package com.itsm.domain.state;
 
+import com.itsm.error.InvalidStateTransitionException;
+
 import java.util.List;
 
 import com.itsm.domain.Incident;
