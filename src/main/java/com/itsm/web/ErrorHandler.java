@@ -9,6 +9,8 @@ import com.itsm.error.UnauthorizedOperationException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -30,6 +32,7 @@ import org.springframework.web.servlet.support.RequestContextUtils;
  *       message shown at the top (nothing was changed); when just opening a
  *       page, a page that shows the message.</li>
  *   <li>A request that cannot be understood at all: a "bad request" page.</li>
+ *   <li>A database failure: a page saying so. Nothing was saved.</li>
  * </ul>
  *
  * Controllers that know a better place to go back to, such as the report
@@ -62,6 +65,28 @@ public class ErrorHandler {
     @ExceptionHandler(BindException.class)
     public ModelAndView invalidForm(BindException e, HttpServletRequest request) {
         return backWithMessageOrPage(request, HttpStatus.BAD_REQUEST, describe(e));
+    }
+
+    /**
+     * Two requests tried to save things that cannot both exist, for example
+     * the same email address registered twice at the same moment.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ModelAndView conflict(DataIntegrityViolationException e, HttpServletRequest request) {
+        log.warn("Conflicting change on {} {}: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+        return page("error/problem", HttpStatus.CONFLICT,
+                "That clashes with something that was saved a moment ago. Please go back, reload the page and try again.");
+    }
+
+    /**
+     * Database failure: the database could not be reached, or it refused the
+     * request. Whatever was being saved has been rolled back.
+     */
+    @ExceptionHandler(DataAccessException.class)
+    public ModelAndView databaseFailure(DataAccessException e, HttpServletRequest request) {
+        log.error("Database failure on {} {}", request.getMethod(), request.getRequestURI(), e);
+        return page("error/problem", HttpStatus.SERVICE_UNAVAILABLE,
+                "The database could not be reached just now. Please try again in a moment.");
     }
 
     /** A request with a missing or unreadable value, such as a status that does not exist. */

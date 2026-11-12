@@ -16,6 +16,9 @@
                     <div class="alert alert-success" role="status" th:if="${param.logout}">
                         You have been signed out.
                     </div>
+                    <div class="alert alert-warning" role="status" th:if="${param.expired}">
+                        You have been signed out. Please sign in again.
+                    </div>
                     <div class="alert alert-success" role="status" th:if="${param.registered}">
                         Your account is ready. You can sign in now.
                     </div>

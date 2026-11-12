@@ -84,6 +84,34 @@
             </div>
         </div>
     </div>
+
+    <div class="card mt-4 border border-danger-subtle">
+        <div class="card-header text-danger-emphasis">Demo data</div>
+        <div class="card-body">
+            <p class="text-body-secondary">
+                Removes <strong>every incident</strong> with its timeline, all notifications and the email outbox,
+                and puts the settings above back to their defaults. Users, services, categories and SLA policies are
+                kept. Incident codes start again at INC-0001.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <form method="post" th:action="@{/admin/settings/reset-demo-data}"
+                      onsubmit="return confirm('Remove every incident and add the sample incidents?');">
+                    <input type="hidden" name="samples" value="true">
+                    <button type="submit" class="btn btn-danger">Reset and add sample incidents</button>
+                </form>
+                <form method="post" th:action="@{/admin/settings/reset-demo-data}"
+                      onsubmit="return confirm('Remove every incident and leave the list empty?');">
+                    <input type="hidden" name="samples" value="false">
+                    <button type="submit" class="btn btn-outline-danger">Reset to an empty incident list</button>
+                </form>
+            </div>
+            <p class="small text-body-secondary mt-3 mb-0">
+                The sample set is 23 incidents from the last ten days in every stage of the lifecycle, including
+                breached, escalated, paused, duplicate and unassigned ones, so that the dashboard, reports and
+                search have something to show.
+            </p>
+        </div>
+    </div>
 </main>
 </body>
 </html>

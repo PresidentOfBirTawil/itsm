@@ -14,6 +14,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -74,6 +75,18 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
     /** Escalated incidents in the given statuses, most recently escalated first. */
     @EntityGraph(attributePaths = {"reporter", "service", "category", "assignee"})
     List<Incident> findByEscalatedAtIsNotNullAndStatusInOrderByEscalatedAtDescIdDesc(Collection<Status> statuses);
+
+    // ---- resetting the demo data ----
+
+    /** Removes the "possible duplicate of" links, so that incidents can be deleted in any order. */
+    @Modifying
+    @Query("update Incident i set i.possibleDuplicateOf = null")
+    void clearDuplicateLinks();
+
+    /** Makes the next incident number 1 again, so that codes start from INC-0001. */
+    @Modifying
+    @Query(value = "alter sequence incident_seq restart with 1", nativeQuery = true)
+    void restartNumbering();
 
     // ---- numbers for the administrator's dashboard ----
 

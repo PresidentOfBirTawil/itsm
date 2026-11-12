@@ -9,12 +9,14 @@ import com.itsm.error.NotFoundException;
 import com.itsm.error.UnauthorizedOperationException;
 import com.itsm.intelligence.DuplicateMatch;
 import com.itsm.domain.AuditEntry;
+import com.itsm.domain.Impact;
 import com.itsm.domain.Incident;
 import com.itsm.domain.IncidentAction;
 import com.itsm.domain.Priority;
 import com.itsm.domain.Role;
 import com.itsm.domain.SlaStatus;
 import com.itsm.domain.Status;
+import com.itsm.domain.Urgency;
 import com.itsm.domain.User;
 import com.itsm.domain.state.Transition;
 import com.itsm.priority.PriorityCalculator;
@@ -90,6 +92,15 @@ public class IncidentPages {
         model.addAttribute("canRate", viewer.getRole() == Role.EMPLOYEE && canWorkOn
                 && incident.getState().allowsRating() && incident.getRating() == null);
 
+        // Technicians (on their own incidents) and administrators can correct the classification while it is open.
+        boolean canReclassify = canWorkOn && viewer.getRole() != Role.EMPLOYEE && incident.getStatus().isOpen();
+        model.addAttribute("canReclassify", canReclassify);
+        if (canReclassify) {
+            model.addAttribute("categories", categories.findAllByOrderByNameAsc());
+            model.addAttribute("impacts", Impact.values());
+            model.addAttribute("urgencies", Urgency.values());
+        }
+
         // What the intelligent features found, each with its explanation.
         List<AuditEntry> history = incidentService.history(incident);
         model.addAttribute("history", history);
@@ -140,6 +151,17 @@ public class IncidentPages {
         return perform(basePath + "/" + code, redirect, () -> {
             Incident incident = incidentService.changeStatus(code, form.getTarget(), actor, form.getNote());
             return "%s is now %s.".formatted(incident.getCode(), incident.getStatus().getLabel().toLowerCase());
+        });
+    }
+
+    /** "Save classification" was pressed. */
+    public String reclassify(String code, ClassificationForm form, User actor, String basePath,
+                             RedirectAttributes redirect) {
+        return perform(basePath + "/" + code, redirect, () -> {
+            Incident incident = incidentService.reclassify(code, actor, form.getCategoryId(), form.getImpact(),
+                    form.getUrgency());
+            return "The classification of %s has been changed. Its priority is %s."
+                    .formatted(code, incident.getPriority());
         });
     }
 

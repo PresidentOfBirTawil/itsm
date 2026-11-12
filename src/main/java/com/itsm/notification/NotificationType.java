@@ -15,7 +15,8 @@ public enum NotificationType {
     SLA_BREACHED(true),
     ESCALATED(true),
     NOTE_ADDED(false),
-    RATED(false);
+    RATED(false),
+    PRIORITY_CHANGED(true);
 
     private final boolean emailed;
 

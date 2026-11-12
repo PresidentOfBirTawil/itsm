@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Audit log', 'audit', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Audit log</h1>
+        <p class="text-body-secondary mb-0">
+            Every recorded action on every incident, newest first: when, who, what, and how the status changed.
+            Entries are written once and never edited.
+        </p>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" th:action="@{/admin/audit}" class="row g-3 align-items-end">
+                <div class="col-sm-5 col-lg-3">
+                    <label for="code" class="form-label">Incident code</label>
+                    <input type="text" class="form-control" id="code" name="code" th:value="${code}" maxlength="20"
+                           placeholder="INC-0007 or 7">
+                </div>
+                <div class="col-sm-7 col-lg-4">
+                    <label for="action" class="form-label">Action</label>
+                    <select class="form-select" id="action" name="action">
+                        <option value="">Any</option>
+                        <option th:each="choice : ${actions}" th:value="${choice}" th:text="${choice.label}"
+                                th:selected="${choice == action}">Status changed</option>
+                    </select>
+                </div>
+                <div class="col-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Filter</button>
+                    <a class="btn btn-outline-secondary" th:href="@{/admin/audit}">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Entries</span>
+            <span class="small fw-normal text-body-secondary" th:if="${entries.size() == limit}"
+                  th:text="|the newest ${limit}; use the filters to see older ones|">the newest 300</span>
+            <span class="badge text-bg-light border" th:unless="${entries.size() == limit}" th:text="${entries.size()}">0</span>
+        </div>
+        <div class="text-center text-body-secondary py-5" th:if="${#lists.isEmpty(entries)}">
+            <i class="bi bi-journal-text fs-1 d-block mb-2"></i>
+            Nothing has been recorded that matches.
+        </div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(entries)}">
+            <table class="table table-sm mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">When</th>
+                    <th scope="col">Incident</th>
+                    <th scope="col">Who</th>
+                    <th scope="col">Action</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${entries}">
+                    <td class="text-nowrap small" th:text="${#temporals.format(entry.occurredAt, 'dd MMM yyyy, HH:mm:ss')}">01 Jan 2026, 10:05:00</td>
+                    <td class="fw-semibold text-nowrap">
+                        <a th:href="@{|/admin/incidents/${entry.incident.code}|}" th:text="${entry.incident.code}">INC-0001</a>
+                    </td>
+                    <td class="text-nowrap" th:text="${entry.actorName}">System</td>
+                    <td class="text-nowrap" th:text="${entry.action.label}">Status changed</td>
+                    <td class="text-nowrap">
+                        <th:block th:if="${entry.statusChange}">
+                            <th:block th:if="${entry.oldStatus != null}">
+                                <span th:replace="~{fragments/ui :: statusBadge(${entry.oldStatus})}"></span>
+                                <i class="bi bi-arrow-right"></i>
+                            </th:block>
+                            <span th:replace="~{fragments/ui :: statusBadge(${entry.newStatus})}"></span>
+                        </th:block>
+                        <span class="text-body-secondary" th:unless="${entry.statusChange}">unchanged</span>
+                    </td>
+                    <td class="small" th:text="${entry.note} ?: '—'">Note</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -193,14 +193,20 @@ public class Incident {
     /** A new incident always starts in status NEW, with no priority and no assignee. */
     public Incident(String title, String description, Employee reporter, ITService service,
                     Impact impact, Urgency urgency) {
+        this(title, description, reporter, service, impact, urgency, LocalDateTime.now());
+    }
+
+    /** The same, for an incident that was reported at an earlier moment (used to load sample data). */
+    public Incident(String title, String description, Employee reporter, ITService service,
+                    Impact impact, Urgency urgency, LocalDateTime reportedAt) {
         this.title = title == null ? null : title.trim();
         this.description = description == null ? null : description.trim();
         this.reporter = reporter;
         this.service = service;
         this.impact = impact;
         this.urgency = urgency;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = this.createdAt;
+        this.createdAt = reportedAt;
+        this.updatedAt = reportedAt;
     }
 
     // ---- code ----
@@ -328,6 +334,24 @@ public class Incident {
     /** Records when the incident was closed. Called by the CLOSED state. */
     public void stampClosed(LocalDateTime when) {
         closedAt = when;
+    }
+
+    /**
+     * Changes how the incident is classified. Allowed while it is still open.
+     * The priority is not touched here: whoever calls this recalculates it
+     * with {@link #prioritise}.
+     */
+    public void reclassify(Category newCategory, Impact newImpact, Urgency newUrgency) {
+        if (!status.isOpen()) {
+            throw new InvalidInputException("%s is %s. Its classification can no longer be changed."
+                    .formatted(code == null ? "The incident" : code, status.getLabel().toLowerCase()));
+        }
+        if (newCategory == null || newImpact == null || newUrgency == null) {
+            throw new IllegalArgumentException("A category, an impact and an urgency are required");
+        }
+        this.category = newCategory;
+        this.impact = newImpact;
+        this.urgency = newUrgency;
     }
 
     // ---- resolution, rating, duplicates, escalation ----

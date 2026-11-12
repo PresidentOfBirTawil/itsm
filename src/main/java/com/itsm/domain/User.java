@@ -47,6 +47,9 @@ public abstract class User {
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
+    /** False once an administrator has disabled the account. A disabled user cannot sign in. */
+    private Boolean enabled;
+
     /** Required by JPA. */
     protected User() {
     }
@@ -93,6 +96,15 @@ public abstract class User {
 
     public String getEmail() {
         return email;
+    }
+
+    /** True unless an administrator has disabled the account. */
+    public boolean isEnabled() {
+        return enabled == null || enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public String getPasswordHash() {

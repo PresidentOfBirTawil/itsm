@@ -4,9 +4,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 /**
  * Who may open which URL. The rules are checked on the server for every
@@ -33,7 +36,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, SessionRegistry sessionRegistry)
+            throws Exception {
         http.authorizeHttpRequests(auth -> {
             auth.requestMatchers("/login", "/register", "/error").permitAll();
             auth.requestMatchers("/css/**", "/webjars/**", "/favicon.svg").permitAll();
@@ -55,6 +59,14 @@ public class SecurityConfig {
         http.logout(logout -> logout
                 .logoutSuccessUrl("/login?logout"));
 
+        // Keep a list of who is signed in, so that disabling an account can
+        // end that person's sessions at once (see SignedInSessions). A person
+        // may still be signed in on any number of devices.
+        http.sessionManagement(session -> session
+                .maximumSessions(-1)
+                .sessionRegistry(sessionRegistry)
+                .expiredUrl("/login?expired"));
+
         if (h2ConsoleEnabled) {
             // The H2 console is a small third-party web app: it has no CSRF
             // tokens and shows its pages in frames, so relax both for it only.
@@ -63,6 +75,18 @@ public class SecurityConfig {
         }
 
         return http.build();
+    }
+
+    /** The sessions of everyone who is signed in. */
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    /** Tells the session registry when a session ends, so that it does not grow for ever. */
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 
     /** Passwords are stored as BCrypt hashes, never as plain text. */
