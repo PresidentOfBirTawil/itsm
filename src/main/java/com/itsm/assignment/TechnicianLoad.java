@@ -12,16 +12,4 @@ public record TechnicianLoad(Technician technician, long openIncidents) {
     public boolean canTakeMore() {
         return technician.isAvailable() && openIncidents < technician.getMaxWorkload();
     }
-
-    /** Why this technician cannot take another incident, in words. Null if they can. */
-    public String reasonCannotTakeMore() {
-        if (!technician.isAvailable()) {
-            return technician.getName() + " is not available";
-        }
-        if (openIncidents >= technician.getMaxWorkload()) {
-            return "%s already has %d of %d open incidents".formatted(
-                    technician.getName(), openIncidents, technician.getMaxWorkload());
-        }
-        return null;
-    }
 }

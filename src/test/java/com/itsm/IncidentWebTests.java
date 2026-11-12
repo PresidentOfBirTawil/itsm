@@ -122,7 +122,7 @@ class IncidentWebTests {
                         .param("description", ""))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form",
-                        "title", "description", "serviceId", "categoryId", "impact", "urgency"))
+                        "title", "description", "serviceId", "impact", "urgency"))
                 .andExpect(content().string(containsString("Please choose the affected service")));
 
         assertThat(incidents.count()).isEqualTo(before);

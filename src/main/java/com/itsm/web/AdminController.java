@@ -3,7 +3,8 @@ package com.itsm.web;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.itsm.BusinessRuleException;
+import com.itsm.error.TechnicianUnavailableException;
+import com.itsm.intelligence.SlaRiskRanker;
 import com.itsm.assignment.AssignmentService;
 import com.itsm.assignment.AssignmentStrategy;
 import com.itsm.domain.Administrator;
@@ -32,7 +33,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
@@ -53,11 +53,12 @@ public class AdminController {
     private final AssignmentService assignmentService;
     private final SlaService slaService;
     private final IncidentPages incidentPages;
+    private final SlaRiskRanker slaRiskRanker;
 
     public AdminController(AdministratorRepository administrators, IncidentRepository incidents,
                            AuditEntryRepository auditEntries, EmailMessageRepository emails,
                            IncidentService incidentService, AssignmentService assignmentService,
-                           SlaService slaService, IncidentPages incidentPages) {
+                           SlaService slaService, IncidentPages incidentPages, SlaRiskRanker slaRiskRanker) {
         this.administrators = administrators;
         this.incidents = incidents;
         this.auditEntries = auditEntries;
@@ -66,6 +67,7 @@ public class AdminController {
         this.assignmentService = assignmentService;
         this.slaService = slaService;
         this.incidentPages = incidentPages;
+        this.slaRiskRanker = slaRiskRanker;
     }
 
     @GetMapping
@@ -93,6 +95,12 @@ public class AdminController {
 
         model.addAttribute("waiting", assignmentService.waitingForTechnician());
         model.addAttribute("activeStrategy", assignmentService.getActiveStrategy());
+
+        // Intelligent features: who is likely to miss a deadline next, and what has been escalated.
+        model.addAttribute("slaRisks", slaRiskRanker.rank(incidents.findByStatusIn(Status.openStatuses()),
+                LocalDateTime.now(), 5));
+        model.addAttribute("escalated", incidents.findByEscalatedAtIsNotNullAndStatusInOrderByEscalatedAtDescIdDesc(
+                Status.openStatuses()));
         return "admin/dashboard";
     }
 
@@ -124,42 +132,43 @@ public class AdminController {
 
     @PostMapping("/incidents/{code}/transition")
     public String changeStatus(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
-                               @RequestParam Status target, @RequestParam(required = false) String note,
-                               RedirectAttributes redirect) {
-        return incidentPages.changeStatus(code, target, note, currentAdministrator(user), INCIDENTS, redirect);
+                               @Valid @ModelAttribute TransitionForm form, RedirectAttributes redirect) {
+        return incidentPages.changeStatus(code, form, currentAdministrator(user), INCIDENTS, redirect);
+    }
+
+    @PostMapping("/incidents/{code}/notes")
+    public String addNote(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
+                          @Valid @ModelAttribute NoteForm form, RedirectAttributes redirect) {
+        return incidentPages.addNote(code, form, currentAdministrator(user), INCIDENTS, redirect);
     }
 
     /** Assign, or reassign, by hand. */
     @PostMapping("/incidents/{code}/assign")
     public String assign(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
-                         @RequestParam(required = false) Long technicianId, RedirectAttributes redirect) {
-        try {
-            Incident incident = incidentService.assign(code, technicianId, currentAdministrator(user));
-            redirect.addFlashAttribute("success",
-                    "%s is now assigned to %s.".formatted(code, incident.getAssignee().getName()));
-        } catch (BusinessRuleException e) {
-            redirect.addFlashAttribute("error", e.getMessage());
+                         @Valid @ModelAttribute AssignForm form, BindingResult result,
+                         RedirectAttributes redirect) {
+        if (result.hasErrors()) {
+            redirect.addFlashAttribute("error", "Please choose a technician.");
+            return "redirect:" + INCIDENTS + "/" + code;
         }
-        return "redirect:" + INCIDENTS + "/" + code;
+        return incidentPages.perform(INCIDENTS + "/" + code, redirect, () -> {
+            Incident incident = incidentService.assign(code, form.getTechnicianId(), currentAdministrator(user));
+            return "%s is now assigned to %s.".formatted(code, incident.getAssignee().getName());
+        });
     }
 
     /** Let the active strategy try again for an incident that has no technician. */
     @PostMapping("/incidents/{code}/auto-assign")
     public String autoAssign(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
                              RedirectAttributes redirect) {
-        try {
+        return incidentPages.perform(INCIDENTS + "/" + code, redirect, () -> {
             Incident incident = incidentService.autoAssign(code, currentAdministrator(user));
-            if (incident.getAssignee() != null) {
-                redirect.addFlashAttribute("success",
-                        "%s is now assigned to %s.".formatted(code, incident.getAssignee().getName()));
-            } else {
-                redirect.addFlashAttribute("error",
+            if (incident.getAssignee() == null) {
+                throw new TechnicianUnavailableException(
                         "No technician could be found for %s. The timeline shows why.".formatted(code));
             }
-        } catch (BusinessRuleException e) {
-            redirect.addFlashAttribute("error", e.getMessage());
-        }
-        return "redirect:" + INCIDENTS + "/" + code;
+            return "%s is now assigned to %s.".formatted(code, incident.getAssignee().getName());
+        });
     }
 
     // ---- settings ----
@@ -175,22 +184,18 @@ public class AdminController {
 
     /** Switches the assignment strategy. It applies to the very next incident; no restart is needed. */
     @PostMapping("/settings/assignment-strategy")
-    public String useStrategy(@RequestParam String key, RedirectAttributes redirect) {
-        try {
-            AssignmentStrategy strategy = assignmentService.useStrategy(key);
-            redirect.addFlashAttribute("success",
-                    "New incidents are now assigned with the %s strategy.".formatted(strategy.getName()));
-        } catch (BusinessRuleException e) {
-            redirect.addFlashAttribute("error", e.getMessage());
-        }
-        return "redirect:/admin/settings";
+    public String useStrategy(@Valid @ModelAttribute SettingsForms.Strategy form, RedirectAttributes redirect) {
+        return incidentPages.perform("/admin/settings", redirect, () -> {
+            AssignmentStrategy strategy = assignmentService.useStrategy(form.getKey());
+            return "New incidents are now assigned with the %s strategy.".formatted(strategy.getName());
+        });
     }
 
     /** Switches the short demo SLA deadlines on or off. */
     @PostMapping("/settings/demo-sla")
-    public String demoSla(@RequestParam boolean enabled, RedirectAttributes redirect) {
-        slaService.setDemoMode(enabled);
-        redirect.addFlashAttribute("success", enabled
+    public String demoSla(@Valid @ModelAttribute SettingsForms.DemoSla form, RedirectAttributes redirect) {
+        slaService.setDemoMode(form.getEnabled());
+        redirect.addFlashAttribute("success", form.getEnabled()
                 ? "Demo SLA is on. Incidents reported from now on get the short demo deadlines."
                 : "Demo SLA is off. Incidents reported from now on get the normal SLA policies.");
         return "redirect:/admin/settings";

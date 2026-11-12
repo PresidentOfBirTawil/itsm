@@ -1,11 +1,18 @@
 package com.itsm.web;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import com.itsm.BusinessRuleException;
+import com.itsm.error.ItsmException;
+import com.itsm.error.NotFoundException;
+import com.itsm.error.UnauthorizedOperationException;
+import com.itsm.intelligence.DuplicateMatch;
+import com.itsm.domain.AuditEntry;
 import com.itsm.domain.Incident;
+import com.itsm.domain.IncidentAction;
 import com.itsm.domain.Priority;
+import com.itsm.domain.Role;
 import com.itsm.domain.SlaStatus;
 import com.itsm.domain.Status;
 import com.itsm.domain.User;
@@ -67,7 +74,6 @@ public class IncidentPages {
         List<Transition> transitions = canWorkOn ? incident.getState().transitionsFor(viewer.getRole()) : List.of();
 
         model.addAttribute("incident", incident);
-        model.addAttribute("history", incidentService.history(incident));
         model.addAttribute("viewerRole", viewer.getRole());
         model.addAttribute("canWorkOn", canWorkOn);
         model.addAttribute("transitions", transitions);
@@ -78,7 +84,26 @@ public class IncidentPages {
                 .collect(Collectors.joining(", ")));
         model.addAttribute("basePath", basePath);
         model.addAttribute("priorityRule", priorityCalculator.describeRule());
+
+        // What the user may add: a note while the incident is not closed, a rating once the fix is confirmed.
+        model.addAttribute("canAddNote", canWorkOn && incident.getState().allowsNotes());
+        model.addAttribute("canRate", viewer.getRole() == Role.EMPLOYEE && canWorkOn
+                && incident.getState().allowsRating() && incident.getRating() == null);
+
+        // What the intelligent features found, each with its explanation.
+        List<AuditEntry> history = incidentService.history(incident);
+        model.addAttribute("history", history);
+        model.addAttribute("duplicate", DuplicateMatch.of(incident));
+        model.addAttribute("laterDuplicates", viewer.getRole() == Role.EMPLOYEE ? List.of()
+                : incidentService.possibleDuplicatesOf(incident));
+        model.addAttribute("categoryNote", noteOf(history, IncidentAction.CATEGORY_SUGGESTED));
+        model.addAttribute("escalationNote", noteOf(history, IncidentAction.ESCALATED));
         return DETAIL_VIEW;
+    }
+
+    private static String noteOf(List<AuditEntry> history, IncidentAction action) {
+        return history.stream().filter(entry -> entry.getAction() == action)
+                .map(AuditEntry::getNote).findFirst().orElse(null);
     }
 
     /**
@@ -107,19 +132,41 @@ public class IncidentPages {
         return SEARCH_VIEW;
     }
 
-    /**
-     * Handles a click on a status button, then goes back to the incident page.
-     * A refused move is shown there as an error message; nothing has changed.
-     */
-    public String changeStatus(String code, Status target, String note, User actor, String basePath,
+    // ---- buttons on the incident page ----
+
+    /** A status button was pressed. */
+    public String changeStatus(String code, TransitionForm form, User actor, String basePath,
                                RedirectAttributes redirect) {
+        return perform(basePath + "/" + code, redirect, () -> {
+            Incident incident = incidentService.changeStatus(code, form.getTarget(), actor, form.getNote());
+            return "%s is now %s.".formatted(incident.getCode(), incident.getStatus().getLabel().toLowerCase());
+        });
+    }
+
+    /** "Add a note" was pressed. */
+    public String addNote(String code, NoteForm form, User actor, String basePath, RedirectAttributes redirect) {
+        return perform(basePath + "/" + code, redirect, () -> {
+            incidentService.addNote(code, actor, form.getNote());
+            return "Your note has been added to %s.".formatted(code);
+        });
+    }
+
+    /**
+     * Carries out an action and goes back to the given page. If the action
+     * breaks a rule, the rule's message is shown there as an error and nothing
+     * has changed. "Not found" and "not allowed" are not messages but whole
+     * pages, so those are passed on to the {@link ErrorHandler}.
+     *
+     * @param action does the work and returns the success message
+     */
+    public String perform(String backTo, RedirectAttributes redirect, Supplier<String> action) {
         try {
-            Incident incident = incidentService.changeStatus(code, target, actor, note);
-            redirect.addFlashAttribute("success",
-                    "%s is now %s.".formatted(incident.getCode(), incident.getStatus().getLabel().toLowerCase()));
-        } catch (BusinessRuleException e) {
+            redirect.addFlashAttribute("success", action.get());
+        } catch (NotFoundException | UnauthorizedOperationException e) {
+            throw e;
+        } catch (ItsmException e) {
             redirect.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:" + basePath + "/" + code;
+        return "redirect:" + backTo;
     }
 }

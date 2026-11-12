@@ -49,6 +49,66 @@
         </div>
     </div>
 
+    <!-- Escalated: P1 incidents nobody acknowledged in time -->
+    <div class="card border border-dark mb-4" th:unless="${#lists.isEmpty(escalated)}">
+        <div class="card-header">
+            <i class="bi bi-arrow-up-circle me-1"></i>
+            <span th:text="${escalated.size() == 1} ? '1 escalated incident needs your attention' : |${escalated.size()} escalated incidents need your attention|">1 escalated incident</span>
+        </div>
+        <div class="card-body pb-0">
+            <p class="small text-body-secondary mb-2">
+                Escalated automatically: priority P1, and no technician acknowledged them within the response time.
+            </p>
+        </div>
+        <div class="card-body p-0">
+            <div th:replace="~{fragments/ui :: incidentTable(${escalated}, '', 'service,priority,status,sla,assignee,due', '/admin/incidents')}"></div>
+        </div>
+    </div>
+
+    <!-- SLA risk list: who misses a deadline next if nobody acts -->
+    <div class="card mb-4">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span><i class="bi bi-graph-up-arrow me-1"></i>Most likely to breach next</span>
+            <span class="small fw-normal text-body-secondary">open incidents, least time left first</span>
+        </div>
+        <div class="text-center text-body-secondary py-4" th:if="${#lists.isEmpty(slaRisks)}">
+            <i class="bi bi-emoji-smile fs-2 d-block mb-1"></i>
+            No open incident has a deadline coming up.
+        </div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(slaRisks)}">
+            <table class="table mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">Code</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Priority</th>
+                    <th scope="col">Assignee</th>
+                    <th scope="col" style="min-width: 8rem">Time used</th>
+                    <th scope="col">Why it is on this list</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="risk : ${slaRisks}">
+                    <td class="fw-semibold text-nowrap">
+                        <a th:href="@{|/admin/incidents/${risk.incident.code}|}" th:text="${risk.incident.code}">INC-0001</a>
+                    </td>
+                    <td th:text="${risk.incident.title}">Title</td>
+                    <td><th:block th:replace="~{fragments/ui :: priorityBadge(${risk.incident.priority})}"></th:block></td>
+                    <td th:text="${risk.incident.assignee != null} ? ${risk.incident.assignee.name} : '—'">Technician</td>
+                    <td>
+                        <div class="progress" style="height: .5rem" role="progressbar" aria-label="Time used"
+                             aria-valuemin="0" aria-valuemax="100" th:attr="aria-valuenow=${risk.percentUsed()}">
+                            <div class="progress-bar" th:style="|width: ${risk.percentUsed()}%|"
+                                 th:classappend="${risk.percentUsed() >= 75} ? 'bg-warning' : 'bg-success'"></div>
+                        </div>
+                    </td>
+                    <td class="small" th:text="${risk.explain()}">Response due in 3 min · 40% of the time used</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="row g-4">
         <!-- Technician workload -->
         <div class="col-lg-7">

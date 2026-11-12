@@ -24,4 +24,10 @@ public final class VerifiedState implements IncidentState {
                 .by(Role.TECHNICIAN, "Close")
                 .by(Role.ADMIN, "Close"));
     }
+
+    /** The fix is confirmed, so the reporter can now say how good it was. */
+    @Override
+    public boolean allowsRating() {
+        return true;
+    }
 }

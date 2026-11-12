@@ -6,6 +6,7 @@ import java.util.List;
 import com.itsm.domain.Incident;
 import com.itsm.domain.Role;
 import com.itsm.domain.Status;
+import com.itsm.error.InvalidStateTransitionException;
 
 /** The technician says it is fixed. The reporter now confirms that, or reopens the incident. */
 public final class ResolvedState implements IncidentState {
@@ -28,6 +29,14 @@ public final class ResolvedState implements IncidentState {
                         .by(Role.EMPLOYEE, "Not fixed, reopen")
                         .by(Role.ADMIN, "Reopen")
                         .withNote());
+    }
+
+    /** An incident cannot count as resolved unless someone has written down what was done. */
+    @Override
+    public void checkEntry(Incident incident) {
+        if (incident.getResolution() == null) {
+            throw new InvalidStateTransitionException(incident, status(), "no resolution has been recorded");
+        }
     }
 
     @Override

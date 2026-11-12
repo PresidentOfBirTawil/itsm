@@ -20,7 +20,7 @@ public class IncidentForm {
     @NotNull(message = "Please choose the affected service")
     private Long serviceId;
 
-    @NotNull(message = "Please choose a category")
+    /** Optional: when left empty, the system chooses a category from the title and description. */
     private Long categoryId;
 
     @NotNull(message = "Please choose the impact")

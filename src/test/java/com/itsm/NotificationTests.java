@@ -1,6 +1,7 @@
 package com.itsm;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,9 +24,12 @@ import com.itsm.domain.Employee;
 import com.itsm.domain.Impact;
 import com.itsm.domain.Incident;
 import com.itsm.domain.Notification;
+import com.itsm.domain.Priority;
+import com.itsm.domain.SlaPolicy;
 import com.itsm.domain.Status;
 import com.itsm.domain.Urgency;
 import com.itsm.domain.User;
+import com.itsm.error.MissingSlaConfigurationException;
 import com.itsm.notification.EmailChannel;
 import com.itsm.notification.InAppChannel;
 import com.itsm.repository.CategoryRepository;
@@ -33,6 +37,7 @@ import com.itsm.repository.EmailMessageRepository;
 import com.itsm.repository.ITServiceRepository;
 import com.itsm.repository.IncidentRepository;
 import com.itsm.repository.NotificationRepository;
+import com.itsm.repository.SlaPolicyRepository;
 import com.itsm.repository.UserRepository;
 import com.itsm.seed.DataSeeder;
 import com.itsm.service.IncidentService;
@@ -84,6 +89,8 @@ class NotificationTests {
     private ITServiceRepository services;
     @Autowired
     private CategoryRepository categories;
+    @Autowired
+    private SlaPolicyRepository slaPolicies;
     @Autowired
     private TransactionTemplate transaction;
 
@@ -247,6 +254,26 @@ class NotificationTests {
         assertThat(incidents.findByCode(reported.getFirst().getCode())).isEmpty();
         assertThat(notifications.count()).isEqualTo(notificationsBefore);
         assertThat(emails.count()).isEqualTo(emailsBefore);
+    }
+
+    @Test
+    void aReportThatFailsHalfWayLeavesNothingBehind() {
+        // Take away the SLA policy for P4, so that reporting a P4 incident fails after the incident row was written.
+        SlaPolicy p4 = slaPolicies.findByPriority(Priority.P4).orElseThrow();
+        slaPolicies.delete(p4);
+        long incidentsBefore = incidents.count();
+        long notificationsBefore = notifications.count();
+        try {
+            assertThatThrownBy(() -> incidentService.report((Employee) user("emp1@itsm.local"),
+                    "Desk lamp flickers", "Details.", services.findByName("Email & Collaboration").orElseThrow().getId(),
+                    categories.findByNameIgnoreCase("Hardware").orElseThrow().getId(), Impact.LOW, Urgency.LOW))
+                    .isInstanceOf(MissingSlaConfigurationException.class);
+
+            assertThat(incidents.count()).isEqualTo(incidentsBefore);         // no half-made incident
+            assertThat(notifications.count()).isEqualTo(notificationsBefore); // and nobody was told about one
+        } finally {
+            slaPolicies.save(new SlaPolicy(Priority.P4, p4.getResponseMinutes(), p4.getResolutionMinutes()));
+        }
     }
 
     // ---- the bell and the outbox ----

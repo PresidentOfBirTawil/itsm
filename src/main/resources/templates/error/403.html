@@ -6,7 +6,7 @@
     <div class="text-center py-5">
         <div class="error-code">403</div>
         <h1 class="h3 mt-3">You do not have access to this page</h1>
-        <p class="text-body-secondary">Your account's role is not allowed to open it.</p>
+        <p class="text-body-secondary" th:text="${reason} ?: 'Your account\'s role is not allowed to open it.'">Your account's role is not allowed to open it.</p>
         <a class="btn btn-primary" th:href="@{/dashboard}">Back to my dashboard</a>
     </div>
 </main>

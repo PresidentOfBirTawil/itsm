@@ -3,9 +3,9 @@ package com.itsm.web;
 import java.util.List;
 
 import com.itsm.domain.Notification;
+import com.itsm.error.NotFoundException;
 import com.itsm.repository.NotificationRepository;
 import com.itsm.security.ItsmUserDetails;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.server.ResponseStatusException;
 
 /** The bell: each signed-in user's own notifications, whatever their role. */
 @Controller
@@ -40,7 +39,7 @@ public class NotificationController {
     public String open(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable Long id) {
         Notification notification = notifications.findById(id)
                 .filter(found -> found.getRecipient().getId().equals(user.getId())) // only your own
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException("That notification does not exist."));
         notification.markRead();
         if (notification.getIncident() == null) {
             return "redirect:/notifications";

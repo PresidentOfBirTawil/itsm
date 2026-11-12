@@ -12,7 +12,10 @@ public enum NotificationType {
     RESOLVED(true),
     CLOSED(true),
     SLA_AT_RISK(true),
-    SLA_BREACHED(true);
+    SLA_BREACHED(true),
+    ESCALATED(true),
+    NOTE_ADDED(false),
+    RATED(false);
 
     private final boolean emailed;
 

@@ -6,7 +6,7 @@
     <div class="text-center py-5">
         <div class="error-code">404</div>
         <h1 class="h3 mt-3">Page not found</h1>
-        <p class="text-body-secondary">There is nothing at this address.</p>
+        <p class="text-body-secondary" th:text="${reason} ?: 'There is nothing at this address.'">There is nothing at this address.</p>
         <a class="btn btn-primary" th:href="@{/dashboard}">Back to my dashboard</a>
     </div>
 </main>

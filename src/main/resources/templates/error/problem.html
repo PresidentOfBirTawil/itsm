@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<!-- Shown when a request breaks one of the application's rules and there is no page to go back to. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('That did not work', 'none', ~{::main})}">
+<body>
+<main>
+    <div class="text-center py-5">
+        <div class="error-code" th:text="${status}">400</div>
+        <h1 class="h3 mt-3">That did not work</h1>
+        <p class="text-body-secondary" th:text="${reason} ?: 'The request could not be completed.'">Why.</p>
+        <p class="text-body-secondary small">Nothing has been changed.</p>
+        <a class="btn btn-primary" th:href="@{/dashboard}">Back to my dashboard</a>
+    </div>
+</main>
+</body>
+</html>

@@ -1,5 +1,7 @@
 package com.itsm.sla;
 
+import com.itsm.error.MissingSlaConfigurationException;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -14,6 +16,7 @@ import com.itsm.domain.SlaSignal;
 import com.itsm.domain.Status;
 import com.itsm.event.IncidentEvent;
 import com.itsm.event.IncidentEventPublisher;
+import com.itsm.intelligence.AutoEscalation;
 import com.itsm.repository.IncidentRepository;
 import com.itsm.repository.SettingRepository;
 import com.itsm.repository.SlaPolicyRepository;
@@ -46,13 +49,15 @@ public class SlaService {
     private final SettingRepository settings;
     private final IncidentRepository incidents;
     private final IncidentEventPublisher events;
+    private final AutoEscalation autoEscalation;
 
     public SlaService(SlaPolicyRepository slaPolicies, SettingRepository settings, IncidentRepository incidents,
-                      IncidentEventPublisher events) {
+                      IncidentEventPublisher events, AutoEscalation autoEscalation) {
         this.slaPolicies = slaPolicies;
         this.settings = settings;
         this.incidents = incidents;
         this.events = events;
+        this.autoEscalation = autoEscalation;
     }
 
     // ---- which policy applies ----
@@ -61,14 +66,14 @@ public class SlaService {
      * The SLA policy for a priority. Normally the one an administrator
      * configured; in demo mode a short stand-in that is not stored.
      *
-     * @throws MissingSlaPolicyException if no policy is configured for the priority
+     * @throws MissingSlaConfigurationException if no policy is configured for the priority
      */
     @Transactional(readOnly = true)
     public SlaPolicy policyFor(Priority priority) {
         if (isDemoMode()) {
             return demoPolicy(priority);
         }
-        return slaPolicies.findByPriority(priority).orElseThrow(() -> new MissingSlaPolicyException(priority));
+        return slaPolicies.findByPriority(priority).orElseThrow(() -> new MissingSlaConfigurationException(priority));
     }
 
     @Transactional(readOnly = true)
@@ -106,7 +111,10 @@ public class SlaService {
     @Transactional
     public int checkOpenIncidents(LocalDateTime now) {
         List<Incident> open = incidents.findByStatusIn(Status.openStatuses());
-        open.forEach(incident -> refresh(incident, now));
+        for (Incident incident : open) {
+            refresh(incident, now);
+            autoEscalation.escalateIfDue(incident, now); // a P1 nobody has acknowledged in time
+        }
         return open.size();
     }
 

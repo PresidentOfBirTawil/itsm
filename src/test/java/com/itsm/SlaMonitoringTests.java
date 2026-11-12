@@ -114,8 +114,8 @@ class SlaMonitoringTests {
 
         slaService.checkOpenIncidents(incident.getCreatedAt().plusMinutes(6));
 
-        AuditEntry breach = incidentService.history(incident).getLast();
-        assertThat(breach.getAction()).isEqualTo(IncidentAction.SLA_BREACHED);
+        AuditEntry breach = incidentService.history(incident).stream()
+                .filter(entry -> entry.getAction() == IncidentAction.SLA_BREACHED).findFirst().orElseThrow();
         assertThat(breach.getActorName()).isEqualTo("System");
         assertThat(breach.getNote()).contains("response deadline", "was missed");
     }

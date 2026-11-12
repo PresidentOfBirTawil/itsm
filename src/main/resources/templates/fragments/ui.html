@@ -40,6 +40,12 @@
     <span th:if="${sla == null}">—</span>
 </th:block>
 
+<!-- A rating from 1 to 5 as stars. -->
+<span th:fragment="stars(rating)" class="text-warning" th:attr="aria-label=|${rating} out of 5|">
+    <i class="bi" th:each="position : ${#numbers.sequence(1, 5)}"
+       th:classappend="${position <= rating} ? 'bi-star-fill' : 'bi-star'"></i>
+</span>
+
 <!-- A length of time given in minutes, written the way people say it: "5 min", "2 h", "1 h 30 min". -->
 <span th:fragment="duration(minutes)"
       th:text="${minutes < 60} ? (${minutes} + ' min') : (${minutes % 60 == 0} ? (${minutes / 60} + ' h') : (${minutes / 60} + ' h ' + ${minutes % 60} + ' min'))">5 min</span>
@@ -79,7 +85,12 @@
                 <td class="fw-semibold text-nowrap">
                     <a th:href="@{|${basePath}/${incident.code}|}" th:text="${incident.code}">INC-0001</a>
                 </td>
-                <td th:text="${incident.title}">Title</td>
+                <td>
+                    <span th:text="${incident.title}">Title</span>
+                    <span class="badge text-bg-dark ms-1" th:if="${incident.escalated}" title="Escalated to the administrators">escalated</span>
+                    <span class="badge text-bg-warning ms-1" th:if="${incident.possibleDuplicateOf != null}"
+                          title="Looks like a duplicate of an earlier incident">possible duplicate</span>
+                </td>
                 <td th:if="${#strings.contains(columns, 'service')}" th:text="${incident.service.name}">Service</td>
                 <td th:if="${#strings.contains(columns, 'category')}"
                     th:text="${incident.category != null} ? ${incident.category.name} : '—'">Category</td>

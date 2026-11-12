@@ -47,11 +47,14 @@
                                 <label for="categoryId" class="form-label">Category</label>
                                 <select class="form-select" id="categoryId" th:field="*{categoryId}"
                                         th:errorclass="is-invalid">
-                                    <option value="">Choose a category…</option>
+                                    <option value="">Let the system choose</option>
                                     <option th:each="category : ${categories}" th:value="${category.id}"
                                             th:text="${category.name}">Category</option>
                                 </select>
                                 <div class="invalid-feedback" th:errors="*{categoryId}">Category error</div>
+                                <div class="form-text">
+                                    Not sure? Leave it. The category is worked out from the words you wrote.
+                                </div>
                             </div>
                         </div>
 

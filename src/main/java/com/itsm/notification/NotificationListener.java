@@ -28,6 +28,9 @@ import org.springframework.stereotype.Component;
  *   <li>closed: the reporter and the technician</li>
  *   <li>any other status change: the reporter</li>
  *   <li>SLA at risk or breached: the technician and the administrators</li>
+ *   <li>escalated: the administrators</li>
+ *   <li>a note: the reporter and the technician</li>
+ *   <li>a rating: the technician</li>
  * </ul>
  * Apart from that first confirmation, nobody is notified about something they did themselves.
  */
@@ -87,6 +90,20 @@ public class NotificationListener implements IncidentEventListener {
                 outbox.addAll(NotificationType.SLA_BREACHED, administrators.findAll(),
                         code + ": SLA breached", event.note());
             }
+
+            case ESCALATED -> outbox.addAll(NotificationType.ESCALATED, administrators.findAll(),
+                    code + " has been escalated to you", event.note());
+
+            // A note goes to the other people on the incident: the reporter and the technician.
+            case NOTE_ADDED -> {
+                String title = "%s: %s added a note".formatted(code, event.actor() == null ? "someone"
+                        : event.actor().getName());
+                outbox.add(NotificationType.NOTE_ADDED, incident.getReporter(), title, event.note());
+                outbox.add(NotificationType.NOTE_ADDED, incident.getAssignee(), title, event.note());
+            }
+
+            case RATED -> outbox.add(NotificationType.RATED, incident.getAssignee(),
+                    code + ": the reporter rated your resolution", event.note());
 
             default -> {
                 // Nothing to tell anyone, e.g. when the priority has just been calculated.

@@ -1,5 +1,6 @@
 package com.itsm.repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -55,6 +56,24 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
     /** Every incident in one of the given statuses. Used by the SLA check. */
     @EntityGraph(attributePaths = {"reporter", "service", "category", "assignee"})
     List<Incident> findByStatusIn(Collection<Status> statuses);
+
+    // ---- duplicates and escalation ----
+
+    /** An open incident with exactly this title that the same person reported against the same service. */
+    Optional<Incident> findFirstByReporterIdAndServiceIdAndTitleIgnoreCaseAndStatusInOrderByIdDesc(
+            Long reporterId, Long serviceId, String title, Collection<Status> statuses);
+
+    /** Other incidents on one service, in the given statuses, reported since the given moment. */
+    @EntityGraph(attributePaths = "service")
+    List<Incident> findByServiceIdAndStatusInAndCreatedAtGreaterThanEqualAndIdNot(
+            Long serviceId, Collection<Status> statuses, LocalDateTime since, Long excludedId);
+
+    /** Later incidents flagged as possible duplicates of the given one. */
+    List<Incident> findByPossibleDuplicateOfIdOrderByIdAsc(Long originalId);
+
+    /** Escalated incidents in the given statuses, most recently escalated first. */
+    @EntityGraph(attributePaths = {"reporter", "service", "category", "assignee"})
+    List<Incident> findByEscalatedAtIsNotNullAndStatusInOrderByEscalatedAtDescIdDesc(Collection<Status> statuses);
 
     // ---- numbers for the administrator's dashboard ----
 

@@ -10,7 +10,12 @@ public enum IncidentAction {
     ASSIGNMENT_FAILED("Automatic assignment failed"),
     STATUS_CHANGED("Status changed"),
     SLA_AT_RISK("SLA at risk"),
-    SLA_BREACHED("SLA breached");
+    SLA_BREACHED("SLA breached"),
+    ESCALATED("Escalated to the administrators"),
+    DUPLICATE_SUSPECTED("Possible duplicate found"),
+    CATEGORY_SUGGESTED("Category chosen automatically"),
+    NOTE_ADDED("Note added"),
+    RATED("Resolution rated");
 
     private final String label;
 

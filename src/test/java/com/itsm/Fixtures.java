@@ -95,7 +95,12 @@ final class Fixtures {
             return incident;
         }
         incident.assignTo(technician(1, "Ravi Kumar", 5));                // CLASSIFIED -> ASSIGNED
-        pathTo(status).forEach(incident::transitionTo);
+        for (Status step : pathTo(status)) {
+            if (step == Status.RESOLVED) {
+                incident.recordResolution("Restarted the service."); // needed before an incident can be RESOLVED
+            }
+            incident.transitionTo(step);
+        }
         return incident;
     }
 }

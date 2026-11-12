@@ -11,7 +11,7 @@ import com.itsm.assignment.LeastLoadedStrategy;
 import com.itsm.assignment.RoundRobinStrategy;
 import com.itsm.assignment.SkillBasedStrategy;
 import com.itsm.assignment.TechnicianLoad;
-import com.itsm.assignment.TechnicianUnavailableException;
+import com.itsm.error.TechnicianUnavailableException;
 import com.itsm.domain.Category;
 import com.itsm.domain.Impact;
 import com.itsm.domain.Incident;
