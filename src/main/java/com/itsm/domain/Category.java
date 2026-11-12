@@ -85,6 +85,12 @@ public class Category {
         keywords.add(keyword.trim().toLowerCase());
     }
 
+    /** Replaces all keywords with the given ones. Blank entries are ignored. */
+    public void replaceKeywords(Collection<String> newKeywords) {
+        keywords.clear();
+        newKeywords.stream().filter(keyword -> keyword != null && !keyword.isBlank()).forEach(this::addKeyword);
+    }
+
     public void removeKeyword(String keyword) {
         if (keyword != null) {
             keywords.remove(keyword.trim().toLowerCase());

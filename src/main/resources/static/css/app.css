@@ -95,3 +95,27 @@ a.stat-link:hover .card {
 .timeline .list-group-item {
     border-left: 3px solid var(--bs-primary-border-subtle);
 }
+
+/* The notification bell in the navbar. */
+.navbar-bell {
+    color: rgba(255, 255, 255, .85);
+    font-size: 1.15rem;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.navbar-bell:hover,
+.navbar-bell.active {
+    color: #fff;
+}
+
+.navbar-bell-count {
+    position: absolute;
+    top: -.55rem;
+    left: .7rem;
+    font-size: .65rem;
+}
+
+.notification-unread {
+    background-color: var(--bs-primary-bg-subtle);
+}

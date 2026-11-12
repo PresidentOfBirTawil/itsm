@@ -61,11 +61,18 @@ public abstract class User {
     public abstract Role getRole();
 
     /**
-     * May this user open the given incident? Each kind of user answers in its
-     * own way: an employee for incidents they reported, a technician for
-     * incidents assigned to them, an administrator for all of them.
+     * May this user look at the given incident? Each kind of user answers in
+     * its own way: an employee only for incidents they reported, technicians
+     * and administrators for all of them.
      */
-    public abstract boolean canAccess(Incident incident);
+    public abstract boolean canView(Incident incident);
+
+    /**
+     * May this user act on the given incident (change its status)? An
+     * employee on incidents they reported, a technician on incidents assigned
+     * to them, an administrator on all of them.
+     */
+    public abstract boolean canWorkOn(Incident incident);
 
     /** Emails are stored trimmed and in lower case so that sign-in is not case-sensitive. */
     public static String normaliseEmail(String email) {

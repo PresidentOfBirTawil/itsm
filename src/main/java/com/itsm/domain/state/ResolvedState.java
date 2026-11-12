@@ -34,4 +34,12 @@ public final class ResolvedState implements IncidentState {
     public void onEnter(Incident incident, Status from, LocalDateTime now) {
         incident.stampResolved(now);
     }
+
+    /** Going back to IN_PROGRESS means the fix did not hold: the incident is no longer resolved. */
+    @Override
+    public void onExit(Incident incident, Status to, LocalDateTime now) {
+        if (to == Status.IN_PROGRESS) {
+            incident.reopen(now);
+        }
+    }
 }

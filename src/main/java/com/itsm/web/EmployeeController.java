@@ -76,7 +76,7 @@ public class EmployeeController {
         model.addAttribute("heading", "My incidents");
         model.addAttribute("subheading", "Every incident you have reported, newest first.");
         model.addAttribute("emptyMessage", "You have not reported any incidents yet.");
-        model.addAttribute("columns", "service,category,priority,status,assignee,reported");
+        model.addAttribute("columns", "service,category,priority,status,sla,assignee,reported");
         model.addAttribute("basePath", INCIDENTS);
         model.addAttribute("canReport", true);
         model.addAttribute("incidents", incidents.findByReporterIdOrderByCreatedAtDescIdDesc(user.getId()));

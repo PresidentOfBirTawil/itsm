@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Email outbox', 'emails', ~{::main})}">
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Email outbox</h1>
+        <p class="text-body-secondary mb-0">
+            Email is simulated: nothing leaves the application. These are the emails it would have sent, newest first.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="text-center text-body-secondary py-5" th:if="${#lists.isEmpty(emails)}">
+            <i class="bi bi-envelope fs-1 d-block mb-2"></i>
+            No emails have been sent yet.
+        </div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(emails)}">
+            <table class="table mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">Sent</th>
+                    <th scope="col">To</th>
+                    <th scope="col">Subject and text</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="email : ${emails}">
+                    <td class="text-nowrap" th:text="${#temporals.format(email.createdAt, 'dd MMM yyyy, HH:mm:ss')}">01 Jan 2026, 10:05:00</td>
+                    <td>
+                        <span th:text="${email.toName}">Name</span>
+                        <div class="small text-body-secondary" th:text="${email.toAddress}">name@example.com</div>
+                    </td>
+                    <td>
+                        <span class="fw-semibold" th:text="${email.subject}">Subject</span>
+                        <div class="small text-body-secondary" th:if="${email.body != null}" th:text="${email.body}">Body</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

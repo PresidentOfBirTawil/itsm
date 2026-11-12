@@ -1,9 +1,7 @@
 package com.itsm.domain.state;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-import com.itsm.domain.Incident;
 import com.itsm.domain.Role;
 import com.itsm.domain.Status;
 
@@ -25,14 +23,6 @@ public final class InProgressState implements IncidentState {
         return List.of(
                 Transition.to(Status.RESOLVED).by(Role.TECHNICIAN, "Resolve").withNote(),
                 Transition.to(Status.AWAITING_INFO).by(Role.TECHNICIAN, "Request information").withNote());
-    }
-
-    /** Coming back from RESOLVED means the fix did not hold: the incident is no longer resolved. */
-    @Override
-    public void onEnter(Incident incident, Status from, LocalDateTime now) {
-        if (from == Status.RESOLVED) {
-            incident.clearResolved();
-        }
     }
 
     @Override

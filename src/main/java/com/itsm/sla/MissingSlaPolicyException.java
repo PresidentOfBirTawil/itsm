@@ -1,4 +1,4 @@
-package com.itsm.service;
+package com.itsm.sla;
 
 import com.itsm.BusinessRuleException;
 import com.itsm.domain.Priority;

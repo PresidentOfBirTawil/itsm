@@ -29,7 +29,7 @@
             <div class="card h-100">
                 <div class="card-header">My incidents</div>
                 <div class="card-body p-0">
-                    <div th:replace="~{fragments/ui :: incidentTable(${incidents}, 'You have not reported any incidents yet.', 'service,priority,status,reported', '/employee/incidents')}"></div>
+                    <div th:replace="~{fragments/ui :: incidentTable(${incidents}, 'You have not reported any incidents yet.', 'service,priority,status,sla,reported', '/employee/incidents')}"></div>
                 </div>
             </div>
         </div>

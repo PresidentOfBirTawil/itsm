@@ -54,6 +54,10 @@ public interface IncidentState {
     default void onEnter(Incident incident, Status from, LocalDateTime now) {
     }
 
+    /** Called just before the incident leaves this state for {@code to}. */
+    default void onExit(Incident incident, Status to, LocalDateTime now) {
+    }
+
     /** Called when a priority has been set on an incident that is in this state. */
     default void onPrioritised(Incident incident) {
     }

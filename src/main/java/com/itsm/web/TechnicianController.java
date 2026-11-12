@@ -7,11 +7,15 @@ import com.itsm.domain.Status;
 import com.itsm.domain.Technician;
 import com.itsm.repository.IncidentRepository;
 import com.itsm.repository.TechnicianRepository;
+import com.itsm.search.IncidentSearchCriteria;
 import com.itsm.security.ItsmUserDetails;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,6 +71,14 @@ public class TechnicianController {
     private List<Incident> queueOf(Technician technician) {
         return incidents.findByAssigneeIdAndStatusInOrderByResolutionDueAscIdAsc(
                 technician.getId(), Status.openStatuses());
+    }
+
+    /** Search across all incidents, not only the technician's own. Results that are not theirs are view-only. */
+    @GetMapping("/search")
+    public String search(@Valid @ModelAttribute("criteria") IncidentSearchCriteria criteria,
+                         BindingResult result, Model model) {
+        model.addAttribute("heading", "Search incidents");
+        return incidentPages.search(model, criteria, result, INCIDENTS, "/technician/search");
     }
 
     // ---- one incident ----

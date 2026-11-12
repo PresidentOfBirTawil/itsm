@@ -21,6 +21,9 @@
         <div class="d-flex gap-2 fs-6">
             <span th:replace="~{fragments/ui :: statusBadge(${incident.status})}"></span>
             <th:block th:replace="~{fragments/ui :: priorityBadge(${incident.priority})}"></th:block>
+            <th:block th:if="${incident.slaStatus != null}">
+                <th:block th:replace="~{fragments/ui :: slaBadge(${incident.slaStatus})}"></th:block>
+            </th:block>
         </div>
     </div>
 
@@ -59,13 +62,20 @@
                             <span th:text="${incident.responseDue != null} ? ${#temporals.format(incident.responseDue, 'dd MMM yyyy, HH:mm')} : '—'">01 Jan 2026, 10:10</span>
                             <span class="text-body-secondary small" th:if="${incident.acknowledgedAt != null}"
                                   th:text="|· acknowledged ${#temporals.format(incident.acknowledgedAt, 'dd MMM yyyy, HH:mm')}|">· acknowledged</span>
+                            <span class="badge text-bg-danger ms-1" th:if="${incident.responseBreachedAt != null}">missed</span>
                         </dd>
 
                         <dt class="col-sm-4">Resolve by</dt>
                         <dd class="col-sm-8">
-                            <th:block th:replace="~{fragments/ui :: deadline(${incident.resolutionDue}, ${incident.overdue})}"></th:block>
+                            <span th:text="${incident.resolutionDue != null} ? ${#temporals.format(incident.resolutionDue, 'dd MMM yyyy, HH:mm')} : '—'">01 Jan 2026, 10:35</span>
                             <span class="text-body-secondary small" th:if="${incident.resolvedAt != null}"
                                   th:text="|· resolved ${#temporals.format(incident.resolvedAt, 'dd MMM yyyy, HH:mm')}|">· resolved</span>
+                            <span class="badge text-bg-danger ms-1" th:if="${incident.resolutionBreachedAt != null}">missed</span>
+                            <div class="small text-body-secondary" th:if="${incident.slaPausedAt != null}"
+                                 th:text="|The clock has been paused since ${#temporals.format(incident.slaPausedAt, 'dd MMM yyyy, HH:mm')} while waiting for information. The deadline will move back by the time spent waiting.|">Paused.</div>
+                            <div class="small text-body-secondary"
+                                 th:if="${incident.slaPausedAt == null and incident.slaPausedSeconds > 0}"
+                                 th:text="|Includes ${incident.slaPausedSeconds / 60} min added for time the clock was paused.|">Includes pauses.</div>
                         </dd>
 
                         <th:block th:if="${incident.closedAt != null}">
@@ -107,7 +117,10 @@
             <div class="card mb-4">
                 <div class="card-header">Change status</div>
                 <div class="card-body">
-                    <p class="text-body-secondary mb-0" th:if="${#lists.isEmpty(transitions)}">
+                    <p class="text-body-secondary mb-0" th:if="${!canWorkOn}">
+                        This incident is not assigned to you. You can read it, but only its technician can change it.
+                    </p>
+                    <p class="text-body-secondary mb-0" th:if="${canWorkOn and #lists.isEmpty(transitions)}">
                         There is no status change for you to make while the incident is
                         <span th:text="${#strings.toLowerCase(incident.status.label)}">assigned</span>.
                     </p>

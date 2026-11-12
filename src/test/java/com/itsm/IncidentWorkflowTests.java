@@ -29,7 +29,7 @@ import com.itsm.repository.UserRepository;
 import com.itsm.service.IncidentFactory;
 import com.itsm.service.IncidentNotFoundException;
 import com.itsm.service.IncidentService;
-import com.itsm.service.MissingSlaPolicyException;
+import com.itsm.sla.MissingSlaPolicyException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -502,9 +502,9 @@ class IncidentWorkflowTests {
         assertThat(incidentService.getFor(code, priya).getCode()).isEqualTo(code);
         assertThat(incidentService.getFor(code, sara).getCode()).isEqualTo(code);
         assertThat(incidentService.getFor(code, admin).getCode()).isEqualTo(code);
+        assertThat(incidentService.getFor(code, meera).getCode()).isEqualTo(code); // any technician may look
 
         assertThatThrownBy(() -> incidentService.getFor(code, rahul)).isInstanceOf(AccessDeniedException.class);
-        assertThatThrownBy(() -> incidentService.getFor(code, meera)).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> incidentService.getFor("INC-9999", admin))
                 .isInstanceOf(IncidentNotFoundException.class);
     }

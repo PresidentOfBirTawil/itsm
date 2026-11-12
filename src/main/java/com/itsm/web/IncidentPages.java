@@ -5,13 +5,23 @@ import java.util.stream.Collectors;
 
 import com.itsm.BusinessRuleException;
 import com.itsm.domain.Incident;
+import com.itsm.domain.Priority;
+import com.itsm.domain.SlaStatus;
 import com.itsm.domain.Status;
 import com.itsm.domain.User;
 import com.itsm.domain.state.Transition;
 import com.itsm.priority.PriorityCalculator;
+import com.itsm.repository.CategoryRepository;
+import com.itsm.repository.ITServiceRepository;
+import com.itsm.repository.IncidentRepository;
+import com.itsm.repository.TechnicianRepository;
+import com.itsm.search.IncidentSearchCriteria;
+import com.itsm.search.IncidentSpecifications;
 import com.itsm.service.IncidentService;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
@@ -23,13 +33,24 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class IncidentPages {
 
     static final String DETAIL_VIEW = "incidents/detail";
+    static final String SEARCH_VIEW = "incidents/search";
 
     private final IncidentService incidentService;
     private final PriorityCalculator priorityCalculator;
+    private final IncidentRepository incidents;
+    private final CategoryRepository categories;
+    private final ITServiceRepository services;
+    private final TechnicianRepository technicians;
 
-    public IncidentPages(IncidentService incidentService, PriorityCalculator priorityCalculator) {
+    public IncidentPages(IncidentService incidentService, PriorityCalculator priorityCalculator,
+                         IncidentRepository incidents, CategoryRepository categories,
+                         ITServiceRepository services, TechnicianRepository technicians) {
         this.incidentService = incidentService;
         this.priorityCalculator = priorityCalculator;
+        this.incidents = incidents;
+        this.categories = categories;
+        this.services = services;
+        this.technicians = technicians;
     }
 
     /**
@@ -41,11 +62,14 @@ public class IncidentPages {
      */
     public String show(Model model, String code, User viewer, String basePath) {
         Incident incident = incidentService.getFor(code, viewer);
-        List<Transition> transitions = incident.getState().transitionsFor(viewer.getRole());
+        // A technician may look at any incident but only gets buttons on their own.
+        boolean canWorkOn = viewer.canWorkOn(incident);
+        List<Transition> transitions = canWorkOn ? incident.getState().transitionsFor(viewer.getRole()) : List.of();
 
         model.addAttribute("incident", incident);
         model.addAttribute("history", incidentService.history(incident));
         model.addAttribute("viewerRole", viewer.getRole());
+        model.addAttribute("canWorkOn", canWorkOn);
         model.addAttribute("transitions", transitions);
         // The buttons that need a note, by their text, e.g. "Resolve, Request information". Empty if none does.
         model.addAttribute("noteNeededFor", transitions.stream()
@@ -55,6 +79,32 @@ public class IncidentPages {
         model.addAttribute("basePath", basePath);
         model.addAttribute("priorityRule", priorityCalculator.describeRule());
         return DETAIL_VIEW;
+    }
+
+    /**
+     * Fills the model for the search page: the incidents that match the
+     * filters, and the choices for the filter drop-downs.
+     *
+     * @param basePath   where this role's incident pages live; each result links to basePath/code
+     * @param searchPath the URL of the search page itself (where the filter form is sent)
+     */
+    public String search(Model model, IncidentSearchCriteria criteria, BindingResult result,
+                         String basePath, String searchPath) {
+        // If a filter could not be understood (for example a date that is not a date), show nothing rather than everything.
+        List<Incident> found = result.hasErrors() ? List.of()
+                : incidents.findAll(IncidentSpecifications.matching(criteria),
+                        Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+        model.addAttribute("incidents", found);
+        model.addAttribute("filtered", !criteria.isEmpty());
+        model.addAttribute("basePath", basePath);
+        model.addAttribute("searchPath", searchPath);
+        model.addAttribute("statuses", Status.values());
+        model.addAttribute("priorities", Priority.values());
+        model.addAttribute("slaStatuses", SlaStatus.values());
+        model.addAttribute("categories", categories.findAllByOrderByNameAsc());
+        model.addAttribute("services", services.findAllByOrderByCriticalityDescNameAsc());
+        model.addAttribute("technicians", technicians.findAllByOrderByNameAsc());
+        return SEARCH_VIEW;
     }
 
     /**

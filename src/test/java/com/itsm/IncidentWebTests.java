@@ -140,13 +140,17 @@ class IncidentWebTests {
     // ---- who can open an incident ----
 
     @Test
-    void anIncidentCanBeOpenedOnlyByItsReporterItsTechnicianAndAdministrators() throws Exception {
+    void anEmployeeSeesOnlyTheirOwnIncidentsAndOtherTechniciansCanOnlyRead() throws Exception {
         String code = reportPaymentOutage(employee()); // reported by Priya, assigned to Sara
 
         mvc.perform(get("/employee/incidents/" + code).session(signIn(RAHUL, DataSeeder.EMPLOYEE_PASSWORD)))
                 .andExpect(status().isForbidden());
+
+        // Another technician may read it, but gets no buttons.
         mvc.perform(get("/technician/incidents/" + code).session(signIn(RAVI, DataSeeder.TECHNICIAN_PASSWORD)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("This incident is not assigned to you")))
+                .andExpect(content().string(not(containsString("name=\"target\""))));
 
         mvc.perform(get("/technician/incidents/" + code).session(signIn(SARA, DataSeeder.TECHNICIAN_PASSWORD)))
                 .andExpect(status().isOk());
@@ -357,11 +361,12 @@ class IncidentWebTests {
         mvc.perform(get("/admin/incidents/" + code).session(admin))
                 .andExpect(content().string(containsString("Technician changed")))
                 .andExpect(content().string(containsString("Moved from Sara Thomas to Ravi Kumar.")));
-        // It is now in Ravi's queue and no longer open to Sara.
+        // Ravi now has the button; Sara can still read the incident but can no longer act on it.
         mvc.perform(get("/technician/incidents/" + code).session(signIn(RAVI, DataSeeder.TECHNICIAN_PASSWORD)))
-                .andExpect(status().isOk());
+                .andExpect(content().string(containsString(">Acknowledge</button>")));
         mvc.perform(get("/technician/incidents/" + code).session(signIn(SARA, DataSeeder.TECHNICIAN_PASSWORD)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString(">Acknowledge</button>"))));
     }
 
     @Test

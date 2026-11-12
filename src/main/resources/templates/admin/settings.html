@@ -8,8 +8,8 @@
         <p class="text-body-secondary mb-0">Changes take effect straight away. No restart is needed.</p>
     </div>
 
-    <div class="row">
-        <div class="col-lg-8">
+    <div class="row g-4">
+        <div class="col-lg-7">
             <div class="card">
                 <div class="card-header">Assignment strategy</div>
                 <div class="card-body">
@@ -21,7 +21,7 @@
                     <form method="post" th:action="@{/admin/settings/assignment-strategy}">
                         <div class="list-group mb-3">
                             <label class="list-group-item d-flex gap-3" th:each="strategy : ${strategies}">
-                                <input class="form-check-input flex-shrink-0" type="radio" name="key"
+                                <input class="form-check-input flex-shrink-0" type="radio" name="key" required
                                        th:value="${strategy.key}" th:checked="${strategy.key == activeStrategy.key}">
                                 <span>
                                     <span class="fw-semibold" th:text="${strategy.name}">Skill-based</span>
@@ -33,6 +33,53 @@
                         </div>
                         <button type="submit" class="btn btn-primary">Use this strategy</button>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Demo SLA</span>
+                    <span class="badge" th:classappend="${demoSla} ? 'text-bg-warning' : 'text-bg-secondary'"
+                          th:text="${demoSla} ? 'on' : 'off'">off</span>
+                </div>
+                <div class="card-body">
+                    <p class="text-body-secondary">
+                        For demonstrations. While it is on, new incidents get these short deadlines instead of the
+                        real SLA policies, so a warning and a breach can be shown within minutes. Incidents that
+                        already exist keep their deadlines.
+                    </p>
+                    <table class="table table-sm mb-3">
+                        <thead>
+                        <tr>
+                            <th scope="col">Priority</th>
+                            <th scope="col">Respond within</th>
+                            <th scope="col">Resolve within</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="policy : ${demoPolicies}">
+                            <td th:text="${policy.priority}">P1</td>
+                            <td><span th:replace="~{fragments/ui :: duration(${policy.responseMinutes})}"></span></td>
+                            <td><span th:replace="~{fragments/ui :: duration(${policy.resolutionMinutes})}"></span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="d-flex flex-wrap gap-2">
+                        <form method="post" th:action="@{/admin/settings/demo-sla}">
+                            <input type="hidden" name="enabled" th:value="${!demoSla}">
+                            <button type="submit" class="btn"
+                                    th:classappend="${demoSla} ? 'btn-outline-secondary' : 'btn-warning'"
+                                    th:text="${demoSla} ? 'Switch demo SLA off' : 'Switch demo SLA on'">Switch demo SLA on</button>
+                        </form>
+                        <form method="post" th:action="@{/admin/settings/check-sla}">
+                            <button type="submit" class="btn btn-outline-primary">Run the SLA check now</button>
+                        </form>
+                    </div>
+                    <p class="small text-body-secondary mt-3 mb-0">
+                        The SLA check runs by itself once a minute. The button runs it immediately.
+                    </p>
                 </div>
             </div>
         </div>

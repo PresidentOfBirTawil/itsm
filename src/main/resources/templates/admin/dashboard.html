@@ -5,7 +5,32 @@
 <main>
     <div class="mb-4">
         <h1 class="h3 mb-1">Administration</h1>
-        <p class="text-body-secondary mb-0">Administrator workspace · incidents, technicians and configuration.</p>
+        <p class="text-body-secondary mb-0">Administrator workspace · how the service desk is doing right now.</p>
+    </div>
+
+    <!-- Totals -->
+    <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
+        <div class="col">
+            <a class="stat-link" th:href="@{/admin/incidents}">
+                <div th:replace="~{fragments/ui :: stat('All incidents', ${totalCount}, 'bi-card-list')}"></div>
+            </a>
+        </div>
+        <div class="col">
+            <div th:replace="~{fragments/ui :: stat('Open', ${openCount}, 'bi-hourglass-split')}"></div>
+        </div>
+        <div class="col">
+            <a class="stat-link" th:href="@{/admin/incidents(priority='P1')}">
+                <div th:replace="~{fragments/ui :: stat('Critical (open P1)', ${criticalCount}, 'bi-exclamation-octagon')}"></div>
+            </a>
+        </div>
+        <div class="col">
+            <div th:replace="~{fragments/ui :: stat('Resolved', ${resolvedCount}, 'bi-check2-circle')}"></div>
+        </div>
+        <div class="col">
+            <a class="stat-link" th:href="@{/admin/incidents(slaStatus='BREACHED')}">
+                <div th:replace="~{fragments/ui :: stat('SLA breaches', ${breachCount}, 'bi-alarm')}"></div>
+            </a>
+        </div>
     </div>
 
     <!-- Warning: incidents no technician could be found for -->
@@ -20,38 +45,16 @@
             </p>
         </div>
         <div class="card-body p-0">
-            <div th:replace="~{fragments/ui :: incidentTable(${waiting}, '', 'service,category,priority,reporter,due', '/admin/incidents')}"></div>
-        </div>
-    </div>
-
-    <div class="row g-3 mb-4">
-        <div class="col-sm-6 col-lg-3">
-            <a class="stat-link" th:href="@{/admin/incidents}">
-                <div th:replace="~{fragments/ui :: stat('Incidents', ${incidentCount}, 'bi-card-list')}"></div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="stat-link" th:href="@{/admin/users}">
-                <div th:replace="~{fragments/ui :: stat('Users', ${userCount}, 'bi-people')}"></div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="stat-link" th:href="@{/admin/services}">
-                <div th:replace="~{fragments/ui :: stat('IT services', ${serviceCount}, 'bi-hdd-network')}"></div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="stat-link" th:href="@{/admin/categories}">
-                <div th:replace="~{fragments/ui :: stat('Categories', ${categoryCount}, 'bi-tags')}"></div>
-            </a>
+            <div th:replace="~{fragments/ui :: incidentTable(${waiting}, '', 'service,category,priority,sla,reporter,due', '/admin/incidents')}"></div>
         </div>
     </div>
 
     <div class="row g-4">
+        <!-- Technician workload -->
         <div class="col-lg-7">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Technicians</span>
+                    <span>Technician workload</span>
                     <span class="small fw-normal">
                         Assignment strategy: <a th:href="@{/admin/settings}" th:text="${activeStrategy.name}">Skill-based</a>
                     </span>
@@ -60,22 +63,31 @@
                     <table class="table mb-0">
                         <thead>
                         <tr>
-                            <th scope="col">Name</th>
+                            <th scope="col">Technician</th>
                             <th scope="col">Skills</th>
-                            <th scope="col" class="text-end">Open incidents</th>
+                            <th scope="col" style="min-width: 9rem">Open incidents</th>
                             <th scope="col">Availability</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="load : ${loads}">
-                            <td class="text-nowrap" th:text="${load.technician.name}">Name</td>
+                        <tr th:each="load : ${loads}"
+                            th:with="percent=${load.openIncidents * 100 / load.technician.maxWorkload}">
+                            <td class="text-nowrap">
+                                <a th:href="@{|/admin/technicians/${load.technician.id}/edit|}"
+                                   th:text="${load.technician.name}">Name</a>
+                            </td>
                             <td>
                                 <span class="badge text-bg-light border me-1" th:each="skill : ${load.technician.skills}"
                                       th:text="${skill.name}">Skill</span>
                             </td>
-                            <td class="text-end text-nowrap"
-                                th:classappend="${load.openIncidents >= load.technician.maxWorkload} ? 'text-danger fw-semibold'"
-                                th:text="|${load.openIncidents} of ${load.technician.maxWorkload}|">0 of 5</td>
+                            <td>
+                                <div class="small" th:text="|${load.openIncidents} of ${load.technician.maxWorkload}|">0 of 5</div>
+                                <div class="progress" style="height: .4rem" role="progressbar" aria-label="Workload"
+                                     aria-valuemin="0" aria-valuemax="100" th:attr="aria-valuenow=${percent}">
+                                    <div class="progress-bar" th:style="|width: ${percent > 100 ? 100 : percent}%|"
+                                         th:classappend="${percent >= 100} ? 'bg-danger' : (${percent >= 80} ? 'bg-warning' : 'bg-success')"></div>
+                                </div>
+                            </td>
                             <td>
                                 <span class="badge"
                                       th:classappend="${load.technician.available} ? 'text-bg-success' : 'text-bg-secondary'"
@@ -87,30 +99,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- Incidents per service -->
         <div class="col-lg-5">
             <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>SLA policies</span>
-                    <a class="small fw-normal" th:href="@{/admin/sla-policies}">Details</a>
-                </div>
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
-                        <tr>
-                            <th scope="col">Priority</th>
-                            <th scope="col">Respond within</th>
-                            <th scope="col">Resolve within</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="policy : ${slaPolicies}">
-                            <td><th:block th:replace="~{fragments/ui :: priorityBadge(${policy.priority})}"></th:block></td>
-                            <td><span th:replace="~{fragments/ui :: duration(${policy.responseMinutes})}"></span></td>
-                            <td><span th:replace="~{fragments/ui :: duration(${policy.resolutionMinutes})}"></span></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="card-header">Incidents per service</div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item" th:each="row : ${perService}">
+                        <div class="d-flex justify-content-between">
+                            <span th:text="${row.serviceName}">Service</span>
+                            <span class="fw-semibold" th:text="${row.incidents}">0</span>
+                        </div>
+                        <div class="progress mt-1" style="height: .4rem" role="progressbar"
+                             th:attr="aria-label=${row.serviceName}, aria-valuenow=${row.incidents}, aria-valuemax=${busiestService}"
+                             aria-valuemin="0">
+                            <div class="progress-bar"
+                                 th:style="|width: ${busiestService > 0 ? row.incidents * 100 / busiestService : 0}%|"></div>
+                        </div>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>

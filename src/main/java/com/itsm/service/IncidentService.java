@@ -1,5 +1,6 @@
 package com.itsm.service;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -26,7 +27,7 @@ import com.itsm.repository.AuditEntryRepository;
 import com.itsm.repository.CategoryRepository;
 import com.itsm.repository.ITServiceRepository;
 import com.itsm.repository.IncidentRepository;
-import com.itsm.repository.SlaPolicyRepository;
+import com.itsm.sla.SlaService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +45,7 @@ public class IncidentService {
     private final IncidentRepository incidents;
     private final ITServiceRepository services;
     private final CategoryRepository categories;
-    private final SlaPolicyRepository slaPolicies;
+    private final SlaService slaService;
     private final AuditEntryRepository auditEntries;
     private final IncidentFactory incidentFactory;
     private final PriorityCalculator priorityCalculator;
@@ -52,14 +53,14 @@ public class IncidentService {
     private final IncidentEventPublisher events;
 
     public IncidentService(IncidentRepository incidents, ITServiceRepository services,
-                           CategoryRepository categories, SlaPolicyRepository slaPolicies,
+                           CategoryRepository categories, SlaService slaService,
                            AuditEntryRepository auditEntries, IncidentFactory incidentFactory,
                            PriorityCalculator priorityCalculator, AssignmentService assignmentService,
                            IncidentEventPublisher events) {
         this.incidents = incidents;
         this.services = services;
         this.categories = categories;
-        this.slaPolicies = slaPolicies;
+        this.slaService = slaService;
         this.auditEntries = auditEntries;
         this.incidentFactory = incidentFactory;
         this.priorityCalculator = priorityCalculator;
@@ -91,14 +92,14 @@ public class IncidentService {
 
         prioritise(incident);
         assignmentService.autoAssign(incident, null);
+        slaService.refresh(incident, LocalDateTime.now());
         return incident;
     }
 
     /** Calculates the priority, looks up the SLA policy for it and sets both on the incident. */
     private void prioritise(Incident incident) {
         PriorityAssessment assessment = priorityCalculator.calculate(incident);
-        SlaPolicy policy = slaPolicies.findByPriority(assessment.priority())
-                .orElseThrow(() -> new MissingSlaPolicyException(assessment.priority()));
+        SlaPolicy policy = slaService.policyFor(assessment.priority());
 
         Status before = incident.getStatus();
         incident.prioritise(assessment, policy);
@@ -122,7 +123,7 @@ public class IncidentService {
         Transition transition = incident.getState().transitionTo(target)
                 .orElseThrow(() -> new InvalidStateTransitionException(incident, target));
 
-        if (!transition.allowedFor(actor.getRole())) {
+        if (!transition.allowedFor(actor.getRole()) || !actor.canWorkOn(incident)) {
             throw new AccessDeniedException("%s may not move %s to %s".formatted(actor, code, target));
         }
         if (transition.noteRequired() && (note == null || note.isBlank())) {
@@ -131,9 +132,12 @@ public class IncidentService {
         }
 
         Status before = incident.getStatus();
-        incident.transitionTo(target);
+        LocalDateTime now = LocalDateTime.now();
+        incident.transitionTo(target, now);
         events.publish(new IncidentEvent(incident, actor, IncidentAction.STATUS_CHANGED, before,
                 incident.getStatus(), note));
+        // A change of status can stop, start or settle an SLA clock, so bring the SLA status up to date at once.
+        slaService.refresh(incident, now);
         return incident;
     }
 
@@ -175,7 +179,7 @@ public class IncidentService {
     @Transactional(readOnly = true)
     public Incident getFor(String code, User viewer) {
         Incident incident = get(code);
-        if (!viewer.canAccess(incident)) {
+        if (!viewer.canView(incident)) {
             throw new AccessDeniedException("%s may not open %s".formatted(viewer, code));
         }
         return incident;

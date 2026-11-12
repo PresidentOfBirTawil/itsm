@@ -1,5 +1,6 @@
 package com.itsm;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -51,6 +52,14 @@ final class Fixtures {
 
     static Incident incident() {
         return incident(Impact.MEDIUM, Urgency.MEDIUM, service(2), category("Network"));
+    }
+
+    /** An incident that was reported at the given moment, so that tests can do exact SLA arithmetic. */
+    static Incident incidentReportedAt(LocalDateTime reportedAt) {
+        Incident incident = incident();
+        ReflectionTestUtils.setField(incident, "createdAt", reportedAt);
+        ReflectionTestUtils.setField(incident, "updatedAt", reportedAt);
+        return incident;
     }
 
     static PriorityAssessment assessment(Priority priority) {
