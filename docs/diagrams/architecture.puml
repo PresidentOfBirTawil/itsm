@@ -1,0 +1,106 @@
+@startuml architecture
+' Layers and packages, and which way the dependencies point.
+title I-ITSM · Architecture
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #4A5568
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #4A5568
+}
+
+actor "Employee\nTechnician\nAdministrator" as User
+node "Browser" as Browser {
+  [HTML pages\nBootstrap 5] as Pages
+}
+
+node "One Spring Boot 4.1 application (Java 25, embedded Tomcat)" as App {
+
+  rectangle "Security · com.itsm.security" as SecurityLayer {
+    [Spring Security filter chain\nform login · BCrypt · CSRF\nURL rules per role · sessions] as Filters
+  }
+
+  rectangle "Presentation · com.itsm.web + templates" as Web {
+    [Controllers\nEmployee · Technician · Admin…] as Controllers
+    [Form objects\nBean Validation] as Forms
+    [Thymeleaf templates] as Views
+    [ErrorHandler\n@ControllerAdvice] as Errors
+  }
+
+  rectangle "Application services" as Services {
+    [IncidentService\nIncidentFactory] as IncidentSvc
+    [AssignmentService\n3 strategies] as AssignSvc
+    [SlaService\nSlaMonitor @Scheduled] as SlaSvc
+    [ReportService\nDemoDataService] as ReportSvc
+    [intelligence\nduplicates · category\nescalation · SLA risk] as Intel
+    [PriorityCalculator] as Prio
+  }
+
+  rectangle "Events · com.itsm.event + notification" as Events {
+    [IncidentEventPublisher] as Publisher
+    [AuditTrailListener] as AuditL
+    [NotificationListener\nNotificationDispatcher] as NotifL
+    [Channels: in-app · email\n(NotificationChannelFactory)] as Channels
+  }
+
+  rectangle "Domain model · com.itsm.domain" as Domain {
+    [Incident + 9 state classes\n(State pattern)] as IncidentD
+    [User · Employee · Technician · Administrator] as UsersD
+    [ITService · Category · SlaPolicy\nAuditEntry · Notification] as OtherD
+    [ItsmException hierarchy\ncom.itsm.error] as Exceptions
+  }
+
+  rectangle "Persistence · com.itsm.repository" as Persistence {
+    [Spring Data JPA repositories\nSpecifications for search] as Repos
+    [Hibernate] as Hibernate
+  }
+}
+
+database "H2 database\nfile ./data/itsm" as DB
+
+User --> Pages
+Pages --> Filters : HTTP request\n(session cookie, CSRF token)
+Filters --> Controllers
+Controllers --> Forms
+Controllers --> Views
+Controllers --> IncidentSvc
+Controllers --> AssignSvc
+Controllers --> ReportSvc
+Controllers --> Repos : simple lists
+Errors ..> Exceptions : turns into\nmessages and pages
+IncidentSvc --> Prio
+IncidentSvc --> AssignSvc
+IncidentSvc --> SlaSvc
+IncidentSvc --> Intel
+IncidentSvc --> Publisher
+AssignSvc --> Publisher
+SlaSvc --> Publisher
+SlaSvc --> Intel
+Publisher --> AuditL
+Publisher --> NotifL
+NotifL --> Channels : after commit
+IncidentSvc --> IncidentD
+AssignSvc --> UsersD
+IncidentSvc --> Repos
+AuditL --> Repos
+Channels --> Repos
+Repos --> Hibernate
+Hibernate --> DB : JDBC
+Hibernate ..> Domain : maps entities
+
+note right of Domain
+  The rules live here. The domain model
+  depends on nothing above it: no Spring,
+  no web, no repositories.
+end note
+
+note bottom of DB
+  Dev: file database, H2 console for admins.
+  Tests: a fresh in-memory database per run.
+end note
+@enduml

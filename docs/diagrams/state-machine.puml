@@ -1,0 +1,57 @@
+@startuml state-machine
+' The incident lifecycle. One class per state in com.itsm.domain.state (State pattern).
+title I-ITSM · Incident state machine
+
+skinparam shadowing false
+skinparam state {
+  BackgroundColor #F7F9FC
+  BorderColor #4A5568
+  ArrowColor #2D3748
+}
+hide empty description
+
+[*] --> NEW : employee reports\nthe incident
+
+NEW --> CLASSIFIED : system: priority calculated,\nSLA deadlines set
+CLASSIFIED --> ASSIGNED : system: strategy chose a technician\nor administrator assigned one
+ASSIGNED --> ACKNOWLEDGED : technician: "Acknowledge"\n/ response SLA met
+ACKNOWLEDGED --> IN_PROGRESS : technician: "Start work"
+IN_PROGRESS --> AWAITING_INFO : technician: "Request information"\n[note required] / SLA clock pauses
+AWAITING_INFO --> IN_PROGRESS : employee: "Send information"\ntechnician: "Resume work"\n/ SLA clock resumes, deadline moves back
+IN_PROGRESS --> RESOLVED : technician: "Resolve"\n[resolution note required]\n/ resolution SLA met or breached
+RESOLVED --> VERIFIED : employee: "Confirm it is fixed"
+RESOLVED --> IN_PROGRESS : employee: "Not fixed, reopen"\nadministrator: "Reopen" [note required]\n/ resolution forgotten, SLA clock resumes
+VERIFIED --> CLOSED : technician or administrator: "Close"
+CLOSED --> [*]
+
+NEW : NewState
+NEW : waiting for its priority
+CLASSIFIED : ClassifiedState
+CLASSIFIED : has a priority, waits for a technician
+ASSIGNED : AssignedState
+ASSIGNED : the response clock is running
+ACKNOWLEDGED : AcknowledgedState
+IN_PROGRESS : InProgressState
+IN_PROGRESS : the resolution clock is running
+AWAITING_INFO : AwaitingInfoState
+AWAITING_INFO : SLA status PAUSED
+RESOLVED : ResolvedState
+RESOLVED : no longer counts as open
+VERIFIED : VerifiedState
+VERIFIED : can be rated
+CLOSED : ClosedState
+CLOSED : final: never changes again,\ncan still be rated
+
+note right of CLASSIFIED
+  If no technician can take it, the
+  incident stays here and the
+  administrators are warned.
+end note
+
+note as Rules
+  **10 legal moves.** Any other move throws
+  InvalidStateTransitionException and changes nothing.
+  Reassigning (ASSIGNED … AWAITING_INFO) changes the
+  technician but not the state.
+end note
+@enduml

@@ -1,0 +1,205 @@
+@startuml class-diagram-patterns
+' The interfaces and the classes behind each design pattern, drawn from the real code.
+title I-ITSM · Class diagram 2: interfaces and design patterns
+
+set separator none
+left to right direction
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F7F9FC
+  BorderColor #4A5568
+  ArrowColor #2D3748
+}
+skinparam package {
+  BorderColor #A0AEC0
+}
+hide empty members
+
+class Incident <<entity>>
+class IncidentService <<service>> {
+  + report(reporter, title, …) : Incident
+  + changeStatus(code, target, actor, note)
+  + reclassify(code, actor, …)
+  + addNote(…)  + rate(…)  + assign(…)
+}
+
+package "State · com.itsm.domain.state" {
+  interface IncidentState {
+    + status() : Status
+    + transitions() : List<Transition>
+    + canTransitionTo(target) : boolean
+    + transitionsFor(role) : List<Transition>
+    + checkEntry(incident)
+    + onEnter(incident, from, now)
+    + onExit(incident, to, now)
+    + onPrioritised(incident)
+    + onAssigned(incident)
+    + allowsAssignment() : boolean
+    + allowsRating() : boolean
+    + allowsNotes() : boolean
+  }
+  class NewState
+  class ClassifiedState
+  class AssignedState
+  class AcknowledgedState
+  class InProgressState
+  class AwaitingInfoState
+  class ResolvedState
+  class VerifiedState
+  class ClosedState
+  class IncidentStates <<registry>> {
+    + {static} of(status) : IncidentState
+    + {static} all() : Collection<IncidentState>
+  }
+  class Transition <<record>> {
+    target : Status
+    labels : Map<Role, String>
+    noteRequired : boolean
+  }
+  IncidentState <|.. NewState
+  IncidentState <|.. ClassifiedState
+  IncidentState <|.. AssignedState
+  IncidentState <|.. AcknowledgedState
+  IncidentState <|.. InProgressState
+  IncidentState <|.. AwaitingInfoState
+  IncidentState <|.. ResolvedState
+  IncidentState <|.. VerifiedState
+  IncidentState <|.. ClosedState
+  IncidentStates o-- "9" IncidentState
+  IncidentState ..> Transition
+}
+Incident ..> IncidentStates : getState()
+
+package "Strategy + Template Method · com.itsm.assignment" {
+  interface AssignmentStrategy {
+    + getKey() : String
+    + getName() : String
+    + getDescription() : String
+    + choose(incident, loads) : Technician
+  }
+  abstract class AbstractAssignmentStrategy {
+    + {final} choose(incident, loads) : Technician
+    # {abstract} pick(incident, ableToTakeMore) : Optional<TechnicianLoad>
+    # nobodySuitableMessage(incident) : String
+  }
+  class SkillBasedStrategy
+  class LeastLoadedStrategy
+  class RoundRobinStrategy
+  class TechnicianLoad <<record>> {
+    technician : Technician
+    openIncidents : long
+    + canTakeMore() : boolean
+  }
+  class AssignmentService <<service>> {
+    + getActiveStrategy() : AssignmentStrategy
+    + useStrategy(key)
+    + autoAssign(incident, actor) : boolean
+    + assignManually(incident, technicianId, admin)
+  }
+  AssignmentStrategy <|.. AbstractAssignmentStrategy
+  AbstractAssignmentStrategy <|-- SkillBasedStrategy
+  AbstractAssignmentStrategy <|-- LeastLoadedStrategy
+  AbstractAssignmentStrategy <|-- RoundRobinStrategy
+  AssignmentService o-- "3" AssignmentStrategy : all strategies,\none active
+  AssignmentStrategy ..> TechnicianLoad
+}
+
+package "Strategy · com.itsm.priority" {
+  interface PriorityCalculator {
+    + calculate(incident) : PriorityAssessment
+    + describeRule() : String
+  }
+  class WeightedPriorityCalculator {
+    + priorityFor(score) : Priority
+  }
+  PriorityCalculator <|.. WeightedPriorityCalculator
+}
+
+package "Factory · com.itsm.service" {
+  class IncidentFactory {
+    + create(reporter, title, description,\n   service, category, impact, urgency) : Incident
+  }
+}
+IncidentFactory ..> Incident : <<creates>>
+
+package "Observer · com.itsm.event" {
+  class IncidentEvent <<record>> {
+    incident, actor, action
+    oldStatus, newStatus, note, occurredAt
+  }
+  interface IncidentEventListener {
+    + onIncidentEvent(event)
+  }
+  class IncidentEventPublisher {
+    - listeners : List<IncidentEventListener>
+    + publish(event)
+  }
+  class AuditTrailListener
+  IncidentEventListener <|.. AuditTrailListener
+  IncidentEventPublisher o-- "0..*" IncidentEventListener : notifies each
+  IncidentEventPublisher ..> IncidentEvent
+}
+
+package "Strategy + Factory · com.itsm.notification" {
+  class NotificationListener {
+    + messagesFor(event) : List<NotificationMessage>
+  }
+  interface NotificationChannel {
+    + getName() : String
+    + send(message)
+  }
+  class InAppChannel
+  class EmailChannel
+  class NotificationChannelFactory {
+    + allChannels() : List<NotificationChannel>
+    + channelsFor(type) : List<NotificationChannel>
+  }
+  class NotificationDispatcher {
+    + sendAfterCommit(messages)
+    + send(messages)
+  }
+  class NotificationMessage <<record>>
+  NotificationChannel <|.. InAppChannel
+  NotificationChannel <|.. EmailChannel
+  NotificationChannelFactory ..> NotificationChannel : <<hands out>>
+  NotificationDispatcher --> NotificationChannelFactory
+  NotificationListener --> NotificationDispatcher
+  NotificationListener ..> NotificationMessage
+}
+IncidentEventListener <|.. NotificationListener
+
+package "Exceptions · com.itsm.error" {
+  abstract class ItsmException
+  class InvalidStateTransitionException
+  class TechnicianUnavailableException
+  class WorkloadExceededException
+  class MissingSlaConfigurationException
+  class DuplicateIncidentException
+  class UnauthorizedOperationException
+  class InvalidInputException
+  class NotFoundException
+  class EmailAlreadyRegisteredException <<com.itsm.service>>
+  class IncidentNotFoundException
+  class ServiceNotFoundException
+  ItsmException <|-- InvalidStateTransitionException
+  ItsmException <|-- TechnicianUnavailableException
+  ItsmException <|-- WorkloadExceededException
+  ItsmException <|-- MissingSlaConfigurationException
+  ItsmException <|-- DuplicateIncidentException
+  ItsmException <|-- UnauthorizedOperationException
+  ItsmException <|-- InvalidInputException
+  ItsmException <|-- NotFoundException
+  InvalidInputException <|-- EmailAlreadyRegisteredException
+  NotFoundException <|-- IncidentNotFoundException
+  NotFoundException <|-- ServiceNotFoundException
+}
+RuntimeException <|-- ItsmException
+
+IncidentService --> IncidentFactory
+IncidentService --> PriorityCalculator
+IncidentService --> AssignmentService
+IncidentService --> IncidentEventPublisher
+AssignmentService --> IncidentEventPublisher
+IncidentService ..> ItsmException : throws
+@enduml
