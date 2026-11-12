@@ -6,8 +6,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * The incident lifecycle from the project brief, in order:
- * NEW → CLASSIFIED → ASSIGNED → ACKNOWLEDGED → IN_PROGRESS → RESOLVED → VERIFIED → CLOSED.
+ * The statuses an incident can be in. The usual path is
+ * NEW → CLASSIFIED → ASSIGNED → ACKNOWLEDGED → IN_PROGRESS → RESOLVED → VERIFIED → CLOSED,
+ * with two side steps: IN_PROGRESS ⇄ AWAITING_INFO, and RESOLVED → IN_PROGRESS (reopen).
+ *
+ * <p>This enum only names the statuses. Which moves are allowed, and who may
+ * make them, is decided by the state classes in {@code com.itsm.domain.state}.</p>
  */
 public enum Status {
 
@@ -16,6 +20,7 @@ public enum Status {
     ASSIGNED("Assigned", true),
     ACKNOWLEDGED("Acknowledged", true),
     IN_PROGRESS("In progress", true),
+    AWAITING_INFO("Awaiting information", true),
     RESOLVED("Resolved", false),
     VERIFIED("Verified", false),
     CLOSED("Closed", false);
@@ -42,5 +47,10 @@ public enum Status {
         return Arrays.stream(values())
                 .filter(Status::isOpen)
                 .collect(Collectors.toCollection(() -> EnumSet.noneOf(Status.class)));
+    }
+
+    /** The statuses in which the work is done: resolved, verified or closed. */
+    public static Set<Status> finishedStatuses() {
+        return EnumSet.complementOf(EnumSet.copyOf(openStatuses()));
     }
 }

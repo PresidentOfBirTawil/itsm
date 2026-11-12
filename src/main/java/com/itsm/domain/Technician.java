@@ -65,6 +65,12 @@ public class Technician extends User {
         return Role.TECHNICIAN;
     }
 
+    /** A technician sees the incidents assigned to them. */
+    @Override
+    public boolean canAccess(Incident incident) {
+        return equals(incident.getAssignee());
+    }
+
     /** A read-only view: skills are changed through {@link #addSkill} and {@link #removeSkill}. */
     public Set<Category> getSkills() {
         return Collections.unmodifiableSet(skills);

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<!--
+  The incident page, shared by all three roles. What differs per role:
+    - the status buttons (only the moves this role may make from the current status)
+    - the assignment box (administrators only)
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${incident.code}, 'incidents', ~{::main})}">
+<body>
+<main>
+    <a class="small text-decoration-none" th:href="@{${basePath}}"><i class="bi bi-arrow-left me-1"></i>Back to the list</a>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mt-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1">
+                <span class="text-body-secondary" th:text="${incident.code}">INC-0001</span>
+                <span th:text="${incident.title}">Title</span>
+            </h1>
+            <p class="text-body-secondary mb-0" th:text="${incident.state.summary()}">What it is waiting for.</p>
+        </div>
+        <div class="d-flex gap-2 fs-6">
+            <span th:replace="~{fragments/ui :: statusBadge(${incident.status})}"></span>
+            <th:block th:replace="~{fragments/ui :: priorityBadge(${incident.priority})}"></th:block>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left: what the incident is, and what has happened to it -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">Details</div>
+                <div class="card-body">
+                    <p class="incident-description" th:text="${incident.description}">Description</p>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Reported by</dt>
+                        <dd class="col-sm-8" th:text="${incident.reporter.name}">Reporter</dd>
+
+                        <dt class="col-sm-4">Affected service</dt>
+                        <dd class="col-sm-8">
+                            <span th:text="${incident.service.name}">Service</span>
+                            <span class="text-body-secondary small">· criticality</span>
+                            <span th:replace="~{fragments/ui :: criticalityBadge(${incident.service.criticality})}"></span>
+                        </dd>
+
+                        <dt class="col-sm-4">Category</dt>
+                        <dd class="col-sm-8" th:text="${incident.category != null} ? ${incident.category.name} : '—'">Category</dd>
+
+                        <dt class="col-sm-4">Impact · urgency</dt>
+                        <dd class="col-sm-8" th:text="|${incident.impact.label} · ${incident.urgency.label}|">High · High</dd>
+
+                        <dt class="col-sm-4">Assigned to</dt>
+                        <dd class="col-sm-8" th:text="${incident.assignee != null} ? ${incident.assignee.name} : 'Nobody yet'">Technician</dd>
+
+                        <dt class="col-sm-4">Reported</dt>
+                        <dd class="col-sm-8" th:text="${#temporals.format(incident.createdAt, 'dd MMM yyyy, HH:mm')}">01 Jan 2026, 10:05</dd>
+
+                        <dt class="col-sm-4">Respond by</dt>
+                        <dd class="col-sm-8">
+                            <span th:text="${incident.responseDue != null} ? ${#temporals.format(incident.responseDue, 'dd MMM yyyy, HH:mm')} : '—'">01 Jan 2026, 10:10</span>
+                            <span class="text-body-secondary small" th:if="${incident.acknowledgedAt != null}"
+                                  th:text="|· acknowledged ${#temporals.format(incident.acknowledgedAt, 'dd MMM yyyy, HH:mm')}|">· acknowledged</span>
+                        </dd>
+
+                        <dt class="col-sm-4">Resolve by</dt>
+                        <dd class="col-sm-8">
+                            <th:block th:replace="~{fragments/ui :: deadline(${incident.resolutionDue}, ${incident.overdue})}"></th:block>
+                            <span class="text-body-secondary small" th:if="${incident.resolvedAt != null}"
+                                  th:text="|· resolved ${#temporals.format(incident.resolvedAt, 'dd MMM yyyy, HH:mm')}|">· resolved</span>
+                        </dd>
+
+                        <th:block th:if="${incident.closedAt != null}">
+                            <dt class="col-sm-4">Closed</dt>
+                            <dd class="col-sm-8" th:text="${#temporals.format(incident.closedAt, 'dd MMM yyyy, HH:mm')}">01 Jan 2026, 10:40</dd>
+                        </th:block>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Timeline</div>
+                <ul class="list-group list-group-flush timeline">
+                    <li class="list-group-item" th:each="entry : ${history}">
+                        <div class="d-flex flex-wrap justify-content-between gap-2">
+                            <span class="fw-semibold" th:text="${entry.action.label}">Status changed</span>
+                            <span class="small text-body-secondary text-nowrap"
+                                  th:text="${#temporals.format(entry.occurredAt, 'dd MMM yyyy, HH:mm:ss')}">01 Jan 2026, 10:05:00</span>
+                        </div>
+                        <div class="small text-body-secondary">
+                            by <span th:text="${entry.actorName}">System</span>
+                            <th:block th:if="${entry.statusChange}">
+                                ·
+                                <th:block th:if="${entry.oldStatus != null}">
+                                    <span th:replace="~{fragments/ui :: statusBadge(${entry.oldStatus})}"></span>
+                                    <i class="bi bi-arrow-right"></i>
+                                </th:block>
+                                <span th:replace="~{fragments/ui :: statusBadge(${entry.newStatus})}"></span>
+                            </th:block>
+                        </div>
+                        <div class="mt-1" th:if="${entry.note != null}" th:text="${entry.note}">Note</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right: what this user can do, how the priority was reached, and (admins) who works on it -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">Change status</div>
+                <div class="card-body">
+                    <p class="text-body-secondary mb-0" th:if="${#lists.isEmpty(transitions)}">
+                        There is no status change for you to make while the incident is
+                        <span th:text="${#strings.toLowerCase(incident.status.label)}">assigned</span>.
+                    </p>
+
+                    <!-- One button per move this role may make from the current status. -->
+                    <form th:unless="${#lists.isEmpty(transitions)}" method="post"
+                          th:action="@{|${basePath}/${incident.code}/transition|}">
+                        <div class="mb-3">
+                            <label for="note" class="form-label">Note</label>
+                            <textarea class="form-control" id="note" name="note" rows="3" maxlength="1000"
+                                      th:required="${!#strings.isEmpty(noteNeededFor)}"></textarea>
+                            <div class="form-text" th:unless="${#strings.isEmpty(noteNeededFor)}"
+                                 th:text="|Needed for: ${noteNeededFor}.|">Needed for: Resolve.</div>
+                            <div class="form-text" th:if="${#strings.isEmpty(noteNeededFor)}">
+                                Optional. It is added to the timeline.
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="target" class="btn"
+                                    th:each="transition, row : ${transitions}"
+                                    th:value="${transition.target}"
+                                    th:classappend="${row.first} ? 'btn-primary' : 'btn-outline-secondary'"
+                                    th:formnovalidate="${!transition.noteRequired}"
+                                    th:text="${transition.labelFor(viewerRole)}">Acknowledge</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Administrators only: assign or reassign -->
+            <div class="card mb-4" th:if="${viewerRole.name() == 'ADMIN'}">
+                <div class="card-header">Assignment</div>
+                <div class="card-body">
+                    <div class="alert alert-warning small" role="alert" th:if="${assignmentWarning != null}">
+                        <i class="bi bi-exclamation-triangle me-1"></i><span th:text="${assignmentWarning}">Why nobody was found.</span>
+                    </div>
+
+                    <p class="mb-3">
+                        Assigned to:
+                        <strong th:text="${incident.assignee != null} ? ${incident.assignee.name} : 'nobody yet'">Technician</strong>
+                    </p>
+
+                    <p class="text-body-secondary mb-0" th:unless="${incident.state.allowsAssignment()}">
+                        The technician cannot be changed while the incident is
+                        <span th:text="${#strings.toLowerCase(incident.status.label)}">resolved</span>.
+                    </p>
+
+                    <th:block th:if="${incident.state.allowsAssignment()}">
+                        <form method="post" th:action="@{|${basePath}/${incident.code}/assign|}">
+                            <label for="technicianId" class="form-label"
+                                   th:text="${incident.assignee != null} ? 'Give it to someone else' : 'Choose a technician'">Choose a technician</label>
+                            <select class="form-select mb-2" id="technicianId" name="technicianId" required>
+                                <option value="">Choose…</option>
+                                <option th:each="load : ${loads}" th:value="${load.technician.id}"
+                                        th:disabled="${!load.canTakeMore() or load.technician == incident.assignee}"
+                                        th:text="|${load.technician.name} · ${load.openIncidents} of ${load.technician.maxWorkload} open${load.technician.available ? '' : ' · not available'}|">Technician · 1 of 5 open</option>
+                            </select>
+                            <div class="form-text mb-2">
+                                Technicians who are not available or already at their maximum cannot be chosen.
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary w-100"
+                                    th:text="${incident.assignee != null} ? 'Reassign' : 'Assign'">Assign</button>
+                        </form>
+
+                        <form method="post" class="mt-2" th:if="${incident.assignee == null}"
+                              th:action="@{|${basePath}/${incident.code}/auto-assign|}">
+                            <button type="submit" class="btn btn-outline-secondary w-100">
+                                Assign automatically (<span th:text="${activeStrategy.name}">Skill-based</span>)
+                            </button>
+                        </form>
+                    </th:block>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">How the priority was worked out</div>
+                <div class="card-body" th:if="${incident.assessment == null}">
+                    <p class="text-body-secondary mb-0">The priority has not been calculated yet.</p>
+                </div>
+                <th:block th:if="${incident.assessment != null}" th:with="assessment=${incident.assessment}">
+                    <table class="table mb-0 priority-breakdown">
+                        <tbody>
+                        <tr>
+                            <td>Impact <span class="text-body-secondary" th:text="|(${incident.impact.label})|">(High)</span></td>
+                            <td class="text-end" th:text="${assessment.impactWeight}">3</td>
+                        </tr>
+                        <tr>
+                            <td>Urgency <span class="text-body-secondary" th:text="|(${incident.urgency.label})|">(High)</span></td>
+                            <td class="text-end" th:text="|× ${assessment.urgencyWeight}|">× 3</td>
+                        </tr>
+                        <tr>
+                            <td>Service criticality <span class="text-body-secondary" th:text="|(${incident.service.name})|">(Service)</span></td>
+                            <td class="text-end" th:text="|× ${assessment.serviceCriticality}|">× 3</td>
+                        </tr>
+                        <tr class="fw-semibold">
+                            <td>Score</td>
+                            <td class="text-end" th:text="|= ${assessment.score}|">= 27</td>
+                        </tr>
+                        <tr class="fw-semibold">
+                            <td>Priority</td>
+                            <td class="text-end"><th:block th:replace="~{fragments/ui :: priorityBadge(${assessment.priority})}"></th:block></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="card-footer bg-transparent small text-body-secondary" th:text="${priorityRule}">The rule.</div>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

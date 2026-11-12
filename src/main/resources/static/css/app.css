@@ -81,3 +81,17 @@ a.stat-link:hover .card {
     line-height: 1;
     color: var(--bs-secondary-color);
 }
+
+/* Keep the line breaks the reporter typed. */
+.incident-description {
+    white-space: pre-wrap;
+}
+
+.priority-breakdown td {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.timeline .list-group-item {
+    border-left: 3px solid var(--bs-primary-border-subtle);
+}

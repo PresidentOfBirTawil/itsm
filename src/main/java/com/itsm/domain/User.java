@@ -60,6 +60,13 @@ public abstract class User {
     /** Each subclass answers with its own role. This is what decides what the user may do. */
     public abstract Role getRole();
 
+    /**
+     * May this user open the given incident? Each kind of user answers in its
+     * own way: an employee for incidents they reported, a technician for
+     * incidents assigned to them, an administrator for all of them.
+     */
+    public abstract boolean canAccess(Incident incident);
+
     /** Emails are stored trimmed and in lower case so that sign-in is not case-sensitive. */
     public static String normaliseEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();

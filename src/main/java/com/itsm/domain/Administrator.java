@@ -20,4 +20,10 @@ public class Administrator extends User {
     public Role getRole() {
         return Role.ADMIN;
     }
+
+    /** An administrator sees every incident. */
+    @Override
+    public boolean canAccess(Incident incident) {
+        return true;
+    }
 }

@@ -1,17 +1,21 @@
 <!DOCTYPE html>
-<!-- One incident list for all three roles. The controller decides which incidents and which wording to show. -->
+<!-- One incident list for employees and administrators. The controller decides which incidents, columns and wording to show. -->
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page(${heading}, 'incidents', ~{::main})}">
 <body>
 <main>
-    <div class="mb-4">
-        <h1 class="h3 mb-1" th:text="${heading}">Incidents</h1>
-        <p class="text-body-secondary mb-0" th:text="${subheading}">Newest first.</p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1" th:text="${heading}">Incidents</h1>
+            <p class="text-body-secondary mb-0" th:text="${subheading}">Newest first.</p>
+        </div>
+        <a class="btn btn-primary" th:if="${canReport}" th:href="@{/employee/incidents/new}">
+            <i class="bi bi-plus-circle me-1"></i>Report an incident</a>
     </div>
 
     <div class="card">
         <div class="card-body p-0">
-            <div th:replace="~{fragments/ui :: incidentTable(${incidents}, ${emptyMessage}, false)}"></div>
+            <div th:replace="~{fragments/ui :: incidentTable(${incidents}, ${emptyMessage}, ${columns}, ${basePath})}"></div>
         </div>
     </div>
 </main>

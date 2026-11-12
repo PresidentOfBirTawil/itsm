@@ -2,7 +2,12 @@ package com.itsm.domain;
 
 import java.time.LocalDateTime;
 
+import com.itsm.BusinessRuleException;
+import com.itsm.domain.state.IncidentState;
+import com.itsm.domain.state.IncidentStates;
+import com.itsm.domain.state.InvalidStateTransitionException;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -26,6 +31,10 @@ import jakarta.validation.constraints.Size;
  * <p>An incident points at other objects that exist on their own: the employee
  * who reported it, the service it affects, its category and the technician it
  * is assigned to. Deleting an incident deletes none of them.</p>
+ *
+ * <p>The status, the priority and the assignee have no setters. They change
+ * only through {@link #transitionTo}, {@link #prioritise} and {@link #assignTo},
+ * which check the rules first.</p>
  */
 @Entity
 @Table(name = "incidents")
@@ -64,29 +73,28 @@ public class Incident {
     @JoinColumn(name = "service_id", nullable = false)
     private ITService service;
 
-    /** Empty until the incident has been classified. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, columnDefinition = "varchar(10)")
     private Impact impact;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, columnDefinition = "varchar(10)")
     private Urgency urgency;
 
-    /** Empty until a priority has been worked out. Set together with the deadlines in {@link #applySla}. */
-    @Enumerated(EnumType.STRING)
-    @Column(length = 5)
-    private Priority priority;
+    /** The priority and how it was calculated. Empty until {@link #prioritise} has been called. */
+    @Embedded
+    private PriorityAssessment assessment;
 
+    /** Changed only by {@link #transitionTo}. */
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, columnDefinition = "varchar(20)")
     private Status status = Status.NEW;
 
     /** Only technicians work on incidents, so the assignee is a Technician. Empty until assigned. */
@@ -123,6 +131,7 @@ public class Incident {
     protected Incident() {
     }
 
+    /** A new incident always starts in status NEW, with no priority and no assignee. */
     public Incident(String title, String description, Employee reporter, ITService service,
                     Impact impact, Urgency urgency) {
         this.title = title == null ? null : title.trim();
@@ -134,6 +143,8 @@ public class Incident {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = this.createdAt;
     }
+
+    // ---- code ----
 
     /**
      * Runs once, just before the incident is first written to the database.
@@ -153,23 +164,100 @@ public class Incident {
         return CODE_FORMAT.formatted(number);
     }
 
+    // ---- lifecycle ----
+
+    /** The object that holds the rules for the status this incident is in right now. */
+    public IncidentState getState() {
+        return IncidentStates.of(status);
+    }
+
     /**
-     * Applies an SLA policy: the incident takes the policy's priority, and both
-     * deadlines are counted from the moment the incident was created.
+     * Moves the incident to another status. This is the only way the status changes.
+     *
+     * <p>The current state decides whether the move is allowed, and the new
+     * state checks that the incident is ready for it. Both checks happen before
+     * anything is changed, so a refused move leaves the incident exactly as it was.</p>
+     *
+     * @throws InvalidStateTransitionException if the lifecycle does not allow the move
      */
-    public void applySla(SlaPolicy policy) {
-        if (policy == null) {
-            throw new IllegalArgumentException("An SLA policy is required");
+    public void transitionTo(Status target) {
+        if (target == null || !getState().canTransitionTo(target)) {
+            throw new InvalidStateTransitionException(this, target);
         }
-        this.priority = policy.getPriority();
+        IncidentState next = IncidentStates.of(target);
+        next.checkEntry(this);
+
+        Status previous = status;
+        status = target;
+        next.onEnter(this, previous, LocalDateTime.now());
+    }
+
+    /**
+     * Sets the priority and, from the matching SLA policy, the two deadlines
+     * (counted from the moment the incident was created). A new incident
+     * becomes CLASSIFIED as soon as this has happened.
+     */
+    public void prioritise(PriorityAssessment assessment, SlaPolicy policy) {
+        if (assessment == null || policy == null) {
+            throw new IllegalArgumentException("A priority assessment and an SLA policy are required");
+        }
+        if (policy.getPriority() != assessment.priority()) {
+            throw new IllegalArgumentException("The SLA policy is for %s but the priority is %s"
+                    .formatted(policy.getPriority(), assessment.priority()));
+        }
+        this.assessment = assessment;
         this.responseDue = policy.responseDueFrom(createdAt);
         this.resolutionDue = policy.resolutionDueFrom(createdAt);
+        getState().onPrioritised(this);
+    }
+
+    /**
+     * Gives the incident to a technician. A classified incident becomes
+     * ASSIGNED; an incident that already has a technician keeps its status and
+     * simply changes hands.
+     *
+     * @throws BusinessRuleException if the incident is in a status where it cannot be assigned
+     */
+    public void assignTo(Technician technician) {
+        if (technician == null) {
+            throw new IllegalArgumentException("A technician is required");
+        }
+        if (!getState().allowsAssignment()) {
+            throw new BusinessRuleException("%s cannot be assigned while it is %s."
+                    .formatted(code == null ? "The incident" : code, status.getLabel().toLowerCase()));
+        }
+        this.assignee = technician;
+        getState().onAssigned(this);
+    }
+
+    /** Records the first time a technician acknowledged the incident. Called by the ACKNOWLEDGED state. */
+    public void stampAcknowledged(LocalDateTime when) {
+        if (acknowledgedAt == null) {
+            acknowledgedAt = when;
+        }
+    }
+
+    /** Records when the incident was resolved. Called by the RESOLVED state. */
+    public void stampResolved(LocalDateTime when) {
+        resolvedAt = when;
+    }
+
+    /** Forgets the resolution time because the incident was reopened. Called by the IN_PROGRESS state. */
+    public void clearResolved() {
+        resolvedAt = null;
+    }
+
+    /** Records when the incident was closed. Called by the CLOSED state. */
+    public void stampClosed(LocalDateTime when) {
+        closedAt = when;
     }
 
     @PreUpdate
     void touch() {
         updatedAt = LocalDateTime.now();
     }
+
+    // ---- reading ----
 
     public Long getId() {
         return id;
@@ -203,10 +291,6 @@ public class Incident {
         return service;
     }
 
-    public void setService(ITService service) {
-        this.service = service;
-    }
-
     public Category getCategory() {
         return category;
     }
@@ -219,36 +303,26 @@ public class Incident {
         return impact;
     }
 
-    public void setImpact(Impact impact) {
-        this.impact = impact;
-    }
-
     public Urgency getUrgency() {
         return urgency;
     }
 
-    public void setUrgency(Urgency urgency) {
-        this.urgency = urgency;
+    /** The priority, or null if it has not been calculated yet. */
+    public Priority getPriority() {
+        return assessment == null ? null : assessment.priority();
     }
 
-    public Priority getPriority() {
-        return priority;
+    /** How the priority was calculated, or null if it has not been calculated yet. */
+    public PriorityAssessment getAssessment() {
+        return assessment;
     }
 
     public Status getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
     public Technician getAssignee() {
         return assignee;
-    }
-
-    public void setAssignee(Technician assignee) {
-        this.assignee = assignee;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -263,24 +337,12 @@ public class Incident {
         return acknowledgedAt;
     }
 
-    public void setAcknowledgedAt(LocalDateTime acknowledgedAt) {
-        this.acknowledgedAt = acknowledgedAt;
-    }
-
     public LocalDateTime getResolvedAt() {
         return resolvedAt;
     }
 
-    public void setResolvedAt(LocalDateTime resolvedAt) {
-        this.resolvedAt = resolvedAt;
-    }
-
     public LocalDateTime getClosedAt() {
         return closedAt;
-    }
-
-    public void setClosedAt(LocalDateTime closedAt) {
-        this.closedAt = closedAt;
     }
 
     public LocalDateTime getResponseDue() {
@@ -289,6 +351,11 @@ public class Incident {
 
     public LocalDateTime getResolutionDue() {
         return resolutionDue;
+    }
+
+    /** True if the incident is still open and its resolution deadline has passed. */
+    public boolean isOverdue() {
+        return status.isOpen() && resolutionDue != null && LocalDateTime.now().isAfter(resolutionDue);
     }
 
     @Override

@@ -5,7 +5,23 @@
 <main>
     <div class="mb-4">
         <h1 class="h3 mb-1">Administration</h1>
-        <p class="text-body-secondary mb-0">Administrator workspace · users, services, categories and SLA policies.</p>
+        <p class="text-body-secondary mb-0">Administrator workspace · incidents, technicians and configuration.</p>
+    </div>
+
+    <!-- Warning: incidents no technician could be found for -->
+    <div class="card border border-warning mb-4" th:unless="${#lists.isEmpty(waiting)}">
+        <div class="card-header text-warning-emphasis">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            <span th:text="${waiting.size() == 1} ? '1 incident is waiting for a technician' : |${waiting.size()} incidents are waiting for a technician|">1 incident is waiting for a technician</span>
+        </div>
+        <div class="card-body pb-0">
+            <p class="small text-body-secondary mb-2">
+                Automatic assignment found nobody who could take these. Open one to assign it by hand.
+            </p>
+        </div>
+        <div class="card-body p-0">
+            <div th:replace="~{fragments/ui :: incidentTable(${waiting}, '', 'service,category,priority,reporter,due', '/admin/incidents')}"></div>
+        </div>
     </div>
 
     <div class="row g-3 mb-4">
@@ -36,7 +52,9 @@
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span>Technicians</span>
-                    <a class="small fw-normal" th:href="@{/admin/users}">All users</a>
+                    <span class="small fw-normal">
+                        Assignment strategy: <a th:href="@{/admin/settings}" th:text="${activeStrategy.name}">Skill-based</a>
+                    </span>
                 </div>
                 <div class="table-responsive">
                     <table class="table mb-0">
@@ -44,22 +62,24 @@
                         <tr>
                             <th scope="col">Name</th>
                             <th scope="col">Skills</th>
-                            <th scope="col" class="text-end">Max workload</th>
+                            <th scope="col" class="text-end">Open incidents</th>
                             <th scope="col">Availability</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="technician : ${technicians}">
-                            <td class="text-nowrap" th:text="${technician.name}">Name</td>
+                        <tr th:each="load : ${loads}">
+                            <td class="text-nowrap" th:text="${load.technician.name}">Name</td>
                             <td>
-                                <span class="badge text-bg-light border me-1" th:each="skill : ${technician.skills}"
+                                <span class="badge text-bg-light border me-1" th:each="skill : ${load.technician.skills}"
                                       th:text="${skill.name}">Skill</span>
                             </td>
-                            <td class="text-end" th:text="${technician.maxWorkload}">5</td>
+                            <td class="text-end text-nowrap"
+                                th:classappend="${load.openIncidents >= load.technician.maxWorkload} ? 'text-danger fw-semibold'"
+                                th:text="|${load.openIncidents} of ${load.technician.maxWorkload}|">0 of 5</td>
                             <td>
                                 <span class="badge"
-                                      th:classappend="${technician.available} ? 'text-bg-success' : 'text-bg-secondary'"
-                                      th:text="${technician.available} ? 'Available' : 'Not available'">Available</span>
+                                      th:classappend="${load.technician.available} ? 'text-bg-success' : 'text-bg-secondary'"
+                                      th:text="${load.technician.available} ? 'Available' : 'Not available'">Available</span>
                             </td>
                         </tr>
                         </tbody>
