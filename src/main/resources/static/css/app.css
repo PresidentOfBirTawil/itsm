@@ -119,3 +119,48 @@ a.stat-link:hover .card {
 .notification-unread {
     background-color: var(--bs-primary-bg-subtle);
 }
+
+/* ---- Live updates (static/js/live.js) ---- */
+
+/* The small dot next to the bell: grey while connecting, green while the page is connected. */
+.live-dot {
+    width: .55rem;
+    height: .55rem;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, .35);
+    transition: background-color .3s;
+}
+
+.live-dot.live-on {
+    background-color: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74, 222, 128, .25);
+}
+
+/* A part of the page that has just been replaced gets an outline that fades, so the eye finds what changed. */
+@keyframes live-updated {
+    from { outline-color: rgba(13, 110, 253, .55); }
+    to   { outline-color: rgba(13, 110, 253, 0); }
+}
+
+.live-updated {
+    outline: 3px solid transparent;
+    outline-offset: .6rem;
+    border-radius: .75rem;
+    animation: live-updated 1.6s ease-out;
+}
+
+/* Small things, such as the bell, sit too close to their neighbours for a wide outline. */
+.navbar .live-updated {
+    outline-offset: .2rem;
+    border-radius: 50%;
+    animation-name: live-updated-light;
+}
+
+@keyframes live-updated-light {
+    from { outline-color: rgba(255, 255, 255, .8); }
+    to   { outline-color: rgba(255, 255, 255, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .live-updated { animation: none; }
+}

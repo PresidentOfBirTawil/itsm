@@ -1,5 +1,6 @@
 package com.itsm.security;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,7 +41,10 @@ public class SecurityConfig {
             throws Exception {
         http.authorizeHttpRequests(auth -> {
             auth.requestMatchers("/login", "/register", "/error").permitAll();
-            auth.requestMatchers("/css/**", "/webjars/**", "/favicon.svg").permitAll();
+            auth.requestMatchers("/css/**", "/js/**", "/webjars/**", "/favicon.svg").permitAll();
+            // The live-updates connection (/live) is checked when it is opened, like any other
+            // address. When the server later finishes it, that is not a new request to check.
+            auth.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll();
             auth.requestMatchers("/employee/**").hasRole("EMPLOYEE");
             auth.requestMatchers("/technician/**").hasRole("TECHNICIAN");
             auth.requestMatchers("/admin/**").hasRole("ADMIN");
@@ -65,7 +69,14 @@ public class SecurityConfig {
         http.sessionManagement(session -> session
                 .maximumSessions(-1)
                 .sessionRegistry(sessionRegistry)
-                .expiredUrl("/login?expired"));
+                .expiredSessionStrategy(event -> {
+                    // Normally: send the browser to the sign-in page. But when the request that
+                    // notices it is a live-updates stream being closed, the answer has long been
+                    // sent and there is nothing left to redirect.
+                    if (!event.getResponse().isCommitted()) {
+                        event.getResponse().sendRedirect(event.getRequest().getContextPath() + "/login?expired");
+                    }
+                }));
 
         if (h2ConsoleEnabled) {
             // The H2 console is a small third-party web app: it has no CSRF

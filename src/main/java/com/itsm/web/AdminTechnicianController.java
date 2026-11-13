@@ -12,6 +12,7 @@ import com.itsm.domain.Technician;
 import com.itsm.domain.User;
 import com.itsm.error.InvalidInputException;
 import com.itsm.error.NotFoundException;
+import com.itsm.live.LiveUpdates;
 import com.itsm.repository.AdministratorRepository;
 import com.itsm.repository.CategoryRepository;
 import com.itsm.repository.EmployeeRepository;
@@ -46,11 +47,13 @@ public class AdminTechnicianController {
     private final AssignmentService assignmentService;
     private final PasswordEncoder passwordEncoder;
     private final SignedInSessions signedInSessions;
+    private final LiveUpdates liveUpdates;
 
     public AdminTechnicianController(UserRepository users, AdministratorRepository administrators,
                                      TechnicianRepository technicians, EmployeeRepository employees,
                                      CategoryRepository categories, AssignmentService assignmentService,
-                                     PasswordEncoder passwordEncoder, SignedInSessions signedInSessions) {
+                                     PasswordEncoder passwordEncoder, SignedInSessions signedInSessions,
+                                     LiveUpdates liveUpdates) {
         this.users = users;
         this.administrators = administrators;
         this.technicians = technicians;
@@ -59,6 +62,7 @@ public class AdminTechnicianController {
         this.assignmentService = assignmentService;
         this.passwordEncoder = passwordEncoder;
         this.signedInSessions = signedInSessions;
+        this.liveUpdates = liveUpdates;
     }
 
     // ---- all users ----
@@ -114,7 +118,8 @@ public class AdminTechnicianController {
         user.setEnabled(enabled);
         users.save(user);
         if (!enabled) {
-            signedInSessions.signOut(user); // a disabled account must not keep working in an open browser
+            signedInSessions.signOut(user);        // a disabled account must not keep working in an open browser
+            liveUpdates.disconnect(user.getId());  // nor keep receiving live updates
         }
         redirect.addFlashAttribute("success", enabled
                 ? "%s can sign in again.".formatted(user.getName())

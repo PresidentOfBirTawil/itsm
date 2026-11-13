@@ -150,6 +150,7 @@ package "Strategy + Factory · com.itsm.notification" {
     + send(message)
   }
   class InAppChannel
+  class LiveChannel
   class EmailChannel
   class NotificationChannelFactory {
     + allChannels() : List<NotificationChannel>
@@ -161,6 +162,7 @@ package "Strategy + Factory · com.itsm.notification" {
   }
   class NotificationMessage <<record>>
   NotificationChannel <|.. InAppChannel
+  NotificationChannel <|.. LiveChannel
   NotificationChannel <|.. EmailChannel
   NotificationChannelFactory ..> NotificationChannel : <<hands out>>
   NotificationDispatcher --> NotificationChannelFactory
@@ -168,6 +170,26 @@ package "Strategy + Factory · com.itsm.notification" {
   NotificationListener ..> NotificationMessage
 }
 IncidentEventListener <|.. NotificationListener
+
+package "Live updates · com.itsm.live" {
+  class LiveUpdateListener {
+    + onIncidentEvent(event)
+  }
+  class LiveUpdates {
+    + connect(userId, role, sessionId) : SseEmitter
+    + incidentChanged(code, reporterId)
+    + unreadCount(userId, unread)
+    + everythingChanged()
+    + disconnect(userId) : int
+  }
+  class LiveController {
+    + live(user, session) : SseEmitter
+  }
+  LiveUpdateListener --> LiveUpdates : after commit
+  LiveController --> LiveUpdates
+}
+IncidentEventListener <|.. LiveUpdateListener
+LiveChannel --> LiveUpdates : bell count
 
 package "Exceptions · com.itsm.error" {
   abstract class ItsmException

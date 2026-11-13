@@ -13,7 +13,7 @@
             <i class="bi bi-plus-circle me-1"></i>Report an incident</a>
     </div>
 
-    <div class="card">
+    <div class="card" data-live="incident-list">
         <div class="card-body p-0">
             <div th:replace="~{fragments/ui :: incidentTable(${incidents}, ${emptyMessage}, ${columns}, ${basePath})}"></div>
         </div>

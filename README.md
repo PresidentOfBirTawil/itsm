@@ -17,6 +17,7 @@ Intelligent IT Service Management & Incident Resolution System, built for the CS
 - Reports for administrators: incidents by status, priority and category, SLA compliance, time to resolve against the SLA target, and figures per technician.
 - A technician or administrator can correct an incident's category, impact and urgency; the priority and deadlines are worked out again.
 - One click fills the application with 23 realistic past incidents, so the dashboard and reports have something to show.
+- **Live updates:** when an incident is created or changes, the administrator's dashboard, the technician's queue and the incident lists update by themselves, and the number on the bell changes at once. No page refresh.
 
 **Documents for the report:** [report notes](docs/report-notes.md) · [20 documented test cases](docs/test-cases.md) · [UML and other diagrams](docs/diagrams/)
 
@@ -134,6 +135,14 @@ Continue from workflow 1.
 
 Without the button, the background job finds the breach by itself within one more minute.
 
+### Show live updates
+
+1. Open three windows side by side: the administrator on **Dashboard**, `tech4@itsm.local` on **My queue**, and `emp1@itsm.local`. Each navbar has a small dot next to the bell; it is green while the page is connected.
+2. As the employee, report an incident with impact **High** and urgency **High** against **Payment Application**.
+3. Do not touch the other two windows. Within a second the administrator's counters go up and the incident appears under "Most likely to breach next"; the incident appears in the technician's queue and the technician's bell shows **1**. The part that changed is outlined for a moment.
+4. As the technician, open the incident and click **Acknowledge**. The administrator's dashboard and the employee's home screen follow.
+5. As the administrator, open the incident page. As the technician, click **Start work**. The administrator's page shows "This incident has just been changed" with a button **Show the latest**. (The incident page is not replaced by itself, because someone may be half-way through writing a note on it.)
+
 Other things worth showing:
 
 - **Nobody can take it.** Report four incidents with category **Security** (give each its own title). Only Arjun has that skill and his maximum is 3, so the fourth stays **Classified**; the administrator sees a warning and assigns it by hand.
@@ -237,14 +246,15 @@ The arithmetic is in `SlaTarget` (how much time is used, how much is left, is it
 
 ### Notifications
 
-`NotificationChannel` is an interface with two implementations:
+`NotificationChannel` is an interface with three implementations:
 
 | Channel        | What it does |
 |----------------|--------------|
 | `InAppChannel` | Saves a notification row. The bell in the navbar shows the unread count; clicking a notification marks it read and opens the incident. |
+| `LiveChannel`  | Sends the recipient's new unread count to every browser tab they have open, so the bell changes without a refresh (see [Live updates](#live-updates)). |
 | `EmailChannel` | Simulated. Saves the email in an outbox table (administrators read it under **System → Email outbox**) and writes it to the log. |
 
-`NotificationChannelFactory` hands out the channels for a kind of news: the app for everything, email as well for the important ones. `NotificationListener` listens to incident events and decides who is told:
+`NotificationChannelFactory` hands out the channels for a kind of news: the app (stored, then pushed live) for everything, email as well for the important ones. `NotificationListener` listens to incident events and decides who is told:
 
 | Event | Who is told |
 |-------|-------------|
@@ -259,7 +269,33 @@ The arithmetic is in `SlaTarget` (how much time is used, how much is left, is it
 | Escalated | the administrators |
 | Rated | the technician |
 
-Messages are sent only after the incident change has been committed, and each channel sends each message in its own database transaction inside its own try/catch. So a failing channel cannot block the other one and cannot roll back the incident change.
+Messages are sent only after the incident change has been committed, and each channel sends each message in its own database transaction inside its own try/catch. So a failing channel cannot block the others and cannot roll back the incident change.
+
+### Live updates
+
+Every signed-in page keeps one connection open to `/live`. It is a stream of server-sent events: plain HTTP, built into every browser (`EventSource`), no extra library. The server sends three kinds of message down it:
+
+| Message | Sent when | Sent to | The page then |
+|---------|-----------|---------|---------------|
+| `incident` | an incident was created or changed in any way | administrators, technicians, and the employee who reported it | fetches itself again in the background and replaces the parts marked `data-live` |
+| `bell` | a notification was stored, or the user read some | that user only | changes the number on the bell at once |
+| `refresh` | the demo data was reset | everyone | fetches itself again |
+
+How it is built:
+
+- `LiveUpdates` holds the open connections and sends the messages. `LiveController` is the `/live` address.
+- `LiveUpdateListener` is a third `IncidentEventListener`, next to the audit trail and the notifications. Nothing in the code that changes incidents was touched: this is the Observer pattern doing its job. It waits for the commit, so a page that fetches fresh content finds the new state and a rolled-back change is never announced, and it announces each incident once per action, however many events the action raised.
+- `LiveChannel` is a third `NotificationChannel`, handed out by the factory after the in-app channel.
+- `static/js/live.js` is the browser side, about a hundred lines. It does not know how a dashboard is built: it asks the server for the page again and swaps the marked parts. So the server still renders everything, and what a user sees is still decided by the normal access rules.
+
+What it is careful about:
+
+- **Privacy.** A message carries only an incident's code, never its content. Employees are sent only the codes of their own incidents.
+- **One slow browser cannot hold up anyone else.** Messages are sent from one background thread, never from the request that caused them.
+- **No database connection per open tab.** The `/live` request reads nothing from the database (who is asking comes from the session), so a hundred open tabs do not use up the connection pool.
+- **Forms are safe.** The incident page is never replaced while someone may be typing; it shows a notice instead. On the search pages only the results are replaced, not the filters.
+- **Connections end when they should:** at sign-out, when an account is disabled, when the tab closes (found by a keep-alive message every 25 seconds), and when the application stops.
+- **Nothing depends on it.** With JavaScript off, or if the connection fails, every page works as before and is refreshed by hand. The browser reconnects by itself after a network break.
 
 ### Intelligent features
 
@@ -324,11 +360,11 @@ Every URL is checked on the server (`SecurityConfig`). Hiding a link or a button
 
 | URL                                   | Who                    |
 |---------------------------------------|------------------------|
-| `/login`, `/register`, CSS and icons  | everyone               |
+| `/login`, `/register`, CSS, scripts and icons | everyone       |
 | `/employee/**`                        | role `EMPLOYEE`        |
 | `/technician/**`                      | role `TECHNICIAN`      |
 | `/admin/**`, `/h2-console/**`         | role `ADMIN`           |
-| anything else                         | any signed-in user     |
+| anything else, including `/live`      | any signed-in user     |
 
 On top of the role, each incident is checked. An employee can open only the incidents they reported. A technician can read every incident (for search) but can act only on the ones assigned to them. An administrator can open and act on all of them. A button press is checked the same way, so sending the request by hand does not get around a missing button. `/notifications` shows each user only their own.
 
@@ -364,7 +400,7 @@ Hibernate adds new tables and columns on its own at startup, but it does not cha
 ./mvnw test
 ```
 
-471 tests. The files marked "plain objects" need no database and run in milliseconds; the rest start the application against a throw-away in-memory database.
+498 tests. The files marked "plain objects" need no database and run in milliseconds; the rest start the application against a throw-away in-memory database.
 
 [`docs/test-cases.md`](docs/test-cases.md) documents 20 of them in full (ID, area, scenario, input, expected result, type), each with the test method that carries it out, and shows where each exception case of the brief is tested.
 
@@ -391,6 +427,8 @@ Hibernate adds new tables and columns on its own at startup, but it does not cha
 | `AuditLogAndReportTests` | The audit log and its filters; the report figures worked out from known incidents. |
 | `DatabaseFailureTests` | A database failure gives a readable 503 page, saves nothing, and the application carries on. |
 | `DemoDataResetTests` | The reset removes incidents and keeps users and settings data; the 23 samples cover every stage and obey every rule; numbering restarts. |
+| `LiveUpdatesTests` (plain objects) | Who is sent which live message; a broken connection is dropped and harms nobody else; incident news waits for the commit and is sent once; nothing after a rollback. |
+| `LiveUpdatesWebTests` | The `/live` stream in the running application: sign-in required, the right messages after reporting, a status change, reading notifications and a reset; an open stream holds no database connection; streams close at sign-out and when an account is disabled. |
 | `IncidentWebTests` | Reporting and working on incidents through the pages. |
 | `SecurityTests`, `RegistrationTests` | Sign-in, role checks on every area, self-registration. |
 | `SeedDataTests`, `DomainModelTests`, `ItsmApplicationTests` | The seed data, the JPA mapping, and that the app starts. |
@@ -404,8 +442,8 @@ A score of 17 cannot actually occur (three whole numbers from 1 to 3 never multi
 | Pattern  | Where | Why |
 |----------|-------|-----|
 | State    | `IncidentState` and one class per status in `domain.state` | The rules of each status live in one class. The incident has no `if`/`switch` on its status. |
-| Strategy | `AssignmentStrategy` with three implementations; `PriorityCalculator` with one; `NotificationChannel` with two | The rule can be swapped, at runtime for assignment, without touching the code that uses it. |
-| Observer | `IncidentEventPublisher`, `IncidentEventListener`, with `AuditTrailListener` and `NotificationListener` as the observers | Code that changes an incident does not know who reacts to the change. Notifications were added without touching that code. |
+| Strategy | `AssignmentStrategy` with three implementations; `PriorityCalculator` with one; `NotificationChannel` with three | The rule can be swapped, at runtime for assignment, without touching the code that uses it. |
+| Observer | `IncidentEventPublisher`, `IncidentEventListener`, with `AuditTrailListener`, `NotificationListener` and `LiveUpdateListener` as the observers | Code that changes an incident does not know who reacts to the change. Notifications, and later live updates, were added without touching that code. |
 | Factory  | `IncidentFactory`; `NotificationChannelFactory` | One place knows what a valid new incident needs, including its code. One place decides which notification channels exist and which news goes where. |
 | Template method | `AbstractAssignmentStrategy` | The shared rule (skip unavailable and full technicians) is written once; each strategy fills in only how it picks. |
 | Repository | the interfaces in `repository` | Database access is behind interfaces. |
@@ -511,8 +549,9 @@ src/main/java/com/itsm
 ├── assignment    AssignmentStrategy, the three strategies, AssignmentService
 ├── sla           SlaService (policies, demo SLA, the check) and SlaMonitor (the minute job)
 ├── event         IncidentEvent, the publisher, the listener interface, AuditTrailListener
-├── notification  NotificationChannel, the two channels, the factory, the dispatcher, NotificationListener
+├── notification  NotificationChannel, the three channels, the factory, the dispatcher, NotificationListener
 ├── intelligence  DuplicateDetector, EscalationPolicy, CategorySuggester, SlaRiskRanker
+├── live          live updates: LiveUpdates (the open connections), LiveController (/live), LiveUpdateListener
 ├── search        IncidentSearchCriteria and IncidentSpecifications
 ├── error         ItsmException and its subclasses
 ├── service       IncidentService (report, change status, reclassify, notes, rating), IncidentFactory, RegistrationService
@@ -526,6 +565,7 @@ src/main/resources
 ├── application.properties        settings shared by all profiles
 ├── application-dev.properties    dev profile: H2 console on
 ├── static/css/app.css            small additions on top of Bootstrap
+├── static/js/live.js             the browser side of live updates
 └── templates
     ├── fragments      layout, the navbar for each role, shared UI pieces (badges, incident table)
     ├── auth           sign-in and registration pages
@@ -553,6 +593,7 @@ src/main/resources
 | Language    | Java 25                                                       |
 | Framework   | Spring Boot 4.1 (Spring MVC, Spring Security, Spring Data JPA, Validation) |
 | Pages       | Thymeleaf, Bootstrap 5 and Bootstrap Icons (served from the app, so the UI works offline) |
+| Live updates | Server-sent events: Spring MVC's `SseEmitter` on the server, the browser's own `EventSource`, no extra library |
 | Database    | H2 in file mode, through Hibernate                            |
 | Build       | Maven (wrapper included)                                      |
 | Tests       | JUnit, Spring MockMvc, Spring Security Test                   |

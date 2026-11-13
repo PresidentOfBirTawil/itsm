@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.itsm.notification.EmailChannel;
 import com.itsm.notification.InAppChannel;
+import com.itsm.notification.LiveChannel;
 import com.itsm.notification.NotificationChannel;
 import com.itsm.notification.NotificationChannelFactory;
 import com.itsm.notification.NotificationDispatcher;
@@ -63,7 +64,7 @@ class NotificationDispatcherTests {
 
     /** A factory that hands out the given channels for every kind of news. */
     private static NotificationDispatcher dispatcherWith(NotificationChannel... channels) {
-        NotificationChannelFactory factory = new NotificationChannelFactory(null, null) {
+        NotificationChannelFactory factory = new NotificationChannelFactory(null, null, null) {
             @Override
             public List<NotificationChannel> channelsFor(NotificationType type) {
                 return List.of(channels);
@@ -115,14 +116,15 @@ class NotificationDispatcherTests {
     @Test
     void theFactoryDecidesWhichChannelsAKindOfNewsGoesThrough() {
         InAppChannel inApp = new InAppChannel(null, null, null);
+        LiveChannel live = new LiveChannel(null, null);
         EmailChannel email = new EmailChannel(null);
-        NotificationChannelFactory factory = new NotificationChannelFactory(inApp, email);
+        NotificationChannelFactory factory = new NotificationChannelFactory(inApp, live, email);
 
-        assertThat(factory.allChannels()).containsExactly(inApp, email);
-        // Important news goes to the app and by email ...
-        assertThat(factory.channelsFor(NotificationType.SLA_BREACHED)).containsExactly(inApp, email);
-        assertThat(factory.channelsFor(NotificationType.ASSIGNED)).containsExactly(inApp, email);
+        assertThat(factory.allChannels()).containsExactly(inApp, live, email);
+        // Important news goes to the app (stored, then the bell updated live) and by email ...
+        assertThat(factory.channelsFor(NotificationType.SLA_BREACHED)).containsExactly(inApp, live, email);
+        assertThat(factory.channelsFor(NotificationType.ASSIGNED)).containsExactly(inApp, live, email);
         // ... an ordinary status change only to the app.
-        assertThat(factory.channelsFor(NotificationType.STATUS_CHANGED)).containsExactly(inApp);
+        assertThat(factory.channelsFor(NotificationType.STATUS_CHANGED)).containsExactly(inApp, live);
     }
 }

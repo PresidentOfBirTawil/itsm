@@ -62,6 +62,7 @@ rectangle "I-ITSM" {
     usecase "Assign a technician automatically" as UC_AutoAssign
     usecase "Record the action in the audit trail" as UC_Trail
     usecase "Notify the people concerned" as UC_Notify
+    usecase "Update open pages and the bell live" as UC_Live
     usecase "Check SLAs: warn at 75%, record breaches" as UC_Check
     usecase "Escalate an unacknowledged P1" as UC_Escalate
   }
@@ -115,8 +116,10 @@ UC_Check ..> UC_Escalate : <<include>>
 
 note bottom of UC_Trail
   Every use case that changes an incident
-  includes "Record the action in the audit trail"
-  and "Notify the people concerned".
+  includes "Record the action in the audit trail",
+  "Notify the people concerned" and
+  "Update open pages and the bell live".
 end note
 UC_Trail -[hidden]- UC_Notify
+UC_Notify -[hidden]- UC_Live
 @enduml

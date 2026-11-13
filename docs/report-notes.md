@@ -120,6 +120,7 @@ escalates a critical incident nobody has acknowledged.
 | FR-22 | Reports: incidents by status, priority and category, SLA compliance, resolution time against target, figures per technician. | `ReportService` |
 | FR-23 | An audit log across all incidents with filters. | `AdminInsightController` |
 | FR-24 | Demo data can be reset and filled with realistic past incidents. | `DemoDataService` |
+| FR-25 | Open pages update by themselves: when an incident is created or changes, the administrator's dashboard, the technician's queue and the incident lists are refreshed in place, and the bell count changes at once. | `live/`, `LiveChannel`, `static/js/live.js` |
 
 ### Non-functional requirements
 
@@ -133,7 +134,7 @@ escalates a critical incident nobody has acknowledged.
 | NFR-06 | Usability | Understandable without training; clear feedback on every action; works on a phone. | Bootstrap 5 responsive layout, a success or error message after every action, only the buttons a user may press are shown. |
 | NFR-07 | Persistence | Data survives a restart. | H2 file database in `./data/itsm`. |
 | NFR-08 | Performance | Pages respond quickly at the size of one organisation. | Indexed lookups by code and id, lists fetched with their related objects in one query, the SLA check takes milliseconds for hundreds of incidents. |
-| NFR-09 | Testability | Rules can be tested without a server or database. | Rules live in plain classes. 471 automated tests. |
+| NFR-09 | Testability | Rules can be tested without a server or database. | Rules live in plain classes. 498 automated tests. |
 | NFR-10 | Portability | Runs on any machine with Java 25, nothing else to install. | Maven wrapper, embedded server, embedded database, Bootstrap served from the application. |
 | NFR-11 | Error tolerance | A user never sees a stack trace. | `ErrorHandler` turns every exception into a message or a page. Section 9. |
 | NFR-12 | Upgradability | A newer version runs on an existing database. | New columns are nullable; enum values are stored as text. |
@@ -180,8 +181,9 @@ Security         com.itsm.security     who are you, may you open this address
 Presentation     com.itsm.web          controllers, form objects, Thymeleaf templates, error pages
 Services         com.itsm.service      one method per user action, one transaction each
                  .assignment .sla .priority .intelligence .report .seed
-Events           com.itsm.event        publisher and listeners (audit trail, notifications)
+Events           com.itsm.event        publisher and listeners (audit trail, notifications, live updates)
                  com.itsm.notification channels, factory, dispatcher
+                 com.itsm.live         the open browser connections (server-sent events)
 Domain model     com.itsm.domain       entities, enums, the nine state classes: the rules
                  com.itsm.error        the exception hierarchy
 Persistence      com.itsm.repository   Spring Data JPA repositories → Hibernate → H2
@@ -236,9 +238,9 @@ The class diagrams ([domain model](diagrams/class-diagram.png),
 | **State** | Interface `IncidentState`; one class per status: `NewState`, `ClassifiedState`, `AssignedState`, `AcknowledgedState`, `InProgressState`, `AwaitingInfoState`, `ResolvedState`, `VerifiedState`, `ClosedState`; registry `IncidentStates`; `Incident.transitionTo` | What an incident may do depends entirely on its status. Without the pattern every method would start with a long `switch (status)`. With it, each status is a small class that lists its own legal moves, who may make them, and what happens on entering and leaving (for example `AwaitingInfoState` pauses the SLA clock). Adding a status means adding a class. |
 | **Strategy** (assignment) | Interface `AssignmentStrategy`; `SkillBasedStrategy`, `LeastLoadedStrategy`, `RoundRobinStrategy`; context `AssignmentService` | There are several reasonable ways to choose a technician and the administrator must be able to switch at runtime. Each rule is one class behind one interface. `AssignmentService` holds a list of all strategies and uses the one named in the settings. A fourth rule is a new class and nothing else. |
 | **Strategy** (priority) | Interface `PriorityCalculator`; `WeightedPriorityCalculator` | The brief leaves the priority rule to the team, so it is likely to change. `IncidentService` knows only the interface. |
-| **Strategy** (delivery) | Interface `NotificationChannel`; `InAppChannel`, `EmailChannel` | "Deliver this message" has several implementations. SMS or chat would be another class. |
+| **Strategy** (delivery) | Interface `NotificationChannel`; `InAppChannel`, `LiveChannel`, `EmailChannel` | "Deliver this message" has several implementations. SMS or chat would be another class. `LiveChannel` (the bell count pushed to open pages) was added later as exactly that: one new class. |
 | **Template Method** | `AbstractAssignmentStrategy.choose()` (final) calls the abstract `pick()` | All three strategies share the same first step (leave out technicians who are disabled, unavailable or full) and the same failure (throw `TechnicianUnavailableException`). The parent class fixes that skeleton once; each subclass fills in only the choice itself. No strategy can forget the workload rule. |
-| **Observer** | `IncidentEventPublisher` (subject); interface `IncidentEventListener`; `AuditTrailListener`, `NotificationListener`; `IncidentEvent` (the message) | Many things must happen when an incident changes: write the audit trail, notify people. The service that changes the incident should not know about them. It publishes an event; every listener reacts. A new reaction is a new listener class. |
+| **Observer** | `IncidentEventPublisher` (subject); interface `IncidentEventListener`; `AuditTrailListener`, `NotificationListener`, `LiveUpdateListener`; `IncidentEvent` (the message) | Many things must happen when an incident changes: write the audit trail, notify people. The service that changes the incident should not know about them. It publishes an event; every listener reacts. A new reaction is a new listener class. Live updates proved it: `LiveUpdateListener` was added after version 1.0 and not one line of `IncidentService`, `AssignmentService` or `SlaService` changed. |
 | **Factory** | `IncidentFactory.create(...)` | Creating a valid incident takes several steps: check that nothing is missing, build it in status NEW, save it so that it gets its number and code. Putting this in one place means an incident cannot be created half-finished anywhere else. |
 | **Factory** | `NotificationChannelFactory.channelsFor(type)` | Which channels a message goes through depends on its type (everything goes in-app; only some types are emailed). The dispatcher asks the factory and does not decide itself. |
 | **Repository** | `IncidentRepository`, `UserRepository`, … (Spring Data JPA) | The rest of the code asks for objects ("open incidents of this technician") and never writes SQL. The database could be replaced without touching the services. |
@@ -337,6 +339,67 @@ Thresholds and why: 0.4 similarity is the lowest value at which the brief's thre
 while unrelated reports on the same service are not. 24 hours keeps yesterday's solved outage from
 attracting today's new one.
 
+### Innovation feature: live updates
+
+When an incident is created or changes, the pages that show it update without a refresh: the
+administrator's dashboard, the technician's home screen and queue, the employee's home screen, the
+incident lists and search results, and the number on the notification bell.
+
+**How it works.** Each signed-in page keeps one HTTP connection open to `/live` (server-sent events,
+the browser's built-in `EventSource`). The server pushes one of three small messages down it:
+`incident` (with the incident's code), `bell` (with the user's unread count) or `refresh`. On an
+`incident` message the page fetches itself again in the background and replaces only the parts marked
+`data-live`; on a `bell` message it changes the number directly.
+
+| Part | Class | Role |
+|---|---|---|
+| The open connections | `live/LiveUpdates` | Remembers who is listening (user, role, session) and sends messages, from one background thread. |
+| The address | `live/LiveController` | `GET /live` returns the stream. |
+| Incident news | `live/LiveUpdateListener` | A third `IncidentEventListener` (Observer). Waits for the commit; one message per incident per action. |
+| Bell count | `notification/LiveChannel` | A third `NotificationChannel` (Strategy), handed out by the factory after the in-app channel. |
+| Browser side | `static/js/live.js` | About a hundred lines of plain JavaScript, no library. |
+
+**Why server-sent events** and not WebSockets or polling: the news only flows one way, from server to
+browser, which is exactly what SSE is for. It is ordinary HTTP, so the existing session cookie and
+security rules apply unchanged, the browser reconnects by itself, and no library is needed on either
+side. Polling every few seconds would do the same with constant load and a delay. WebSockets would add
+a second protocol and their own security configuration for a two-way channel nobody needs.
+
+**Why the page fetches itself again** instead of receiving the new data in the message: the server
+already knows how to render every page and who may see what. Sending data would mean a second, parallel
+way of producing the dashboard in JavaScript, with its own access checks to get wrong. This way a
+message carries no content at all, only "something changed".
+
+**Design decisions worth mentioning in the report**
+
+- *After the commit.* The listener registers itself with the running transaction and sends when it
+  commits. A page that fetches fresh content therefore finds the new state, and a change that is rolled
+  back is never announced.
+- *Once per action.* Reporting an incident raises three events (reported, prioritised, assigned); the
+  pages get one message.
+- *Privacy.* Technicians and administrators may see every incident, so they get every message. An
+  employee gets only the codes of incidents they reported.
+- *Isolation.* Messages are sent from a dedicated thread. A browser on a broken connection cannot slow
+  down the request of the person who caused the news, and a failed send only removes that connection.
+- *No database connection per tab.* The `/live` request reads nothing from the database. This is
+  tested: with three streams open the connection pool has no connection in use.
+- *Forms are never replaced.* The incident page shows "This incident has just been changed" with a
+  link, because someone may be writing a note. On search pages only the results are replaced.
+- *Progressive enhancement.* Without JavaScript every page works exactly as before.
+
+### Innovation challenges of the brief that are covered
+
+| Innovation challenge in the brief | In this project |
+|---|---|
+| Incident similarity detection | Duplicate detection (`DuplicateDetector`) |
+| Predictive SLA violation detection | The 75% warning and the "most likely to breach next" list (`SlaRiskRanker`) |
+| Automated incident escalation | `EscalationPolicy`, `AutoEscalation` |
+| AI-assisted incident classification | Rule-based category suggestion (`CategorySuggester`); no machine learning |
+| Real-time notifications | The bell count pushed to open pages (`LiveChannel`) |
+| Real-time operational dashboard | The administrator's dashboard updating live (`LiveUpdateListener`) |
+| Event-driven architecture | Inside the application: `IncidentEventPublisher` and its three listeners |
+| Analytics and visualization | The Reports page (`ReportService`) |
+
 ---
 
 ## 9. Exception handling
@@ -382,6 +445,7 @@ no controller has its own error-page code and no stack trace reaches a browser.
 | **No information leaks** | The sign-in page gives the same message for an unknown email, a wrong password and a disabled account. Error pages show a readable sentence, never a stack trace or SQL. | `auth/login.html`, `ErrorHandler` |
 | **Least privilege for tools** | The H2 database console exists only in the development profile and only for administrators. | `SecurityConfig`, `application-dev.properties` |
 | **Accountability** | Every change to an incident is in the audit trail with the user and the time. | `AuditTrailListener` |
+| **Live updates** | The stream at `/live` needs a signed-in session like any other address. A message carries only an incident code or the user's own unread count, never content; employees get only the codes of their own incidents. What a page then shows is fetched through the normal, access-checked pages. Streams are closed at sign-out and when an account is disabled. | `LiveUpdates`, `LiveController` |
 | **Browser protections** | Spring Security's default headers: no framing by other sites (clickjacking), no content-type sniffing, no caching of protected pages. | Spring Security default |
 
 ### What is not implemented, and what would be needed
@@ -395,7 +459,7 @@ no controller has its own error-page code and no stack trace reaches a browser.
 | Single sign-on | Staff need one more password. | Sign in through the company directory (OAuth 2 / OpenID Connect), which Spring Security supports. |
 | Audit of sign-ins and administration | Only incident changes are in the audit trail, not who signed in or who changed a setting. | A second audit log for security events. |
 | Database credentials | The development database has the default user and no password. | A real database server with its own account; secrets from the environment, not from a file in the repository. |
-| Session timeout tuning, "remember me" | Sessions end after the server's default 30 minutes of inactivity. | A timeout chosen for the organisation. |
+| Session timeout tuning, "remember me" | Sessions end after the server's default 30 minutes of inactivity. A page that refreshes itself through live updates counts as activity, so an open dashboard on a busy desk stays signed in. | A timeout chosen for the organisation; an absolute maximum session length for unattended screens. |
 | Data protection | No encryption of the database file; no rule for deleting old personal data. | Disk encryption; a retention policy. |
 
 ---
@@ -425,7 +489,9 @@ thing that works: one language, one project, one build, one deployment. Security
 because the server decides what is on the page (a button a user may not press is never sent) and
 there is no public API to protect separately. Thymeleaf templates are valid HTML and escape user
 text by default. Bootstrap gives a consistent, responsive look without a designer, so the pages work
-on a phone. A small amount of plain JavaScript is used only where it helps.
+on a phone. A small amount of plain JavaScript is used only where it helps: about a hundred lines for
+live updates (section 8), which replace parts of a page with HTML the server rendered. Pages still work
+with JavaScript switched off.
 
 ### 3. Why did you choose this backend technology?
 
@@ -489,7 +555,7 @@ redesign.
 - Strong typing and a mature, well-documented ecosystem with long-term support.
 - Security, transactions, validation and scheduling come from the framework, already tested.
 - OOP concepts map directly onto language features (question 8).
-- Excellent testability: 471 tests run in under a minute with no external services.
+- Excellent testability: 498 tests run in under a minute with no external services.
 - The database can be exchanged without code changes.
 - Pages work without JavaScript, which makes them robust and accessible.
 
@@ -497,8 +563,8 @@ redesign.
 
 - H2 is not meant for many simultaneous users or large data; a production system needs a database
   server.
-- Server-rendered pages reload on each action. Highly interactive features (drag and drop, offline
-  use) would need more client-side code.
+- Server-rendered pages reload on each action. Live updates soften this for dashboards and lists, but
+  highly interactive features (drag and drop, offline use) would need more client-side code.
 - Spring Boot uses more memory and starts more slowly (a few seconds) than lightweight frameworks.
 - The framework does much "by convention". That saves code but means a newcomer has to learn what
   happens behind annotations such as `@Transactional`.
@@ -547,6 +613,7 @@ tens of thousands of incidents). The steps below are in the order they would bec
 | 4 | The SLA check loads every open incident every minute. | Query only incidents whose next deadline is near (`resolution_due < now + x`) and that are not already breached, in batches. | Small |
 | 5 | One server is not enough, or must not be a single point of failure. | Run **several instances behind a load balancer**. The application is nearly stateless already; three things are not: (a) sessions in memory → Spring Session with Redis or the database; (b) the SLA job would run on every instance → a shared lock so that one instance runs it (ShedLock); (c) the round-robin strategy remembers the last technician in memory → store it in the database. | Medium |
 | 6 | Sending notifications slows down the request and is lost if the server stops at the wrong moment. | Write notifications to an **outbox table** in the same transaction and deliver them from a **message queue** (RabbitMQ or Kafka) with retries. Listeners already receive events and never call each other, so this replaces the dispatcher only. | Medium |
+| 6a | Live updates: each server knows only the browsers connected to itself, and every message makes every open dashboard render again. | With several instances, **publish the messages through a shared channel** (Redis publish/subscribe or the message queue of step 6) so that every instance can tell its own browsers. Send at most one message per second per page, and for the busiest pages send the changed row instead of asking for the whole page. | Medium |
 | 7 | Duplicate detection compares against all recent incidents of a service in memory. | Use the database's **full-text search**, or a search engine, to fetch only likely candidates. `DuplicateDetector` stays as the final check. | Medium |
 | 8 | Reports compete with daily work for the database. | A **read replica** for reports and search. | Medium |
 | 9 | Several teams work on the code, or one part needs far more capacity than the rest. | Split along the existing package boundaries into **services**: notifications first (already event-driven), then reporting. Incident, assignment and SLA should stay together because they share one transaction. | Large |
@@ -570,7 +637,7 @@ oversights:
 | Service dependency graph | Not implemented | Each incident affects one service; services have no relationships to each other. |
 | Multi-level escalation chain | One level only | The brief requires escalation; one level to the administrators covers it. |
 | Number of affected users as its own input | Part of the impact level | See Assumptions. |
-| Real email, SMS, mobile push | Simulated email outbox | No mail server in a course project. A real channel is one class implementing `NotificationChannel`. |
+| Real email, SMS, mobile push | Simulated email outbox; live updates only while a page is open | No mail server in a course project. A real channel is one class implementing `NotificationChannel`. Push to a closed browser or a phone would need a push service. |
 | Business hours and holidays in SLA times | Not implemented | SLA times are clock time. |
 | File attachments on incidents | Not implemented | Not in the brief. |
 | REST API for other systems | Not implemented | The brief allows a web application without one. The services could be exposed through REST controllers without change. |
