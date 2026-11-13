@@ -9,7 +9,8 @@
   active  - which navbar link to highlight (for example 'dashboard')
   content - the <main> element of the page
 -->
-<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="page(title, active, content)">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="page(title, active, content)">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -42,5 +43,7 @@
 </footer>
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<!--/* Live updates (see static/js/live.js). Only for signed-in users: the sign-in page has nothing to update. */-->
+<script th:src="@{/js/live.js}" sec:authorize="isAuthenticated()" defer></script>
 </body>
 </html>

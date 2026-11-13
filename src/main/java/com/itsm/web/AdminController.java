@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.itsm.error.TechnicianUnavailableException;
 import com.itsm.intelligence.SlaRiskRanker;
+import com.itsm.live.LiveUpdates;
 import com.itsm.assignment.AssignmentService;
 import com.itsm.assignment.AssignmentStrategy;
 import com.itsm.domain.Administrator;
@@ -57,12 +58,13 @@ public class AdminController {
     private final IncidentPages incidentPages;
     private final SlaRiskRanker slaRiskRanker;
     private final DemoDataService demoDataService;
+    private final LiveUpdates liveUpdates;
 
     public AdminController(AdministratorRepository administrators, IncidentRepository incidents,
                            AuditEntryRepository auditEntries, EmailMessageRepository emails,
                            IncidentService incidentService, AssignmentService assignmentService,
                            SlaService slaService, IncidentPages incidentPages, SlaRiskRanker slaRiskRanker,
-                           DemoDataService demoDataService) {
+                           DemoDataService demoDataService, LiveUpdates liveUpdates) {
         this.administrators = administrators;
         this.incidents = incidents;
         this.auditEntries = auditEntries;
@@ -73,6 +75,7 @@ public class AdminController {
         this.incidentPages = incidentPages;
         this.slaRiskRanker = slaRiskRanker;
         this.demoDataService = demoDataService;
+        this.liveUpdates = liveUpdates;
     }
 
     @GetMapping
@@ -230,6 +233,7 @@ public class AdminController {
     public String resetDemoData(@RequestParam(defaultValue = "true") boolean samples, RedirectAttributes redirect) {
         return incidentPages.perform("/admin/settings", redirect, () -> {
             int added = demoDataService.reset(samples);
+            liveUpdates.everythingChanged(); // every open page fetches its content again
             return samples
                     ? "The demo data has been reset: %d sample incidents were added.".formatted(added)
                     : "All incidents have been removed. The next incident will be INC-0001.";

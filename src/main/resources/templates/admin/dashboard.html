@@ -2,7 +2,8 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page('Administrator dashboard', 'dashboard', ~{::main})}">
 <body>
-<main>
+<!-- data-live: this part is replaced in place when an incident changes (static/js/live.js). -->
+<main data-live="page">
     <div class="mb-4">
         <h1 class="h3 mb-1">Administration</h1>
         <p class="text-body-secondary mb-0">Administrator workspace · how the service desk is doing right now.</p>

@@ -22,7 +22,9 @@ participant "AssignmentStrategy\n(SkillBased…)" as Strategy
 participant "AuditTrailListener" as Audit
 participant "NotificationListener" as Notifier
 participant "NotificationDispatcher" as Dispatcher
+participant "LiveUpdateListener\n+ LiveUpdates" as Live
 database "H2" as DB
+actor "Open pages of\nadmins, technicians" as Others
 
 Employee -> Security : POST /employee/incidents\n(title, description, service, category, impact, urgency)
 Security -> Security : session valid? role EMPLOYEE? CSRF token?
@@ -48,6 +50,7 @@ group one database transaction
   Audit -> DB : insert audit entry
   Publisher -> Notifier : onIncidentEvent
   Notifier -> Dispatcher : sendAfterCommit(messages)
+  Publisher -> Live : onIncidentEvent (remembered until the commit)
 
   Service -> Duplicates : findDuplicate(incident, recent open ones)
   Duplicates --> Service : match or nothing
@@ -80,10 +83,13 @@ Controller --> Employee : 302 redirect to /employee/incidents/INC-0007
 
 group after the commit, each channel in its own transaction
   Dispatcher -> DB : in-app notifications for reporter and technician
+  Dispatcher -> Live : unread count of each recipient
+  Live --> Others : event "bell": the number on the bell changes
   Dispatcher -> DB : simulated emails into the outbox
+  Live --> Others : event "incident": dashboards and queues\nfetch their content again (one message, not three)
   note right of Dispatcher
     A channel that fails is logged and skipped.
-    The incident and the other channel are unaffected.
+    The incident and the other channels are unaffected.
   end note
 end
 

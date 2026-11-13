@@ -81,7 +81,8 @@
         </div>
     </div>
 
-    <div class="card">
+    <!-- data-live: the results are replaced in place when an incident changes; the filters above keep what was typed. -->
+    <div class="card" data-live="incident-list">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span th:text="${filtered} ? 'Matching incidents' : 'All incidents'">All incidents</span>
             <span class="badge text-bg-light border" th:text="${incidents.size()}">0</span>

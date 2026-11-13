@@ -8,8 +8,13 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-/** Values every page needs for its navbar, added to the model of every controller. */
-@ControllerAdvice
+/**
+ * Values every page needs for its navbar, added to the model of every
+ * controller in this package. (Not to the live-updates connection in
+ * {@code com.itsm.live}: that request stays open for hours and must not
+ * read from the database.)
+ */
+@ControllerAdvice(basePackages = "com.itsm.web")
 public class GlobalModel {
 
     private final NotificationRepository notifications;

@@ -15,23 +15,26 @@ import org.springframework.stereotype.Component;
 public class NotificationChannelFactory {
 
     private final InAppChannel inApp;
+    private final LiveChannel live;
     private final EmailChannel email;
 
-    public NotificationChannelFactory(InAppChannel inApp, EmailChannel email) {
+    public NotificationChannelFactory(InAppChannel inApp, LiveChannel live, EmailChannel email) {
         this.inApp = inApp;
+        this.live = live;
         this.email = email;
     }
 
     /** Every channel the application has. */
     public List<NotificationChannel> allChannels() {
-        return List.of(inApp, email);
+        return List.of(inApp, live, email);
     }
 
     /**
-     * The channels for one kind of news: always the app, and email as well if
+     * The channels for one kind of news: always the app (the stored
+     * notification, then the live update of the bell), and email as well if
      * the news is important enough.
      */
     public List<NotificationChannel> channelsFor(NotificationType type) {
-        return type.isEmailed() ? List.of(inApp, email) : List.of(inApp);
+        return type.isEmailed() ? List.of(inApp, live, email) : List.of(inApp, live);
     }
 }

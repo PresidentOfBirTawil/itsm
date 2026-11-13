@@ -17,6 +17,7 @@ skinparam component {
 actor "Employee\nTechnician\nAdministrator" as User
 node "Browser" as Browser {
   [HTML pages\nBootstrap 5] as Pages
+  [live.js\nEventSource] as LiveJs
 }
 
 node "One Spring Boot 4.1 application (Java 25, embedded Tomcat)" as App {
@@ -41,11 +42,13 @@ node "One Spring Boot 4.1 application (Java 25, embedded Tomcat)" as App {
     [PriorityCalculator] as Prio
   }
 
-  rectangle "Events · com.itsm.event + notification" as Events {
+  rectangle "Events · com.itsm.event + notification + live" as Events {
     [IncidentEventPublisher] as Publisher
     [AuditTrailListener] as AuditL
     [NotificationListener\nNotificationDispatcher] as NotifL
-    [Channels: in-app · email\n(NotificationChannelFactory)] as Channels
+    [Channels: in-app · live · email\n(NotificationChannelFactory)] as Channels
+    [LiveUpdateListener] as LiveL
+    [LiveUpdates\nopen connections\n(server-sent events)] as Live
   }
 
   rectangle "Domain model · com.itsm.domain" as Domain {
@@ -83,6 +86,11 @@ SlaSvc --> Publisher
 SlaSvc --> Intel
 Publisher --> AuditL
 Publisher --> NotifL
+Publisher --> LiveL
+LiveL --> Live : after commit
+Channels --> Live : bell count
+Live ..> LiveJs : pushes "incident", "bell"\nover the open /live connection
+LiveJs ..> Filters : fetches the page again,\nswaps the live parts
 NotifL --> Channels : after commit
 IncidentSvc --> IncidentD
 AssignSvc --> UsersD

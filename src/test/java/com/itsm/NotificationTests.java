@@ -309,8 +309,9 @@ class NotificationTests {
         // "Mark all as read" empties the bell.
         mvc.perform(post("/notifications/read-all").session(sara).with(csrf()))
                 .andExpect(redirectedUrl("/notifications"));
+        // (The number stays on the page, hidden, so that a live update can change it later.)
         mvc.perform(get("/technician/dashboard").session(sara))
-                .andExpect(content().string(not(containsString("navbar-bell-count"))));
+                .andExpect(content().string(containsString("navbar-bell-count d-none\">0</span>")));
     }
 
     @Test

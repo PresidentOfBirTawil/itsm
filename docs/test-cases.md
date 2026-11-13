@@ -1,6 +1,6 @@
 # Test cases
 
-The project has **471 automated tests** in 28 test classes (JUnit 5, AssertJ, Spring's MockMvc). They run
+The project has **498 automated tests** in 29 test classes (JUnit 5, AssertJ, Spring's MockMvc). They run
 with one command and need nothing installed except Java 25:
 
 ```bash
@@ -108,20 +108,22 @@ exception classes extend the one abstract `ItsmException`.
 | `AuditLogAndReportTests` | 8 | The administrator's audit log with its filters, and the report figures. |
 | `DatabaseFailureTests` | 4 | A database failure gives a readable 503 page and leaves nothing half-saved. |
 | `DemoDataResetTests` | 8 | "Reset demo data": what is removed, what is kept, and that the sample incidents obey the rules. |
-| **Total** | **471** | |
+| `LiveUpdatesTests` | 14 | Live updates as plain objects: who is sent which message, broken connections, waiting for the commit. |
+| `LiveUpdatesWebTests` | 13 | The live stream in the running application: sign-in required, the right messages arrive, streams close when they should. |
+| **Total** | **498** | |
 
 ## How the tests are built
 
 - **Unit tests** (`WeightedPriorityCalculatorTests`, `IncidentLifecycleTests`, `AssignmentStrategyTests`,
   `SlaTests`, `DuplicateDetectorTests`, `CategorySuggesterTests`, `EscalationAndRiskTests`,
-  `NotificationDispatcherTests`) create plain Java objects. They use no database and no Spring, so a
+  `NotificationDispatcherTests`, `LiveUpdatesTests`) create plain Java objects. They use no database and no Spring, so a
   failure points straight at the rule that broke.
 - **Integration tests** start the whole application against an empty in-memory H2 database with the
   seed data. Each test runs in a transaction that is rolled back afterwards, so tests cannot affect
   each other.
 - **Web tests** send real HTTP requests through the security filters with MockMvc. They sign in through
   the real login form, so roles, CSRF protection and sessions are tested as they are in production.
-- `NotificationTests`, `DatabaseFailureTests` and `DemoDataResetTests` need real commits or deliberate
-  failures, so each has its own copy of the application and database.
+- `NotificationTests`, `DatabaseFailureTests`, `DemoDataResetTests` and `LiveUpdatesWebTests` need real
+  commits or deliberate failures, so each has its own copy of the application and database.
 - The every-minute SLA job is switched off in tests. Tests call the same check directly and pass in the
   time, so nothing depends on the clock of the machine.

@@ -98,8 +98,9 @@
                         <a class="nav-link" th:classappend="${active == 'search' or active == 'incidents'} ? 'active'"
                            th:href="@{/admin/incidents}"><i class="bi bi-card-list me-1"></i>Incidents
                             <!-- Warning: incidents that no technician could be found for. -->
-                            <span class="badge text-bg-warning ms-1" th:if="${waitingCount != null and waitingCount > 0}"
-                                  th:text="${waitingCount}" title="Incidents waiting for a technician">1</span></a>
+                            <span data-live="nav-waiting"><span class="badge text-bg-warning ms-1"
+                                  th:if="${waitingCount != null and waitingCount > 0}"
+                                  th:text="${waitingCount}" title="Incidents waiting for a technician">1</span></span></a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'reports'} ? 'active'"
@@ -149,11 +150,14 @@
     <a class="navbar-bell position-relative" th:href="@{/notifications}" title="Notifications"
        th:classappend="${active == 'notifications'} ? 'active'">
         <i class="bi bi-bell-fill"></i>
+        <!-- Always on the page, hidden while it is zero, so that a live update can change the number. -->
         <span class="badge rounded-pill text-bg-danger navbar-bell-count"
-              th:if="${unreadNotifications != null and unreadNotifications > 0}"
-              th:text="${unreadNotifications}">3</span>
+              th:classappend="${unreadNotifications == null or unreadNotifications <= 0} ? 'd-none'"
+              th:text="${unreadNotifications ?: 0}">3</span>
         <span class="visually-hidden">Notifications</span>
     </a>
+    <!-- Turns green while the page is connected for live updates. -->
+    <span class="live-dot" data-live-status title="Live updates are connecting" aria-hidden="true"></span>
     <span class="navbar-text">
         <i class="bi bi-person-circle me-1"></i><span sec:authentication="principal.name">Name</span>
         <span class="badge text-bg-light ms-1" sec:authentication="principal.role.label">Role</span>
