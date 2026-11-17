@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.itsm.assignment.AssignmentService;
 import com.itsm.domain.AuditEntry;
@@ -30,6 +31,8 @@ import com.itsm.error.ServiceNotFoundException;
 import com.itsm.error.UnauthorizedOperationException;
 import com.itsm.event.IncidentEvent;
 import com.itsm.event.IncidentEventPublisher;
+import com.itsm.intelligence.CategoryClassifier;
+import com.itsm.intelligence.CategoryPrediction;
 import com.itsm.intelligence.CategorySuggester;
 import com.itsm.intelligence.CategorySuggestion;
 import com.itsm.intelligence.DuplicateDetector;
@@ -62,6 +65,7 @@ public class IncidentService {
     private final PriorityCalculator priorityCalculator;
     private final AssignmentService assignmentService;
     private final CategorySuggester categorySuggester;
+    private final CategoryClassifier categoryClassifier;
     private final DuplicateDetector duplicateDetector;
     private final IncidentEventPublisher events;
 
@@ -69,8 +73,8 @@ public class IncidentService {
                            CategoryRepository categories, SlaService slaService,
                            AuditEntryRepository auditEntries, IncidentFactory incidentFactory,
                            PriorityCalculator priorityCalculator, AssignmentService assignmentService,
-                           CategorySuggester categorySuggester, DuplicateDetector duplicateDetector,
-                           IncidentEventPublisher events) {
+                           CategorySuggester categorySuggester, CategoryClassifier categoryClassifier,
+                           DuplicateDetector duplicateDetector, IncidentEventPublisher events) {
         this.incidents = incidents;
         this.services = services;
         this.categories = categories;
@@ -80,6 +84,7 @@ public class IncidentService {
         this.priorityCalculator = priorityCalculator;
         this.assignmentService = assignmentService;
         this.categorySuggester = categorySuggester;
+        this.categoryClassifier = categoryClassifier;
         this.duplicateDetector = duplicateDetector;
         this.events = events;
     }
@@ -109,24 +114,35 @@ public class IncidentService {
         ITService service = services.findById(serviceId).orElseThrow(() -> new ServiceNotFoundException(serviceId));
         refuseIfAlreadyReported(reporter, service, title);
 
-        CategorySuggestion suggestion = null;
+        String categoryReason = null;
         Category category;
         if (categoryId != null) {
             category = categories.findById(categoryId)
                     .orElseThrow(() -> new NotFoundException("The chosen category does not exist."));
         } else {
-            suggestion = categorySuggester.suggest(title + " " + description, categories.findAll())
-                    .orElseThrow(() -> new InvalidInputException(
-                            "We could not work out a category from what you wrote. Please choose one."));
-            category = suggestion.category();
+            // First the keyword rules, which explain themselves in one line; then the learning classifier.
+            String text = title + " " + description;
+            Optional<CategorySuggestion> byKeywords = categorySuggester.suggest(text, categories.findAll());
+            if (byKeywords.isPresent()) {
+                category = byKeywords.get().category();
+                categoryReason = byKeywords.get().explain();
+            } else {
+                CategoryPrediction prediction = categoryClassifier.predict(text)
+                        .filter(guess -> guess.confidence() >= CategoryClassifier.CONFIDENT)
+                        .orElseThrow(() -> new InvalidInputException(
+                                "We could not work out a category from what you wrote. Please choose one."));
+                category = categories.findById(prediction.categoryId())
+                        .orElseThrow(() -> new NotFoundException("The predicted category no longer exists."));
+                categoryReason = prediction.explain();
+            }
         }
 
         Incident incident = incidentFactory.create(reporter, title, description, service, category, impact, urgency);
         events.publish(new IncidentEvent(incident, reporter, IncidentAction.REPORTED, null, incident.getStatus(),
                 "Reported against %s, category %s.".formatted(service.getName(), category.getName())));
-        if (suggestion != null) {
+        if (categoryReason != null) {
             events.publish(new IncidentEvent(incident, null, IncidentAction.CATEGORY_SUGGESTED,
-                    incident.getStatus(), incident.getStatus(), suggestion.explain()));
+                    incident.getStatus(), incident.getStatus(), categoryReason));
         }
 
         linkIfPossibleDuplicate(incident);

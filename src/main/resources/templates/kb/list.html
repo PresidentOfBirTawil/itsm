@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Knowledge base', 'kb', ~{::main})}">
+<body>
+<main>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Knowledge base</h1>
+            <p class="text-body-secondary mb-0">Known problems and how to solve them. Many problems can be fixed in a
+                minute without waiting for a technician.</p>
+        </div>
+        <a class="btn btn-primary" th:if="${canEdit}" th:href="@{/kb/manage/new}">
+            <i class="bi bi-plus-circle me-1"></i>Write an article</a>
+    </div>
+
+    <form method="get" th:action="@{/kb}" class="mb-4" role="search">
+        <div class="input-group input-group-lg">
+            <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
+            <input type="search" class="form-control" name="q" th:value="${q}" maxlength="200" autofocus
+                   placeholder="Describe the problem, e.g. vpn keeps disconnecting" aria-label="Search the knowledge base">
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+        <div class="form-text" th:if="${q != null and !#strings.isEmpty(q)}">
+            Best matches first. <a th:href="@{/kb}">Show all articles</a>
+        </div>
+    </form>
+
+    <div class="card" th:if="${#lists.isEmpty(articles)}">
+        <div class="text-center text-body-secondary py-5">
+            <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+            No article matches. Try other words, or report an incident and a technician will help.
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-lg-2 g-3">
+        <div class="col" th:each="article : ${articles}">
+            <a class="card h-100 text-decoration-none text-body kb-card" th:href="@{|/kb/${article.id}|}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between gap-2 small text-body-secondary mb-1">
+                        <span th:text="${article.reference}">KB-0001</span>
+                        <span>
+                            <span th:if="${article.helpfulPercent != null}" class="me-2"
+                                  th:title="|${article.helpfulVotes + article.notHelpfulVotes} votes|">
+                                <i class="bi bi-hand-thumbs-up"></i> <span th:text="|${article.helpfulPercent}%|">90%</span></span>
+                            <i class="bi bi-eye"></i> <span th:text="${article.views}">12</span>
+                        </span>
+                    </div>
+                    <h2 class="h6 fw-semibold mb-2" th:text="${article.title}">VPN disconnects</h2>
+                    <p class="small text-body-secondary mb-2" th:text="${#strings.abbreviate(article.problem, 160)}">Problem</p>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span class="badge text-bg-light border" th:if="${article.category != null}"
+                              th:text="${article.category.name}">Network</span>
+                        <span class="badge text-bg-light border" th:if="${article.service != null}"
+                              th:text="${article.service.name}">Corporate Network</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

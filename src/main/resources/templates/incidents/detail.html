@@ -116,6 +116,20 @@
                                  th:text="|Includes ${incident.slaPausedSeconds / 60} min added for time the clock was paused.|">Includes pauses.</div>
                         </dd>
 
+                        <!--/* Predicted from how long similar incidents took (SlaPredictor) */-->
+                        <th:block th:if="${forecast != null}">
+                            <dt class="col-sm-4">Expected resolution</dt>
+                            <dd class="col-sm-8">
+                                <span th:text="|around ${#temporals.format(forecast.expectedResolution, 'dd MMM, HH:mm')}|">around 01 Jan, 10:30</span>
+                                <span th:if="${staff}" class="badge ms-1 forecast-badge"
+                                      th:classappend="${forecast.level() == 'high'} ? 'text-bg-danger' : (${forecast.level() == 'medium'} ? 'text-bg-warning' : 'text-bg-success')"
+                                      th:text="|${forecast.breachPercent}% risk of missing the deadline|">20% risk</span>
+                                <div class="small text-body-secondary">
+                                    <i class="bi bi-graph-up-arrow me-1"></i>Predicted from <span th:text="${forecast.basis}">12 resolved incidents</span>.
+                                </div>
+                            </dd>
+                        </th:block>
+
                         <th:block th:if="${incident.closedAt != null}">
                             <dt class="col-sm-4">Closed</dt>
                             <dd class="col-sm-8" th:text="${#temporals.format(incident.closedAt, 'dd MMM yyyy, HH:mm')}">01 Jan 2026, 10:40</dd>
@@ -135,6 +149,14 @@
                         <span class="small" th:text="|${incident.rating} out of 5|">4 out of 5</span>
                         <div class="small fst-italic" th:if="${incident.ratingComment != null}"
                              th:text="|“${incident.ratingComment}”|">Comment</div>
+                    </div>
+                    <!--/* Turn a good fix into a knowledge article, so it is suggested next time */-->
+                    <div class="mt-3 pt-3 border-top" th:if="${staff}">
+                        <a th:if="${knowledgeArticle != null}" class="small" th:href="@{|/kb/${knowledgeArticle.id}|}">
+                            <i class="bi bi-journal-bookmark me-1"></i>Written up as <span th:text="${knowledgeArticle.reference}">KB-0001</span></a>
+                        <a th:if="${canWriteArticle}" class="btn btn-sm btn-outline-success"
+                           th:href="@{/kb/manage/new(fromIncident=${incident.code})}">
+                            <i class="bi bi-journal-plus me-1"></i>Save as a knowledge article</a>
                     </div>
                 </div>
             </div>
@@ -204,6 +226,39 @@
                 </div>
             </div>
 
+            <!--/* Suggested solutions: knowledge articles and similar past incidents (ResolutionRecommender) */-->
+            <div class="card mb-4" th:if="${staff and !#lists.isEmpty(recommendations)}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-lightbulb me-1 text-warning"></i>Suggested solutions</span>
+                    <span class="small fw-normal text-body-secondary">by similarity</span>
+                </div>
+                <div class="suggestion p-3" th:each="suggestion : ${recommendations}">
+                    <div class="d-flex justify-content-between align-items-center small mb-1">
+                        <span>
+                            <span class="badge" th:classappend="${suggestion.article} ? 'text-bg-success' : 'text-bg-secondary'"
+                                  th:text="${suggestion.source.label}">Knowledge base</span>
+                            <a th:if="${suggestion.article}" th:href="@{|/kb/${suggestion.articleId}|}"
+                               th:text="${suggestion.reference}">KB-0001</a>
+                            <a th:unless="${suggestion.article}" th:href="@{|${basePath}/${suggestion.incidentCode}|}"
+                               th:text="${suggestion.reference}">INC-0001</a>
+                        </span>
+                        <span class="fw-semibold" th:text="|${suggestion.percent}% match|">80% match</span>
+                    </div>
+                    <div class="fw-semibold small" th:text="${suggestion.title}">Title</div>
+                    <div class="small text-success-emphasis" th:if="${suggestion.timesUsed > 1}">
+                        <i class="bi bi-patch-check me-1"></i><span th:text="|This fix resolved ${suggestion.timesUsed} similar incidents|">This fix resolved 4 similar incidents</span>
+                    </div>
+                    <div class="small kb-text text-body-secondary my-1" th:text="${#strings.abbreviate(suggestion.solution, 220)}">Solution</div>
+                    <div class="small text-body-secondary">
+                        Matched on: <span th:text="${#strings.listJoin(suggestion.topWords(), ', ')}">vpn, client</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2"
+                            th:if="${canUseSuggestion and !#lists.isEmpty(transitions)}"
+                            data-fill-target="#note" th:attr="data-fill-text=${suggestion.solution}">
+                        <i class="bi bi-clipboard-plus me-1"></i>Use this text</button>
+                </div>
+            </div>
+
             <!-- The reporter rates the resolution once the fix is confirmed -->
             <div class="card mb-4 border border-primary-subtle" th:if="${canRate}">
                 <div class="card-header">Rate the resolution</div>
@@ -248,6 +303,21 @@
             <div class="card mb-4" th:if="${canReclassify}">
                 <div class="card-header">Change classification</div>
                 <div class="card-body">
+                    <!--/* A second opinion from the learning classifier, when it disagrees */-->
+                    <div class="alert alert-info small" th:if="${classifierOpinion != null}">
+                        <i class="bi bi-cpu me-1"></i>The classifier thinks this is
+                        <strong th:text="${classifierOpinion.categoryName}">Database</strong>
+                        (<span th:text="|${classifierOpinion.percent()}% sure|">80% sure</span><th:block
+                            th:unless="${#lists.isEmpty(classifierOpinion.evidence)}">, because of
+                        <span th:text="${#strings.listJoin(classifierOpinion.evidence, ', ')}">replication</span></th:block>).
+                        <form method="post" class="mt-2" th:action="@{|${basePath}/${incident.code}/classification|}">
+                            <input type="hidden" name="categoryId" th:value="${classifierOpinion.categoryId}">
+                            <input type="hidden" name="impact" th:value="${incident.impact}">
+                            <input type="hidden" name="urgency" th:value="${incident.urgency}">
+                            <button type="submit" class="btn btn-sm btn-info"
+                                    th:text="|Change to ${classifierOpinion.categoryName}|">Change to Database</button>
+                        </form>
+                    </div>
                     <form method="post" th:action="@{|${basePath}/${incident.code}/classification|}">
                         <div class="mb-2">
                             <label for="reclassifyCategory" class="form-label">Category</label>

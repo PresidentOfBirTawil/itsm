@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${article.title}, 'kb', ~{::main})}">
+<body>
+<main>
+    <a class="small text-decoration-none" th:href="@{/kb}"><i class="bi bi-arrow-left me-1"></i>Knowledge base</a>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="small text-body-secondary mb-1">
+                        <span th:text="${article.reference}">KB-0001</span>
+                        · updated <span th:text="${#temporals.format(article.updatedAt, 'dd MMM yyyy')}">01 Jan 2026</span>
+                        <th:block th:if="${article.author != null}">· by <span th:text="${article.author.name}">Ravi</span></th:block>
+                    </div>
+                    <h1 class="h3 mb-3" th:text="${article.title}">VPN disconnects</h1>
+                    <div class="d-flex flex-wrap gap-1 mb-4">
+                        <span class="badge text-bg-light border" th:if="${article.category != null}"
+                              th:text="${article.category.name}">Network</span>
+                        <span class="badge text-bg-light border" th:if="${article.service != null}"
+                              th:text="${article.service.name}">Corporate Network</span>
+                    </div>
+
+                    <h2 class="h6 text-uppercase text-body-secondary">The problem</h2>
+                    <p class="kb-text" th:text="${article.problem}">Problem</p>
+
+                    <h2 class="h6 text-uppercase text-body-secondary mt-4">The solution</h2>
+                    <div class="kb-text p-3 rounded bg-success-subtle text-success-emphasis" th:text="${article.solution}">Solution</div>
+
+                    <p class="small text-body-secondary mt-3 mb-0"
+                       th:if="${canEdit and article.sourceIncident != null}">
+                        Written from <a th:href="@{|${incidentsPath}/${article.sourceIncident.code}|}"
+                                        th:text="${article.sourceIncident.code}">INC-0001</a>.
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent d-flex flex-wrap align-items-center gap-2 py-3">
+                    <span class="me-2">Did this solve your problem?</span>
+                    <form method="post" th:action="@{|/kb/${article.id}/vote|}" class="d-inline">
+                        <input type="hidden" name="helpful" value="true">
+                        <button class="btn btn-sm btn-outline-success" type="submit"><i class="bi bi-hand-thumbs-up me-1"></i>Yes</button>
+                    </form>
+                    <form method="post" th:action="@{|/kb/${article.id}/vote|}" class="d-inline">
+                        <input type="hidden" name="helpful" value="false">
+                        <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-hand-thumbs-down me-1"></i>No</button>
+                    </form>
+                    <span class="small text-body-secondary ms-auto">
+                        <th:block th:if="${article.helpfulPercent != null}"
+                                  th:text="|${article.helpfulPercent}% of ${article.helpfulVotes + article.notHelpfulVotes} people found it helpful · |"></th:block>
+                        <span th:text="|${article.views} views|">12 views</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card mb-4" th:if="${canEdit}">
+                <div class="card-header">Manage</div>
+                <div class="card-body d-flex gap-2">
+                    <a class="btn btn-outline-primary" th:href="@{|/kb/manage/${article.id}/edit|}"><i class="bi bi-pencil me-1"></i>Edit</a>
+                    <form method="post" th:action="@{|/kb/manage/${article.id}/delete|}"
+                          data-confirm="Delete this article? This cannot be undone.">
+                        <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash me-1"></i>Delete</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card" th:unless="${#lists.isEmpty(related)}">
+                <div class="card-header">Related articles</div>
+                <div class="list-group list-group-flush">
+                    <a class="list-group-item list-group-item-action" th:each="other : ${related}"
+                       th:href="@{|/kb/${other.id}|}">
+                        <div class="small text-body-secondary" th:text="${other.reference}">KB-0002</div>
+                        <div th:text="${other.title}">Other</div>
+                    </a>
+                </div>
+            </div>
+            <div class="card mt-4" sec:authorize="hasRole('EMPLOYEE')" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+                <div class="card-body">
+                    <p class="mb-2">Still stuck?</p>
+                    <a class="btn btn-primary w-100" th:href="@{/employee/incidents/new}">Report an incident</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

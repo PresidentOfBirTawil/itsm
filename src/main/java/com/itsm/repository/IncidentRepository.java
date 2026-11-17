@@ -92,6 +92,15 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
 
     long countByStatusIn(Collection<Status> statuses);
 
+    /** Incidents that have been resolved at some point: the history the predictions learn from. */
+    List<Incident> findByResolvedAtIsNotNull();
+
+    /** Finished incidents with a written resolution: the past fixes that can be suggested again. */
+    List<Incident> findByResolutionIsNotNullAndStatusIn(Collection<Status> statuses);
+
+    /** Incidents with a category: the examples the category classifier learns from. */
+    List<Incident> findByCategoryIsNotNull();
+
     @Query("select count(i) from Incident i where i.assessment.priority = :priority and i.status in :statuses")
     long countByPriorityAndStatusIn(@Param("priority") Priority priority,
                                     @Param("statuses") Collection<Status> statuses);

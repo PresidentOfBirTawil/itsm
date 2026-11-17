@@ -1,5 +1,6 @@
 package com.itsm.web;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -7,7 +8,13 @@ import java.util.stream.Collectors;
 import com.itsm.error.ItsmException;
 import com.itsm.error.NotFoundException;
 import com.itsm.error.UnauthorizedOperationException;
+import com.itsm.domain.KnowledgeArticle;
+import com.itsm.intelligence.CategoryClassifier;
+import com.itsm.intelligence.CategoryPrediction;
 import com.itsm.intelligence.DuplicateMatch;
+import com.itsm.intelligence.ResolutionRecommender;
+import com.itsm.knowledge.KnowledgeService;
+import com.itsm.sla.SlaPredictor;
 import com.itsm.domain.AuditEntry;
 import com.itsm.domain.Impact;
 import com.itsm.domain.Incident;
@@ -44,22 +51,37 @@ public class IncidentPages {
     static final String DETAIL_VIEW = "incidents/detail";
     static final String SEARCH_VIEW = "incidents/search";
 
+    /** How many suggested solutions the incident page shows. */
+    private static final int SUGGESTED_SOLUTIONS = 3;
+    /** The classifier must be at least this sure before it questions the category on the incident page. */
+    private static final double SECOND_OPINION_CONFIDENCE = 0.6;
+
     private final IncidentService incidentService;
     private final PriorityCalculator priorityCalculator;
     private final IncidentRepository incidents;
     private final CategoryRepository categories;
     private final ITServiceRepository services;
     private final TechnicianRepository technicians;
+    private final ResolutionRecommender recommender;
+    private final CategoryClassifier classifier;
+    private final SlaPredictor slaPredictor;
+    private final KnowledgeService knowledge;
 
     public IncidentPages(IncidentService incidentService, PriorityCalculator priorityCalculator,
                          IncidentRepository incidents, CategoryRepository categories,
-                         ITServiceRepository services, TechnicianRepository technicians) {
+                         ITServiceRepository services, TechnicianRepository technicians,
+                         ResolutionRecommender recommender, CategoryClassifier classifier, SlaPredictor slaPredictor,
+                         KnowledgeService knowledge) {
         this.incidentService = incidentService;
         this.priorityCalculator = priorityCalculator;
         this.incidents = incidents;
         this.categories = categories;
         this.services = services;
         this.technicians = technicians;
+        this.recommender = recommender;
+        this.classifier = classifier;
+        this.slaPredictor = slaPredictor;
+        this.knowledge = knowledge;
     }
 
     /**
@@ -109,6 +131,7 @@ public class IncidentPages {
                 : incidentService.possibleDuplicatesOf(incident));
         model.addAttribute("categoryNote", noteOf(history, IncidentAction.CATEGORY_SUGGESTED));
         model.addAttribute("escalationNote", noteOf(history, IncidentAction.ESCALATED));
+        addInsights(model, incident, viewer, canWorkOn, canReclassify);
         return DETAIL_VIEW;
     }
 
@@ -152,6 +175,35 @@ public class IncidentPages {
             Incident incident = incidentService.changeStatus(code, form.getTarget(), actor, form.getNote());
             return "%s is now %s.".formatted(incident.getCode(), incident.getStatus().getLabel().toLowerCase());
         });
+    }
+
+    /**
+     * What the learning features have to say about the incident: when it will
+     * probably be resolved (everyone), and for technicians and administrators
+     * the suggested solutions, a second opinion on the category, and whether
+     * the fix has been written up for the knowledge base.
+     */
+    private void addInsights(Model model, Incident incident, User viewer, boolean canWorkOn, boolean canReclassify) {
+        boolean staff = viewer.getRole() != Role.EMPLOYEE;
+        boolean open = incident.getStatus().isOpen();
+        model.addAttribute("forecast", open ? slaPredictor.forecast(incident, LocalDateTime.now()).orElse(null) : null);
+        model.addAttribute("staff", staff);
+        if (!staff) {
+            return;
+        }
+        model.addAttribute("recommendations", open ? recommender.recommend(incident, SUGGESTED_SOLUTIONS) : List.of());
+        model.addAttribute("canUseSuggestion", canWorkOn && open);
+        CategoryPrediction opinion = canReclassify
+                ? classifier.predict(incident.getTitle() + " " + incident.getDescription())
+                        .filter(prediction -> prediction.confidence() >= SECOND_OPINION_CONFIDENCE)
+                        .filter(prediction -> incident.getCategory() == null
+                                || !prediction.categoryId().equals(incident.getCategory().getId()))
+                        .orElse(null)
+                : null;
+        model.addAttribute("classifierOpinion", opinion);
+        KnowledgeArticle article = knowledge.writtenFrom(incident).orElse(null);
+        model.addAttribute("knowledgeArticle", article);
+        model.addAttribute("canWriteArticle", article == null && incident.getResolution() != null && !open);
     }
 
     /** "Save classification" was pressed. */

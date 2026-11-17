@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,8 @@ import com.itsm.domain.Priority;
 import com.itsm.domain.SlaStatus;
 import com.itsm.domain.Status;
 import com.itsm.domain.Urgency;
+import com.itsm.intelligence.CategoryClassifier;
+import com.itsm.intelligence.ResolutionRecommender;
 import com.itsm.repository.AuditEntryRepository;
 import com.itsm.repository.CategoryRepository;
 import com.itsm.repository.EmailMessageRepository;
@@ -39,6 +42,8 @@ import com.itsm.repository.UserRepository;
 import com.itsm.seed.DataSeeder;
 import com.itsm.seed.DemoDataService;
 import com.itsm.service.IncidentService;
+import com.itsm.sla.SlaForecast;
+import com.itsm.sla.SlaPredictor;
 import com.itsm.sla.SlaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +67,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class DemoDataResetTests {
 
-    private static final int SAMPLES = 23;
+    private static final int SAMPLES = DemoDataService.SAMPLE_COUNT;
 
     @Autowired
     private MockMvc mvc;
@@ -92,6 +97,12 @@ class DemoDataResetTests {
     private SlaPolicyRepository slaPolicies;
     @Autowired
     private TransactionTemplate transaction;
+    @Autowired
+    private SlaPredictor slaPredictor;
+    @Autowired
+    private ResolutionRecommender recommender;
+    @Autowired
+    private CategoryClassifier classifier;
 
     private Incident reportPaymentOutage() {
         return report("Payment application is unavailable");
@@ -113,7 +124,7 @@ class DemoDataResetTests {
             List<Incident> all = incidents.findAll();
             assertThat(all).hasSize(SAMPLES);
             assertThat(all).extracting(Incident::getCode)
-                    .contains("INC-0001", "INC-0023").doesNotHaveDuplicates();
+                    .contains("INC-0001", Incident.codeFor(SAMPLES)).doesNotHaveDuplicates();
 
             Set<Status> statuses = all.stream().map(Incident::getStatus).collect(Collectors.toSet());
             assertThat(statuses).contains(Status.CLASSIFIED, Status.ASSIGNED, Status.ACKNOWLEDGED,
@@ -216,7 +227,7 @@ class DemoDataResetTests {
         demoData.reset(true);
 
         assertThat(incidents.count()).isEqualTo(SAMPLES);
-        assertThat(incidents.findAll()).extracting(Incident::getCode).contains("INC-0001").doesNotContain("INC-0024");
+        assertThat(incidents.findAll()).extracting(Incident::getCode).contains("INC-0001").doesNotContain(Incident.codeFor(SAMPLES + 1));
     }
 
     @Test
@@ -227,7 +238,7 @@ class DemoDataResetTests {
         slaService.checkOpenIncidents(LocalDateTime.now());        // the every-minute check copes with them
         Incident next = reportPaymentOutage();                     // and new work carries on after them
 
-        assertThat(next.getCode()).isEqualTo("INC-0024");
+        assertThat(next.getCode()).isEqualTo(Incident.codeFor(SAMPLES + 1));
         mvc.perform(get("/admin/dashboard").session(admin))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("totalCount", SAMPLES + 1L));
@@ -241,6 +252,24 @@ class DemoDataResetTests {
     }
 
     @Test
+    void theSampleHistoryGivesTheLearningFeaturesSomethingToLearnFrom() {
+        demoData.reset(true);
+
+        transaction.executeWithoutResult(tx -> {
+            List<Incident> open = incidents.findByStatusIn(Status.openStatuses());
+            Map<String, SlaForecast> forecasts = slaPredictor.forecastAll(open, LocalDateTime.now());
+            assertThat(forecasts).hasSizeGreaterThanOrEqualTo(open.size() / 2);   // most open incidents get a forecast
+            assertThat(forecasts.values()).allSatisfy(forecast -> assertThat(forecast.breachPercent()).isBetween(0, 100));
+
+            Incident vpn = open.stream().filter(incident -> incident.getTitle().startsWith("VPN connection drops"))
+                    .findFirst().orElseThrow();
+            assertThat(recommender.recommend(vpn, 3)).isNotEmpty()
+                    .first().satisfies(best -> assertThat(best.sharedWords()).contains("vpn"));
+            assertThat(classifier.trainingSize()).isGreaterThan(SAMPLES);
+        });
+    }
+
+    @Test
     void theAdministratorResetsFromTheSettingsPage() throws Exception {
         MockHttpSession admin = signIn("admin@itsm.local", DataSeeder.ADMIN_PASSWORD);
 
@@ -251,7 +280,7 @@ class DemoDataResetTests {
         mvc.perform(post("/admin/settings/reset-demo-data").session(admin).with(csrf()).param("samples", "true"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/settings"))
-                .andExpect(flash().attribute("success", "The demo data has been reset: 23 sample incidents were added."));
+                .andExpect(flash().attribute("success", "The demo data has been reset: " + SAMPLES + " sample incidents were added."));
         assertThat(incidents.count()).isEqualTo(SAMPLES);
 
         mvc.perform(post("/admin/settings/reset-demo-data").session(admin).with(csrf()).param("samples", "false"))

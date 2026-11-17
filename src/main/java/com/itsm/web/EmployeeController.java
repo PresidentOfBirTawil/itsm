@@ -15,6 +15,8 @@ import com.itsm.repository.EmployeeRepository;
 import com.itsm.repository.ITServiceRepository;
 import com.itsm.repository.IncidentRepository;
 import com.itsm.security.ItsmUserDetails;
+import com.itsm.intelligence.ReportAdvice;
+import com.itsm.intelligence.ReportAssistant;
 import com.itsm.service.IncidentService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +27,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -41,16 +45,19 @@ public class EmployeeController {
     private final CategoryRepository categories;
     private final IncidentService incidentService;
     private final IncidentPages incidentPages;
+    private final ReportAssistant reportAssistant;
 
     public EmployeeController(EmployeeRepository employees, IncidentRepository incidents,
                               ITServiceRepository services, CategoryRepository categories,
-                              IncidentService incidentService, IncidentPages incidentPages) {
+                              IncidentService incidentService, IncidentPages incidentPages,
+                              ReportAssistant reportAssistant) {
         this.employees = employees;
         this.incidents = incidents;
         this.services = services;
         this.categories = categories;
         this.incidentService = incidentService;
         this.incidentPages = incidentPages;
+        this.reportAssistant = reportAssistant;
     }
 
     @GetMapping
@@ -133,6 +140,14 @@ public class EmployeeController {
     }
 
     // ---- one incident ----
+
+    /** Live hints for the report form, as JSON: see {@link ReportAssistant}. */
+    @GetMapping("/incidents/assist")
+    @ResponseBody
+    public ReportAdvice assist(@RequestParam(defaultValue = "") String title,
+                               @RequestParam(defaultValue = "") String description) {
+        return reportAssistant.advise(title, description);
+    }
 
     @GetMapping("/incidents/{code}")
     public String incident(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code, Model model) {

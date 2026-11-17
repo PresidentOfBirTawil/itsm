@@ -48,6 +48,8 @@ public class SecurityConfig {
             auth.requestMatchers("/employee/**").hasRole("EMPLOYEE");
             auth.requestMatchers("/technician/**").hasRole("TECHNICIAN");
             auth.requestMatchers("/admin/**").hasRole("ADMIN");
+            // Writing knowledge articles: technicians and administrators. Reading /kb: anyone signed in.
+            auth.requestMatchers("/kb/manage/**").hasAnyRole("TECHNICIAN", "ADMIN");
             if (h2ConsoleEnabled) {
                 auth.requestMatchers(H2_CONSOLE).hasRole("ADMIN");
             }

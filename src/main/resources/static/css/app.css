@@ -164,3 +164,21 @@ a.stat-link:hover .card {
 @media (prefers-reduced-motion: reduce) {
     .live-updated { animation: none; }
 }
+
+/* ---- Knowledge base and suggestions ---- */
+
+.kb-text {
+    white-space: pre-line;
+}
+
+a.kb-card:hover {
+    box-shadow: 0 4px 12px rgba(16, 24, 40, .14);
+}
+
+.suggestion + .suggestion {
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.assist-panel .badge {
+    font-weight: 500;
+}

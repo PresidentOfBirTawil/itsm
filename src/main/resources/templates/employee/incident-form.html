@@ -25,11 +25,30 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="description" class="form-label">What is happening?</label>
+                            <div class="d-flex justify-content-between align-items-end">
+                                <label for="description" class="form-label">What is happening?</label>
+                                <!-- Shown by voice-input.js only in browsers that can turn speech into text -->
+                                <button type="button" class="btn btn-sm btn-link text-decoration-none mb-1 d-none"
+                                        data-dictate="#description" title="Speak instead of typing">
+                                    <i class="bi bi-mic me-1"></i><span>Dictate</span></button>
+                            </div>
                             <textarea class="form-control" id="description" rows="4" th:field="*{description}"
                                       th:errorclass="is-invalid" maxlength="4000"
                                       placeholder="What did you try to do, what happened, and who is affected?"></textarea>
                             <div class="invalid-feedback" th:errors="*{description}">Description error</div>
+                        </div>
+
+                        <!-- Filled in by report-assist.js while the employee types -->
+                        <div class="assist-panel card border-primary-subtle bg-primary-subtle mb-3 d-none" id="assist"
+                             aria-live="polite">
+                            <div class="card-body py-3">
+                                <div class="fw-semibold mb-2"><i class="bi bi-stars me-1"></i>Smart suggestions</div>
+                                <div data-assist-fields class="d-flex flex-column gap-2"></div>
+                                <div data-assist-articles class="mt-3 d-none">
+                                    <div class="small fw-semibold">Before you report: these articles may solve it right away</div>
+                                    <ul class="list-unstyled small mb-0 mt-1"></ul>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row g-3 mb-3">
@@ -89,6 +108,8 @@
             </div>
         </div>
     </div>
+    <script th:src="@{/js/voice-input.js}" defer></script>
+    <script th:src="@{/js/report-assist.js}" defer></script>
 </main>
 </body>
 </html>

@@ -46,6 +46,10 @@
                         <a class="nav-link" th:classappend="${active == 'incidents'} ? 'active'"
                            th:href="@{/employee/incidents}"><i class="bi bi-card-list me-1"></i>My incidents</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'kb'} ? 'active'"
+                           th:href="@{/kb}"><i class="bi bi-journal-bookmark me-1"></i>Knowledge base</a>
+                    </li>
                 </ul>
                 <div th:replace="~{fragments/navbar :: userMenu(${active})}"></div>
             </div>
@@ -73,6 +77,10 @@
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'search'} ? 'active'"
                            th:href="@{/technician/search}"><i class="bi bi-search me-1"></i>Search</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'kb'} ? 'active'"
+                           th:href="@{/kb}"><i class="bi bi-journal-bookmark me-1"></i>Knowledge base</a>
                     </li>
                 </ul>
                 <div th:replace="~{fragments/navbar :: userMenu(${active})}"></div>
@@ -105,6 +113,10 @@
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'reports'} ? 'active'"
                            th:href="@{/admin/reports}"><i class="bi bi-bar-chart me-1"></i>Reports</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'kb'} ? 'active'"
+                           th:href="@{/kb}"><i class="bi bi-journal-bookmark me-1"></i>Knowledge base</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"

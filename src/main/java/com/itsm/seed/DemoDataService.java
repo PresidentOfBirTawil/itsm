@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.itsm.domain.AuditEntry;
@@ -23,6 +24,7 @@ import com.itsm.domain.Technician;
 import com.itsm.domain.Urgency;
 import com.itsm.domain.User;
 import com.itsm.error.InvalidInputException;
+import com.itsm.intelligence.CategoryClassifier;
 import com.itsm.intelligence.DuplicateDetector;
 import com.itsm.intelligence.EscalationPolicy;
 import com.itsm.priority.PriorityCalculator;
@@ -32,6 +34,7 @@ import com.itsm.repository.CategoryRepository;
 import com.itsm.repository.EmailMessageRepository;
 import com.itsm.repository.ITServiceRepository;
 import com.itsm.repository.IncidentRepository;
+import com.itsm.repository.KnowledgeArticleRepository;
 import com.itsm.repository.NotificationRepository;
 import com.itsm.repository.SettingRepository;
 import com.itsm.repository.SlaPolicyRepository;
@@ -77,6 +80,8 @@ public class DemoDataService {
     private final DuplicateDetector duplicateDetector;
     private final EscalationPolicy escalationPolicy;
     private final EntityManager entityManager;
+    private final KnowledgeArticleRepository knowledgeArticles;
+    private final CategoryClassifier categoryClassifier;
 
     public DemoDataService(IncidentRepository incidents, AuditEntryRepository auditEntries,
                            NotificationRepository notifications, EmailMessageRepository emails,
@@ -84,7 +89,8 @@ public class DemoDataService {
                            AdministratorRepository administrators, ITServiceRepository services,
                            CategoryRepository categories, SlaPolicyRepository slaPolicies,
                            PriorityCalculator priorityCalculator, DuplicateDetector duplicateDetector,
-                           EscalationPolicy escalationPolicy, EntityManager entityManager) {
+                           EscalationPolicy escalationPolicy, EntityManager entityManager,
+                           KnowledgeArticleRepository knowledgeArticles, CategoryClassifier categoryClassifier) {
         this.incidents = incidents;
         this.auditEntries = auditEntries;
         this.notifications = notifications;
@@ -100,6 +106,8 @@ public class DemoDataService {
         this.duplicateDetector = duplicateDetector;
         this.escalationPolicy = escalationPolicy;
         this.entityManager = entityManager;
+        this.knowledgeArticles = knowledgeArticles;
+        this.categoryClassifier = categoryClassifier;
     }
 
     /**
@@ -112,6 +120,7 @@ public class DemoDataService {
     public int reset(boolean withSampleIncidents) {
         notifications.deleteAllInBatch();
         emails.deleteAllInBatch();
+        knowledgeArticles.forgetSourceIncidents(); // articles stay; only their link to an incident goes
         auditEntries.deleteAllInBatch();
         incidents.clearDuplicateLinks();
         incidents.deleteAllInBatch();
@@ -126,6 +135,7 @@ public class DemoDataService {
         technicians.findAll().forEach(technician -> technician.setAvailable(true));
 
         int added = withSampleIncidents ? addSampleIncidents(LocalDateTime.now().withNano(0)) : 0;
+        categoryClassifier.markStale();
         log.info("Demo data reset: {} sample incidents added", added);
         return added;
     }
@@ -212,15 +222,126 @@ public class DemoDataService {
             new Sample(3, "Antivirus reports malware on a shared PC", "The PC at reception shows a red antivirus warning.",
                     "Email & Collaboration", "Security", Impact.MEDIUM, Urgency.MEDIUM, 12, Story.UNASSIGNED, 0, -1, -1, null, null, null));
 
+    /**
+     * Recurring problems for the generated history: what was reported and how
+     * it was fixed. Every one of them is played several times over two
+     * months, so that the learning features (category classifier, suggested
+     * solutions, SLA forecast) and the trend charts have realistic data.
+     */
+    private record Recurring(String title, String description, String service, String category, String resolution) {
+    }
+
+    private static final List<Recurring> RECURRING = List.of(
+            new Recurring("VPN disconnects when working from home", "The VPN connects but drops after a few minutes.",
+                    "Corporate Network", "Network", "Updated the VPN client and switched it to TCP."),
+            new Recurring("Office wifi is very slow on the second floor", "Pages take ages to load near the kitchen.",
+                    "Corporate Network", "Network", "Restarted the overloaded access point and moved two users to the 5 GHz band."),
+            new Recurring("Cannot reach the intranet from the branch office", "The intranet times out from the branch, other sites work.",
+                    "Corporate Network", "Network", "Fixed the DNS forwarder at the branch office."),
+            new Recurring("Docking station does not detect the monitors", "The screens stay black when the laptop is docked.",
+                    "Email & Collaboration", "Hardware", "Updated the dock firmware and the display driver."),
+            new Recurring("Printer on floor 3 jams on every job", "Every print job jams in tray 2.",
+                    "Email & Collaboration", "Hardware", "Removed torn paper from the fuser and replaced the tray 2 roller."),
+            new Recurring("Laptop battery drains within an hour", "The battery goes from full to empty very fast.",
+                    "Email & Collaboration", "Hardware", "Replaced the swollen laptop battery."),
+            new Recurring("Nightly data load times out", "The overnight import into the reporting database did not finish.",
+                    "Database Cluster", "Database", "Added an index on the import staging table and re-ran the load."),
+            new Recurring("Deadlock errors when saving orders", "Order entry sometimes fails with a deadlock message.",
+                    "Database Cluster", "Database", "Changed the order update to lock rows in a fixed order."),
+            new Recurring("Standby database lagging behind", "Replication lag alarm on the standby database.",
+                    "Database Cluster", "Database", "Freed disk space on the standby and restarted replication."),
+            new Recurring("Shared drive is almost full", "The team share warns that it is 98% full.",
+                    "Cloud Storage", "Storage", "Archived old project folders and raised the quota by 200 GB."),
+            new Recurring("Cannot restore a deleted file", "A spreadsheet was deleted yesterday and is not in the recycle bin.",
+                    "Cloud Storage", "Storage", "Restored the file from last night's backup."),
+            new Recurring("Cloud drive sync stuck on processing", "The sync client has said processing changes for hours.",
+                    "Cloud Storage", "Storage", "Renamed a file with an invalid character and reset the sync client."),
+            new Recurring("Virtual machine will not start after patching", "The test VM hangs at boot since the weekend patches.",
+                    "Cloud Storage", "Cloud", "Rolled back the faulty kernel patch on the VM."),
+            new Recurring("Container deployment stuck in pending", "The new release never starts in the cluster.",
+                    "Cloud Storage", "Cloud", "Freed cluster capacity by removing unused test deployments."),
+            new Recurring("Phishing email reported by staff", "Several people received an email asking them to confirm their password.",
+                    "Email & Collaboration", "Security", "Blocked the sender domain and removed the email from all mailboxes."),
+            new Recurring("Antivirus blocks the accounting tool", "The antivirus quarantines the accounting program at start-up.",
+                    "Email & Collaboration", "Security", "Verified the signed program and added it to the antivirus allow list."),
+            new Recurring("Unusual sign-in alerts from abroad", "Security alerts about sign-ins from another country.",
+                    "Authentication Service", "Security", "Reset the password, revoked sessions and turned on two-factor sign-in."),
+            new Recurring("Password reset link expires immediately", "The reset link says it has expired as soon as I open it.",
+                    "Authentication Service", "Authentication", "Fixed the clock drift on the identity server that made links expire."),
+            new Recurring("Account locked again and again", "My account locks a few minutes after I unlock it.",
+                    "Authentication Service", "Authentication", "Removed the old password stored on the user's phone."),
+            new Recurring("Sign-in code rejected as invalid", "The two-factor code from the app is always rejected.",
+                    "Authentication Service", "Authentication", "Set the phone's time to automatic and re-registered the authenticator."),
+            new Recurring("Payment confirmation emails are not sent", "Customers pay but never get the confirmation email.",
+                    "Payment Application", "Application", "Restarted the stuck notification queue of the payment service."),
+            new Recurring("Card payments fail at checkout", "Card payments are declined with a gateway timeout.",
+                    "Payment Application", "Application", "Raised the gateway connection limit and restarted the payment service."),
+            new Recurring("Invoice PDF cannot be generated", "Downloading an invoice shows an error page.",
+                    "Payment Application", "Application", "Reinstalled the missing font used by the invoice template."),
+            new Recurring("Mail client crashes when opening attachments", "Mail closes as soon as I open a PDF attachment.",
+                    "Email & Collaboration", "Software", "Disabled the faulty PDF add-in and repaired Office."),
+            new Recurring("Video meetings fail to start", "Meetings hang on connecting for everyone in the team.",
+                    "Email & Collaboration", "Software", "Cleared the meeting client cache and updated it to the latest version."),
+            new Recurring("Office says the product is unlicensed", "Word and Excel show a red banner about the licence.",
+                    "Email & Collaboration", "Software", "Reassigned the Office licence and signed the user in again."));
+
+    /** How many incidents the generated history has: two months of finished work. */
+    static final int HISTORY_SIZE = 60;
+
+    /** How many incidents a reset with samples adds in total. */
+    public static final int SAMPLE_COUNT = 23 + HISTORY_SIZE;
+
+    private static final String[] RATING_COMMENTS = {
+            null, null, "Quick and friendly.", "Fixed while I waited.", "Took a while but it works now.",
+            "Great explanation of what went wrong.", null, "Had to chase once."};
+
     private int addSampleIncidents(LocalDateTime now) {
         User administrator = administrators.findAll().stream().findFirst()
                 .orElseThrow(() -> new InvalidInputException("The sample incidents need an administrator account."));
+        List<Sample> all = new ArrayList<>(SAMPLES);
+        all.addAll(history());
         List<Incident> added = new ArrayList<>();
         // Oldest first, so that the codes go up with time.
-        SAMPLES.stream()
+        all.stream()
                 .sorted((a, b) -> Long.compare(b.minutesAgo(), a.minutesAgo()))
                 .forEach(sample -> added.add(play(sample, now, administrator, added)));
         return added.size();
+    }
+
+    /**
+     * Two months of finished incidents, generated from the recurring problems
+     * with a fixed random seed, so a reset always gives the same data. Times
+     * are drawn around the SLA targets of each incident's priority, so most
+     * meet their deadlines and some, as in real life, do not.
+     */
+    private List<Sample> history() {
+        java.util.Random random = new java.util.Random(2026);
+        Map<String, Integer> skilled = Map.of("Network", 1, "Hardware", 1, "Database", 2, "Storage", 2, "Cloud", 2,
+                "Security", 3, "Authentication", 3, "Application", 4, "Software", 4);
+        Impact[] impacts = {Impact.LOW, Impact.LOW, Impact.MEDIUM, Impact.MEDIUM, Impact.MEDIUM, Impact.HIGH};
+        Urgency[] urgencies = {Urgency.LOW, Urgency.MEDIUM, Urgency.MEDIUM, Urgency.MEDIUM, Urgency.HIGH, Urgency.HIGH};
+        Employee someone = (Employee) demoUser("emp1");
+        List<Sample> history = new ArrayList<>();
+        for (int i = 0; i < HISTORY_SIZE; i++) {
+            Recurring problem = RECURRING.get(random.nextInt(RECURRING.size()));
+            Impact impact = impacts[random.nextInt(impacts.length)];
+            Urgency urgency = urgencies[random.nextInt(urgencies.length)];
+            ITService service = services.findByName(problem.service()).orElseThrow();
+            PriorityAssessment assessment = priorityCalculator.calculate(
+                    new Incident(problem.title(), problem.description(), someone, service, impact, urgency));
+            SlaPolicy policy = slaPolicies.findByPriority(assessment.priority()).orElseThrow();
+
+            long minutesAgo = (11L * 24 * 60) + random.nextInt(49 * 24 * 60);
+            long ack = Math.max(1, Math.round(policy.getResponseMinutes() * (0.1 + random.nextDouble() * 1.05)));
+            long resolve = ack + 5 + Math.round(policy.getResolutionMinutes() * (0.15 + random.nextDouble() * 1.05));
+            int roll = random.nextInt(100);
+            Integer rating = roll < 20 ? null : roll < 55 ? 5 : roll < 85 ? 4 : roll < 94 ? 3 : roll < 98 ? 2 : 1;
+            String comment = rating == null ? null : RATING_COMMENTS[random.nextInt(RATING_COMMENTS.length)];
+            history.add(new Sample(1 + random.nextInt(4), problem.title(), problem.description(), problem.service(),
+                    problem.category(), impact, urgency, minutesAgo, Story.CLOSED, skilled.get(problem.category()),
+                    ack, resolve, problem.resolution(), rating, comment));
+        }
+        return history;
     }
 
     /** Takes one sample incident through its life, writing the audit entries as it goes. */

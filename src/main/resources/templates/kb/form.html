@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${heading}, 'kb', ~{::main})}">
+<body>
+<main>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="h3 mb-1" th:text="${heading}">Write a knowledge article</h1>
+            <p class="text-body-secondary mb-4">Write the problem the way users describe it, so the article is found
+                when someone reports the same thing.</p>
+            <div class="card">
+                <div class="card-body p-4">
+                    <form th:action="@{${action}}" th:object="${form}" method="post" novalidate>
+                        <input type="hidden" th:field="*{sourceIncidentCode}">
+                        <div class="alert alert-info small" th:if="*{sourceIncidentCode != null and sourceIncidentCode != ''}">
+                            <span th:text="|Written from *{sourceIncidentCode}.|">Written from INC-0001.</span>
+                            Check the wording before publishing: remove names and anything private.
+                        </div>
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" th:field="*{title}" th:errorclass="is-invalid" maxlength="150">
+                            <div class="invalid-feedback" th:errors="*{title}">error</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="problem" class="form-label">The problem</label>
+                            <textarea class="form-control" id="problem" rows="4" th:field="*{problem}" th:errorclass="is-invalid"></textarea>
+                            <div class="invalid-feedback" th:errors="*{problem}">error</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="solution" class="form-label">The solution</label>
+                            <textarea class="form-control" id="solution" rows="6" th:field="*{solution}" th:errorclass="is-invalid"></textarea>
+                            <div class="invalid-feedback" th:errors="*{solution}">error</div>
+                            <div class="form-text">Step by step. Users may follow it themselves.</div>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="categoryId" class="form-label">Category</label>
+                                <select class="form-select" id="categoryId" th:field="*{categoryId}">
+                                    <option value="">Any</option>
+                                    <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}">Network</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="serviceId" class="form-label">Service</label>
+                                <select class="form-select" id="serviceId" th:field="*{serviceId}">
+                                    <option value="">Any</option>
+                                    <option th:each="service : ${services}" th:value="${service.id}" th:text="${service.name}">Email</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Publish</button>
+                            <a class="btn btn-outline-secondary" th:href="@{/kb}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

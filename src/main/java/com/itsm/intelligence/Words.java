@@ -1,7 +1,9 @@
 package com.itsm.intelligence;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -43,6 +45,24 @@ public final class Words {
      */
     public static Set<String> significantWords(String text) {
         Set<String> words = new LinkedHashSet<>();
+        if (text == null) {
+            return words;
+        }
+        Arrays.stream(text.toLowerCase().replace("'", "").split("[^a-z0-9]+"))
+                .filter(word -> !word.isEmpty())
+                .filter(word -> !COMMON_WORDS.contains(word))
+                .map(Words::singular)
+                .filter(word -> !COMMON_WORDS.contains(word))
+                .forEach(words::add);
+        return words;
+    }
+
+    /**
+     * The same words as {@link #significantWords}, in order and with repeats,
+     * for methods that count how often a word occurs.
+     */
+    public static List<String> tokens(String text) {
+        List<String> words = new ArrayList<>();
         if (text == null) {
             return words;
         }
