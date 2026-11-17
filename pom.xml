@@ -68,6 +68,12 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- PostgreSQL for server installations (the "prod" profile, see docker-compose.yml) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- Bootstrap 5 served from the jar, so the UI also works offline -->
         <dependency>

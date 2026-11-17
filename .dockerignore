@@ -1,0 +1,8 @@
+target/
+data/
+.runtime/
+.git/
+.idea/
+*.iml
+docs/
+packaging/
