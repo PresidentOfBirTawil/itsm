@@ -58,7 +58,8 @@ public class ResolutionRecommender {
                 .forEach(source -> coveredByArticles.add(source.getId()));
 
         List<Recommendation> found = new ArrayList<>();
-        SimilarityIndex.build(allArticles, KnowledgeArticle::searchText)
+        // Articles are matched on their whole text: the solution often names the cause ("phishing", "index").
+        SimilarityIndex.build(allArticles, article -> article.searchText() + " " + article.getSolution())
                 .search(query, limit * 3, MINIMUM_SCORE / 2)
                 .forEach(match -> {
                     KnowledgeArticle article = match.item();

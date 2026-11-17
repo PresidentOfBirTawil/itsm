@@ -1,31 +1,26 @@
 <!DOCTYPE html>
 <!--
-  The page frame every screen shares: <head>, the navbar for the current role,
-  the page content and the footer. A page uses it like this:
+  The page frames.
 
-    <html th:replace="~{fragments/layout :: page('Title', 'navKey', ~{::main})}">
+  page(title, active, content)  the application: navbar for the user's role, the page, a footer.
+                                A page uses it like this:
+                                <html th:replace="~{fragments/layout :: page('Title', 'navKey', ~{::main})}">
+  site(title, content)          the public product site (the landing page): full-width sections.
 
   title   - shown in the browser tab
   active  - which navbar link to highlight (for example 'dashboard')
   content - the <main> element of the page
 -->
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:fragment="page(title, active, content)">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="application-name" th:content="${@brand.name}" content="Quell">
-    <title th:text="|${title} · ${@brand.name}|">Quell</title>
-    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
-    <link rel="stylesheet" th:href="@{/css/app.css}">
+<head th:replace="~{fragments/layout :: documentHead(${title})}">
+    <title>Quell</title>
 </head>
-<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+<body class="d-flex flex-column min-vh-100">
 
 <th:block th:replace="~{fragments/navbar :: navbar(${active})}"></th:block>
 
-<div class="container py-4 flex-grow-1">
+<div class="container py-4 py-lg-5 flex-grow-1">
     <!-- One-off messages set by the previous request, e.g. "INC-0001 is now resolved." -->
     <div class="alert alert-success alert-dismissible fade show" role="status" th:if="${success}">
         <i class="bi bi-check-circle me-1"></i><span th:text="${success}">Done.</span>
@@ -39,17 +34,57 @@
     <main th:replace="${content}">Page content goes here.</main>
 </div>
 
-<footer class="border-top bg-body py-3 small text-body-secondary">
+<footer class="app-footer py-3">
     <div class="container d-flex flex-wrap justify-content-between gap-2">
         <span><img th:src="@{/img/logo.svg}" width="16" height="16" alt="" class="me-1 align-text-bottom"><span
                 th:text="|${@brand.name} · ${@brand.tagline}|">Quell · Intelligent IT service management</span></span>
-        <span th:text="|Version ${@brand.version}|">Version 1.0</span>
+        <span>
+            <a class="link-secondary text-decoration-none me-3" th:href="@{/kb}" sec:authorize="isAuthenticated()">Help</a>
+            <span th:text="|Version ${@brand.version}|">Version 1.0</span>
+        </span>
     </div>
 </footer>
 
-<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
-<script th:src="@{/js/app.js}"></script>
-<!--/* Live updates (see static/js/live.js). Only for signed-in users: the sign-in page has nothing to update. */-->
-<script th:src="@{/js/live.js}" sec:authorize="isAuthenticated()" defer></script>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 </body>
 </html>
+
+<!--/* The public product site: no app navbar, full-width sections. */-->
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org" th:fragment="site(title, content)">
+<head th:replace="~{fragments/layout :: documentHead(${title})}">
+    <title>Quell</title>
+</head>
+<body class="d-flex flex-column min-vh-100 site">
+<main th:replace="${content}">Page content goes here.</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>
+
+<!--/* Everything in <head>, shared by both frames. */-->
+<head th:fragment="documentHead(title)">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="application-name" th:content="${@brand.name}" content="Quell">
+    <meta name="description" th:content="|${@brand.name}: ${@brand.tagline}. Report IT problems in seconds; they are prioritised, routed and tracked automatically.|">
+    <meta name="theme-color" content="#09090b">
+    <title th:text="|${title} · ${@brand.name}|">Quell</title>
+    <!-- Sets dark or light before anything is drawn, so the page never flashes the wrong theme. -->
+    <script th:src="@{/js/theme.js}"></script>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="apple-touch-icon" th:href="@{/img/logo-180.png}">
+    <link rel="stylesheet" th:href="@{/webjars/fontsource-variable__inter/index.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<!--/* Scripts at the end of <body>, shared by both frames. */-->
+<th:block th:fragment="scripts">
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/app.js}"></script>
+    <th:block sec:authorize="isAuthenticated()" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+        <!--/* Live updates and the command palette: only for signed-in users. */-->
+        <script th:src="@{/js/live.js}" defer></script>
+        <script th:src="@{/js/command-palette.js}" defer></script>
+    </th:block>
+</th:block>

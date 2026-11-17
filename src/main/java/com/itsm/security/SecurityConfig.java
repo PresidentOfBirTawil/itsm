@@ -17,7 +17,7 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
  * request, so hiding a link in the navbar is never the only protection.
  *
  * <ul>
- *   <li>/login, /register and static files: everyone</li>
+ *   <li>/ (the product site), /login, /register and static files: everyone</li>
  *   <li>/employee/**: role EMPLOYEE</li>
  *   <li>/technician/**: role TECHNICIAN</li>
  *   <li>/admin/** (and the H2 console in dev): role ADMIN</li>
@@ -40,8 +40,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SessionRegistry sessionRegistry)
             throws Exception {
         http.authorizeHttpRequests(auth -> {
-            auth.requestMatchers("/login", "/register", "/error").permitAll();
-            auth.requestMatchers("/css/**", "/js/**", "/webjars/**", "/favicon.svg").permitAll();
+            auth.requestMatchers("/", "/login", "/register", "/error").permitAll();
+            auth.requestMatchers("/css/**", "/js/**", "/img/**", "/webjars/**", "/favicon.svg").permitAll();
             // The live-updates connection (/live) is checked when it is opened, like any other
             // address. When the server later finishes it, that is not a new request to check.
             auth.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll();

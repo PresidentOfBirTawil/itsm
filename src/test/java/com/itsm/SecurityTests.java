@@ -105,7 +105,7 @@ class SecurityTests {
     void visitorIsSentToTheLoginPage() throws Exception {
         mvc.perform(get("/admin/dashboard")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
         mvc.perform(get("/employee/dashboard")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
-        mvc.perform(get("/")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
+        mvc.perform(get("/")).andExpect(status().isOk());   // the product site, open to everyone
     }
 
     @Test

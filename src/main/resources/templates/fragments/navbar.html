@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <!--
   One navbar per kind of visitor. Only the one that matches the signed-in
-  user's role is rendered. Hiding links here is a convenience only: the real
-  protection is in SecurityConfig, which checks every URL on the server.
+  user's role is rendered, and each role has its own colour line at the top.
+  Hiding links here is a convenience only: the real protection is in
+  SecurityConfig, which checks every URL on the server.
 -->
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
@@ -10,33 +11,39 @@
 <th:block th:fragment="navbar(active)">
 
     <!-- Visitor: not signed in -->
-    <nav class="navbar navbar-expand navbar-guest" data-bs-theme="dark" sec:authorize="isAnonymous()">
+    <nav class="navbar navbar-expand app-nav navbar-guest" sec:authorize="isAnonymous()">
         <div class="container">
-            <a class="navbar-brand fw-semibold" th:href="@{/}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
-            <ul class="navbar-nav ms-auto">
+            <a class="navbar-brand" th:href="@{/}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
+            <ul class="navbar-nav ms-auto align-items-center gap-1">
+                <li class="nav-item d-none d-sm-block">
+                    <a class="nav-link" th:href="@{/#download}">Download</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${active == 'login'} ? 'active'" th:href="@{/login}">Sign in</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${active == 'register'} ? 'active'" th:href="@{/register}">Register</a>
+                    <a class="nav-link" th:classappend="${active == 'register'} ? 'active'" th:href="@{/register}">Create account</a>
+                </li>
+                <li class="nav-item">
+                    <button type="button" class="app-icon-button" data-theme-toggle title="Switch theme"><i class="bi bi-sun"></i></button>
                 </li>
             </ul>
         </div>
     </nav>
 
     <!-- Employee -->
-    <nav class="navbar navbar-expand-lg navbar-employee" data-bs-theme="dark" sec:authorize="hasRole('EMPLOYEE')">
+    <nav class="navbar navbar-expand-lg app-nav navbar-employee" sec:authorize="hasRole('EMPLOYEE')">
         <div class="container">
-            <a class="navbar-brand fw-semibold" th:href="@{/employee/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
+            <a class="navbar-brand" th:href="@{/employee/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="mainNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav me-auto ms-lg-3 gap-lg-1">
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'dashboard'} ? 'active'"
-                           th:href="@{/employee/dashboard}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                           th:href="@{/employee/dashboard}"><i class="bi bi-house me-1"></i>Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'report'} ? 'active'"
@@ -57,26 +64,26 @@
     </nav>
 
     <!-- Technician -->
-    <nav class="navbar navbar-expand-lg navbar-technician" data-bs-theme="dark" sec:authorize="hasRole('TECHNICIAN')">
+    <nav class="navbar navbar-expand-lg app-nav navbar-technician" sec:authorize="hasRole('TECHNICIAN')">
         <div class="container">
-            <a class="navbar-brand fw-semibold" th:href="@{/technician/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
+            <a class="navbar-brand" th:href="@{/technician/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="mainNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav me-auto ms-lg-3 gap-lg-1">
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'dashboard'} ? 'active'"
-                           th:href="@{/technician/dashboard}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                           th:href="@{/technician/dashboard}"><i class="bi bi-house me-1"></i>Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'incidents'} ? 'active'"
-                           th:href="@{/technician/incidents}"><i class="bi bi-tools me-1"></i>My queue</a>
+                           th:href="@{/technician/incidents}"><i class="bi bi-inbox me-1"></i>My queue</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'search'} ? 'active'"
-                           th:href="@{/technician/search}"><i class="bi bi-search me-1"></i>Search</a>
+                           th:href="@{/technician/search}"><i class="bi bi-funnel me-1"></i>All incidents</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'kb'} ? 'active'"
@@ -89,18 +96,18 @@
     </nav>
 
     <!-- Administrator -->
-    <nav class="navbar navbar-expand-lg navbar-admin" data-bs-theme="dark" sec:authorize="hasRole('ADMIN')">
+    <nav class="navbar navbar-expand-lg app-nav navbar-admin" sec:authorize="hasRole('ADMIN')">
         <div class="container">
-            <a class="navbar-brand fw-semibold" th:href="@{/admin/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
+            <a class="navbar-brand" th:href="@{/admin/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="mainNav">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav me-auto ms-lg-3 gap-lg-1">
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'dashboard'} ? 'active'"
-                           th:href="@{/admin/dashboard}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                           th:href="@{/admin/dashboard}"><i class="bi bi-grid-1x2 me-1"></i>Overview</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'search' or active == 'incidents'} ? 'active'"
@@ -116,13 +123,13 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'kb'} ? 'active'"
-                           th:href="@{/kb}"><i class="bi bi-journal-bookmark me-1"></i>Knowledge base</a>
+                           th:href="@{/kb}"><i class="bi bi-journal-bookmark me-1"></i>Knowledge</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                            aria-expanded="false"
                            th:classappend="${active == 'users' or active == 'technicians' or active == 'services' or active == 'categories' or active == 'sla'} ? 'active'"><i class="bi bi-sliders me-1"></i>Manage</a>
-                        <ul class="dropdown-menu" data-bs-theme="light">
+                        <ul class="dropdown-menu">
                             <li><a class="dropdown-item" th:classappend="${active == 'users'} ? 'active'"
                                    th:href="@{/admin/users}"><i class="bi bi-people me-2"></i>Users</a></li>
                             <li><a class="dropdown-item" th:classappend="${active == 'technicians'} ? 'active'"
@@ -140,7 +147,7 @@
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                            aria-expanded="false"
                            th:classappend="${active == 'audit' or active == 'emails' or active == 'settings'} ? 'active'"><i class="bi bi-gear me-1"></i>System</a>
-                        <ul class="dropdown-menu" data-bs-theme="light">
+                        <ul class="dropdown-menu">
                             <li><a class="dropdown-item" th:classappend="${active == 'audit'} ? 'active'"
                                    th:href="@{/admin/audit}"><i class="bi bi-journal-text me-2"></i>Audit log</a></li>
                             <li><a class="dropdown-item" th:classappend="${active == 'emails'} ? 'active'"
@@ -154,14 +161,21 @@
             </div>
         </div>
     </nav>
-
 </th:block>
 
-<!-- The bell, who is signed in, their role, and the sign-out button. Shared by the three role navbars. -->
-<div th:fragment="userMenu(active)" class="d-flex align-items-center gap-3 py-2 py-lg-0">
-    <a class="navbar-bell position-relative" th:href="@{/notifications}" title="Notifications"
+<!--
+  Right-hand side of a signed-in navbar: search (Ctrl/⌘ K), the theme switch, the bell with
+  the number of unread notifications, the live-updates dot, and the user's menu.
+-->
+<div th:fragment="userMenu(active)" class="d-flex align-items-center gap-1 gap-lg-2 py-2 py-lg-0 app-nav-tools">
+    <button type="button" class="btn btn-sm app-search-trigger" data-command-palette title="Search and jump anywhere">
+        <i class="bi bi-search"></i><span class="d-none d-xxl-inline ms-2 me-3">Search…</span>
+        <span class="app-kbd d-none d-xl-inline-block ms-2"><span data-shortcut-mod>Ctrl</span> K</span>
+    </button>
+    <button type="button" class="app-icon-button" data-theme-toggle title="Switch theme"><i class="bi bi-sun"></i></button>
+    <a class="navbar-bell app-icon-button" th:href="@{/notifications}" title="Notifications"
        th:classappend="${active == 'notifications'} ? 'active'">
-        <i class="bi bi-bell-fill"></i>
+        <i class="bi bi-bell"></i>
         <!-- Always on the page, hidden while it is zero, so that a live update can change the number. -->
         <span class="badge rounded-pill text-bg-danger navbar-bell-count"
               th:classappend="${unreadNotifications == null or unreadNotifications <= 0} ? 'd-none'"
@@ -169,14 +183,32 @@
         <span class="visually-hidden">Notifications</span>
     </a>
     <!-- Turns green while the page is connected for live updates. -->
-    <span class="live-dot" data-live-status title="Live updates are connecting" aria-hidden="true"></span>
-    <span class="navbar-text">
-        <i class="bi bi-person-circle me-1"></i><span sec:authentication="principal.name">Name</span>
-        <span class="badge text-bg-light ms-1" sec:authentication="principal.role.label">Role</span>
-    </span>
-    <form th:action="@{/logout}" method="post" class="m-0">
-        <button type="submit" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right me-1"></i>Sign out</button>
-    </form>
+    <span class="live-dot mx-1" data-live-status title="Live updates are connecting" aria-hidden="true"></span>
+    <div class="dropdown">
+        <button type="button" class="btn btn-sm app-user-button" data-bs-toggle="dropdown" aria-expanded="false"
+                title="Your account">
+            <span class="app-avatar" sec:authentication="principal.initials">PS</span>
+            <span class="d-none d-xxl-inline" sec:authentication="principal.name">Name</span>
+            <i class="bi bi-chevron-down small opacity-50"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" style="min-width: 15rem">
+            <li class="px-3 pt-2 pb-2">
+                <div class="fw-semibold" sec:authentication="principal.name">Name</div>
+                <div class="small text-body-secondary text-truncate" sec:authentication="principal.username">email</div>
+                <span class="role-pill d-inline-block mt-2" sec:authentication="principal.role.label">Role</span>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" th:href="@{/notifications}"><i class="bi bi-bell me-2"></i>Notifications</a></li>
+            <li><a class="dropdown-item" th:href="@{/kb}"><i class="bi bi-life-preserver me-2"></i>Help and knowledge base</a></li>
+            <li><button type="button" class="dropdown-item" data-theme-toggle><i class="bi bi-sun me-2"></i>Switch theme</button></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i>Sign out</button>
+                </form>
+            </li>
+        </ul>
+    </div>
 </div>
 
 </body>

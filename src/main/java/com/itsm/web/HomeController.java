@@ -1,17 +1,34 @@
 package com.itsm.web;
 
+import com.itsm.config.Brand;
 import com.itsm.security.ItsmUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-/** The entry points everyone shares: the home URL, the sign-in page and the dashboard redirect. */
+/** The entry points everyone shares: the product site, the sign-in page and the dashboard redirect. */
 @Controller
 public class HomeController {
 
+    private final Brand brand;
+
+    public HomeController(Brand brand) {
+        this.brand = brand;
+    }
+
+    /** The product site for visitors; signed-in users go straight to their dashboard. */
     @GetMapping("/")
-    public String home() {
-        return "redirect:/dashboard";
+    public String home(@AuthenticationPrincipal ItsmUserDetails user, Model model) {
+        if (user != null) {
+            return "redirect:/dashboard";
+        }
+        boolean downloads = !brand.getDownloadUrl().isBlank();
+        model.addAttribute("downloadsPage", downloads ? brand.getDownloadUrl() : "/login");
+        model.addAttribute("windowsDownload", downloads ? brand.download("Quell-Setup-Windows.exe") : "/login");
+        model.addAttribute("macDownload", downloads ? brand.download("Quell-Mac.dmg") : "/login");
+        model.addAttribute("linuxDownload", downloads ? brand.download("Quell-Linux.deb") : "/login");
+        return "site/landing";
     }
 
     /** Sends each signed-in user to the dashboard that belongs to their role. */

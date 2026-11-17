@@ -92,6 +92,20 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
 
     long countByStatusIn(Collection<Status> statuses);
 
+    /**
+     * The quick search of the command palette: incidents whose code or title
+     * contains the text, newest first. With a reporter, only theirs.
+     *
+     * @param pattern the text in upper case between % wildcards, e.g. "%VPN%"
+     */
+    @Query("""
+            select i from Incident i
+            where (:reporterId is null or i.reporter.id = :reporterId)
+              and (upper(i.code) like :pattern or upper(i.title) like :pattern)
+            order by i.createdAt desc, i.id desc""")
+    List<Incident> quickSearch(@Param("reporterId") Long reporterId, @Param("pattern") String pattern,
+                               org.springframework.data.domain.Limit limit);
+
     /** Incidents that have been resolved at some point: the history the predictions learn from. */
     List<Incident> findByResolvedAtIsNotNull();
 

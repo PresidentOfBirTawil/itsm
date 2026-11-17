@@ -47,6 +47,17 @@ public class ItsmUserDetails implements UserDetails {
         return role;
     }
 
+    /** Up to two initials for the round avatar in the navbar, e.g. "PS" for Priya Sharma. */
+    public String getInitials() {
+        if (name == null || name.isBlank()) {
+            return "?";
+        }
+        String[] parts = name.trim().split("\\s+");
+        String first = parts[0].substring(0, 1);
+        String last = parts.length > 1 ? parts[parts.length - 1].substring(0, 1) : "";
+        return (first + last).toUpperCase();
+    }
+
     /** One authority per user: ROLE_EMPLOYEE, ROLE_TECHNICIAN or ROLE_ADMIN. */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
