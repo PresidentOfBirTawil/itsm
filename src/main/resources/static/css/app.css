@@ -1,4 +1,4 @@
-/* I-ITSM: small additions on top of Bootstrap 5. */
+/* Quell: small additions on top of Bootstrap 5. */
 
 /* One navbar colour per role, so it is obvious at a glance who is signed in. */
 .navbar-guest,
@@ -181,4 +181,27 @@ a.kb-card:hover {
 
 .assist-panel .badge {
     font-weight: 500;
+}
+
+/* ---- Brand ---- */
+
+.navbar-logo {
+    border-radius: 7px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .25);
+    vertical-align: -6px;
+}
+
+/* ---- Sign-in page ---- */
+
+.login-points li {
+    margin-bottom: .75rem;
+    font-size: 1.05rem;
+}
+
+.demo-button {
+    padding: .6rem .9rem;
+}
+
+.demo-button:hover .text-body-secondary {
+    color: inherit !important;
 }

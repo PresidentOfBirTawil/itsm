@@ -12,7 +12,7 @@
     <!-- Visitor: not signed in -->
     <nav class="navbar navbar-expand navbar-guest" data-bs-theme="dark" sec:authorize="isAnonymous()">
         <div class="container">
-            <a class="navbar-brand fw-semibold" th:href="@{/}"><i class="bi bi-life-preserver me-2"></i>I-ITSM</a>
+            <a class="navbar-brand fw-semibold" th:href="@{/}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${active == 'login'} ? 'active'" th:href="@{/login}">Sign in</a>
@@ -27,7 +27,7 @@
     <!-- Employee -->
     <nav class="navbar navbar-expand-lg navbar-employee" data-bs-theme="dark" sec:authorize="hasRole('EMPLOYEE')">
         <div class="container">
-            <a class="navbar-brand fw-semibold" th:href="@{/employee/dashboard}"><i class="bi bi-life-preserver me-2"></i>I-ITSM</a>
+            <a class="navbar-brand fw-semibold" th:href="@{/employee/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -59,7 +59,7 @@
     <!-- Technician -->
     <nav class="navbar navbar-expand-lg navbar-technician" data-bs-theme="dark" sec:authorize="hasRole('TECHNICIAN')">
         <div class="container">
-            <a class="navbar-brand fw-semibold" th:href="@{/technician/dashboard}"><i class="bi bi-life-preserver me-2"></i>I-ITSM</a>
+            <a class="navbar-brand fw-semibold" th:href="@{/technician/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -91,7 +91,7 @@
     <!-- Administrator -->
     <nav class="navbar navbar-expand-lg navbar-admin" data-bs-theme="dark" sec:authorize="hasRole('ADMIN')">
         <div class="container">
-            <a class="navbar-brand fw-semibold" th:href="@{/admin/dashboard}"><i class="bi bi-life-preserver me-2"></i>I-ITSM</a>
+            <a class="navbar-brand fw-semibold" th:href="@{/admin/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>

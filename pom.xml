@@ -12,9 +12,9 @@
 
     <groupId>com.itsm</groupId>
     <artifactId>itsm</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>itsm</name>
-    <description>Intelligent IT Service Management &amp; Incident Resolution System (I-ITSM)</description>
+    <version>1.1.0</version>
+    <name>quell</name>
+    <description>Quell: intelligent IT service management and incident resolution</description>
 
     <properties>
         <java.version>25</java.version>
@@ -92,6 +92,8 @@
     </dependencies>
 
     <build>
+        <!-- target/quell.jar: the runnable application, also what the installers package. -->
+        <finalName>quell</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

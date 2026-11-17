@@ -15,3 +15,6 @@ data/
 .project
 .settings/
 .DS_Store
+
+# Private Java downloaded by the start scripts
+.runtime/

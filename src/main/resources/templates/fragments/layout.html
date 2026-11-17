@@ -14,7 +14,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title th:text="|${title} · I-ITSM|">I-ITSM</title>
+    <meta name="application-name" th:content="${@brand.name}" content="Quell">
+    <title th:text="|${title} · ${@brand.name}|">Quell</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
@@ -39,7 +40,11 @@
 </div>
 
 <footer class="border-top bg-body py-3 small text-body-secondary">
-    <div class="container">I-ITSM · Intelligent IT Service Management &amp; Incident Resolution System</div>
+    <div class="container d-flex flex-wrap justify-content-between gap-2">
+        <span><img th:src="@{/img/logo.svg}" width="16" height="16" alt="" class="me-1 align-text-bottom"><span
+                th:text="|${@brand.name} · ${@brand.tagline}|">Quell · Intelligent IT service management</span></span>
+        <span th:text="|Version ${@brand.version}|">Version 1.0</span>
+    </div>
 </footer>
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
