@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${editingId == null} ? 'Add webhook' : 'Webhook', 'webhooks', ~{::main})}">
+<body>
+<main>
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="mb-4">
+                <a class="small text-decoration-none" th:href="@{/admin/webhooks}"><i class="bi bi-arrow-left me-1"></i>Integrations</a>
+                <h1 class="page-title mt-2 mb-1" th:text="${editingId == null} ? 'Add a webhook' : ${name}">Add a webhook</h1>
+                <p class="text-body-secondary mb-0">Quell sends a message to this address whenever one of the chosen events happens.</p>
+            </div>
+            <div class="card">
+                <div class="card-body p-4">
+                    <form method="post" th:action="${editingId == null} ? @{/admin/webhooks} : @{|/admin/webhooks/${editingId}|}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" th:value="${name}" maxlength="80"
+                                   required placeholder="e.g. #it-incidents channel">
+                        </div>
+                        <div class="mb-3">
+                            <span class="form-label d-block">Sends to</span>
+                            <div class="d-flex flex-wrap gap-2">
+                                <th:block th:each="option : ${kinds}">
+                                    <input type="radio" class="btn-check" name="kind" th:id="|kind-${option}|" th:value="${option}"
+                                           th:checked="${option == kind}">
+                                    <label class="btn btn-outline-secondary" th:for="|kind-${option}|">
+                                        <i class="bi me-1" th:classappend="${option.icon}"></i><span th:text="${option.label}">Slack</span></label>
+                                </th:block>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="url" class="form-label">Webhook address</label>
+                            <input type="url" class="form-control font-monospace" id="url" name="url" th:value="${url}"
+                                   maxlength="500" required placeholder="https://hooks.slack.com/services/…">
+                            <div class="form-text">
+                                Slack: <em>Apps → Incoming Webhooks → Add to channel</em>.
+                                Teams: <em>channel → Workflows → "Post to a channel when a webhook request is received"</em>.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <span class="form-label d-block">Events</span>
+                            <div class="row row-cols-2 g-1">
+                                <div class="col" th:each="event : ${choosableEvents}">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="events" th:id="|event-${event}|"
+                                               th:value="${event}" th:checked="${events.contains(event)}">
+                                        <label class="form-check-label" th:for="|event-${event}|" th:text="${event.label}">Reported</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="majorOnly" name="majorOnly" value="true"
+                                   th:checked="${majorOnly}">
+                            <label class="form-check-label" for="majorOnly">Only incidents with priority P1 or P2</label>
+                        </div>
+                        <div class="form-check form-switch mb-4" th:if="${editingId != null}">
+                            <input class="form-check-input" type="checkbox" role="switch" id="enabled" name="enabled" value="true"
+                                   th:checked="${enabled}">
+                            <label class="form-check-label" for="enabled">On</label>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" th:text="${editingId == null} ? 'Add webhook' : 'Save'">Save</button>
+                            <a class="btn btn-outline-secondary" th:href="@{/admin/webhooks}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5" th:if="${editingId != null}">
+            <div class="card mb-4">
+                <div class="card-header">Test and remove</div>
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <form method="post" th:action="@{|/admin/webhooks/${editingId}/test|}">
+                        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-send me-1"></i>Send a test message</button>
+                    </form>
+                    <form method="post" th:action="@{|/admin/webhooks/${editingId}/delete|}"
+                          th:attr="data-confirm=|Remove the webhook ${name}?|">
+                        <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i>Remove</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card mb-4" th:if="${webhook != null and webhook.kind.name() == 'GENERIC'}">
+                <div class="card-header"><i class="bi bi-shield-lock me-1"></i>Checking the signature</div>
+                <div class="card-body small">
+                    <p class="mb-2">Every message carries <code>X-Quell-Timestamp</code> and
+                        <code>X-Quell-Signature: sha256=…</code>, the HMAC-SHA256 of <code>timestamp + "." + body</code>
+                        with this secret. Reject messages whose signature does not match or whose timestamp is old.</p>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control font-monospace" id="webhook-secret" th:value="${webhook.secret}" readonly
+                               aria-label="Signing secret">
+                        <button type="button" class="btn btn-outline-secondary" data-copy="#webhook-secret"><span>Copy</span></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4" th:if="${editingId != null}">
+        <div th:replace="~{admin/fragments-webhooks :: deliveryLog(${deliveries}, false)}"></div>
+    </div>
+</main>
+</body>
+</html>

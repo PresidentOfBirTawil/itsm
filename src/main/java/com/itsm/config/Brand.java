@@ -17,17 +17,25 @@ public class Brand {
     private final String version;
     private final boolean demoMode;
     private final String downloadUrl;
+    private final String publicUrl;
 
     public Brand(@Value("${app.brand.name:Quell}") String name,
                  @Value("${app.brand.tagline:Intelligent IT service management}") String tagline,
                  @Value("${app.version:dev}") String version,
                  @Value("${app.demo-mode:true}") boolean demoMode,
-                 @Value("${app.download-url:}") String downloadUrl) {
+                 @Value("${app.download-url:}") String downloadUrl,
+                 @Value("${app.public-url:http://localhost:8080}") String publicUrl) {
         this.name = name;
         this.tagline = tagline;
         this.version = version;
         this.demoMode = demoMode;
         this.downloadUrl = downloadUrl;
+        this.publicUrl = publicUrl.endsWith("/") ? publicUrl.substring(0, publicUrl.length() - 1) : publicUrl;
+    }
+
+    /** The address people use to reach this installation, for links in messages to other systems. */
+    public String getPublicUrl() {
+        return publicUrl;
     }
 
     public String getName() {

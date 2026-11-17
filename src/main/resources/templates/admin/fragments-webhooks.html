@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/* The delivery log, on the webhook list and on one webhook's page. */-->
+<div class="card" th:fragment="deliveryLog(deliveries, showWebhook)">
+    <div class="card-header d-flex justify-content-between">
+        <span><i class="bi bi-list-check me-1"></i>Recent deliveries</span>
+        <span class="small text-body-secondary">newest first · failed messages are retried for about an hour</span>
+    </div>
+    <div class="text-center text-body-secondary py-4" th:if="${#lists.isEmpty(deliveries)}">Nothing sent yet.</div>
+    <div class="table-responsive" th:unless="${#lists.isEmpty(deliveries)}">
+        <table class="table mb-0 align-middle small">
+            <thead>
+            <tr>
+                <th scope="col">When</th>
+                <th scope="col" th:if="${showWebhook}">Webhook</th>
+                <th scope="col">Event</th>
+                <th scope="col">Incident</th>
+                <th scope="col">Result</th>
+                <th scope="col"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="delivery : ${deliveries}">
+                <td class="text-nowrap" th:text="${#temporals.format(delivery.createdAt, 'dd MMM, HH:mm:ss')}">17 Nov, 10:02</td>
+                <td th:if="${showWebhook}" th:text="${delivery.webhook.name}">Ops channel</td>
+                <td><code th:text="${delivery.event.name}">incident.reported</code></td>
+                <td th:text="${delivery.incidentCode ?: '—'}">INC-0001</td>
+                <td>
+                    <span th:if="${delivery.state.name() == 'DELIVERED'}" class="badge text-bg-success"
+                          th:text="|Delivered · ${delivery.responseStatus}|">Delivered · 200</span>
+                    <span th:if="${delivery.state.name() == 'PENDING' and delivery.attempts == 0}" class="badge text-bg-secondary">Sending</span>
+                    <span th:if="${delivery.state.name() == 'PENDING' and delivery.attempts > 0}" class="badge text-bg-warning"
+                          th:title="${delivery.error}"
+                          th:text="|Retrying · attempt ${delivery.attempts + 1}|">Retrying</span>
+                    <span th:if="${delivery.state.name() == 'FAILED'}" class="badge text-bg-danger" th:title="${delivery.error}">Failed</span>
+                    <div class="text-body-secondary text-truncate" style="max-width: 22rem" th:if="${delivery.error != null}"
+                         th:text="${delivery.error}">Could not reach the receiver</div>
+                </td>
+                <td class="text-end">
+                    <form method="post" th:if="${delivery.state.name() == 'FAILED'}"
+                          th:action="@{|/admin/webhooks/deliveries/${delivery.id}/retry|}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Retry</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
