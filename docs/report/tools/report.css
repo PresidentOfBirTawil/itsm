@@ -1,0 +1,70 @@
+/* Print styles for the project report (rendered to PDF by Chromium). */
+@page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+@page wide { size: A4 landscape; margin: 14mm 16mm 18mm 16mm; }
+.wide { page: wide; }
+.wide figure img { max-height: 158mm; width: auto; max-width: 100%; }
+.wide h2, .wide h3 { margin-top: 0; }
+.wide table { font-size: 7.6pt; }
+
+:root {
+  --ink: #18181b; --muted: #52525b; --faint: #71717a; --line: #e4e4e7;
+  --accent: #4f46e5; --accent-2: #0891b2; --soft: #f4f4f5; --code: #f6f7f9;
+}
+html { font-family: "Inter", "DejaVu Sans", sans-serif; font-size: 9.6pt; color: var(--ink); line-height: 1.5; }
+body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+h1, h2, h3, h4 { font-weight: 650; line-height: 1.25; color: #0b0b10; break-after: avoid; }
+h1 { font-size: 20pt; margin: 0 0 6mm; padding-bottom: 3mm; border-bottom: 2.5px solid transparent;
+     border-image: linear-gradient(90deg, var(--accent), var(--accent-2)) 1; break-before: page; letter-spacing: -0.01em; }
+h2 { font-size: 13.5pt; margin: 7mm 0 2.5mm; }
+h3 { font-size: 11pt; margin: 5mm 0 2mm; }
+p, li { orphans: 3; widows: 3; }
+a { color: var(--accent); text-decoration: none; }
+strong { font-weight: 650; }
+
+code { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; font-size: 0.86em; background: var(--code);
+       border: 1px solid #ececf0; border-radius: 3px; padding: 0 0.25em; }
+pre { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; font-size: 7.6pt; line-height: 1.45;
+      background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 3mm 3.5mm;
+      white-space: pre-wrap; word-break: break-word; break-inside: avoid; }
+pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+
+col { width: auto !important; }
+table { width: 100%; table-layout: auto; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 8.2pt; line-height: 1.4; }
+thead { display: table-header-group; }
+th { text-align: left; font-weight: 650; background: var(--soft); border-bottom: 1.5px solid #d4d4d8; }
+th, td { padding: 1.6mm 2mm; vertical-align: top; border-bottom: 1px solid var(--line); }
+tr { break-inside: avoid; }
+td code { word-break: break-word; }
+
+figure { margin: 4mm 0 6mm; break-inside: avoid; text-align: center; }
+figure img { max-width: 100%; max-height: 225mm; object-fit: contain; border: 1px solid var(--line); border-radius: 6px; }
+figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 2mm; }
+img { max-width: 100%; }
+
+/* Table of contents */
+nav#TOC { break-before: page; }
+nav#TOC::before { content: "Contents"; display: block; font-size: 20pt; font-weight: 650; margin-bottom: 6mm;
+                  padding-bottom: 3mm; border-bottom: 2.5px solid var(--accent); }
+nav#TOC ul { list-style: none; padding-left: 0; margin: 0; }
+nav#TOC > ul > li { margin: 2.2mm 0; font-weight: 600; }
+nav#TOC ul ul { padding-left: 6mm; font-weight: 400; color: var(--muted); }
+nav#TOC ul ul li { margin: 0.6mm 0; font-size: 9pt; }
+nav#TOC a { color: inherit; }
+
+/* Cover */
+.cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; }
+.cover h1 { break-before: auto; border: none; border-image: none; padding: 0; font-size: 46pt; margin: 6mm 0 2mm;
+            letter-spacing: -0.03em; color: #4f46e5; background: none; }
+.cover .cover-logo, .cover img { border: 0; border-radius: 22px; width: 30mm; }
+.cover figure { text-align: left; margin: 0; }
+.cover figcaption { display: none; }
+.cover-subtitle { display: block; font-size: 17pt; font-weight: 500; color: #27272a; margin-bottom: 4mm; }
+.cover-course { display: block; font-size: 10.5pt; color: var(--muted); margin-bottom: 14mm; }
+.cover table { width: 150mm; font-size: 10pt; margin: 0; }
+.cover table th { display: none; }
+.cover table td { border-bottom: 1px solid var(--line); padding: 2.4mm 2mm; }
+.cover table td:first-child { width: 42mm; color: var(--muted); }
+
+/* The summary page right after the cover */
+#summary { break-before: page; }

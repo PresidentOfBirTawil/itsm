@@ -68,3 +68,16 @@ To fill Quell with realistic sample data, sign in as the administrator and choos
 Download the source code, then double-click **Start Quell.bat** (Windows) or **Start Quell.command**
 (Mac; on Linux run `./"Start Quell.command"`). It uses Java 25 if you have it, or downloads a
 private copy into the project folder, builds Quell the first time, and opens your browser.
+
+## On a server (Docker and PostgreSQL)
+
+With Docker installed, in the repository folder:
+
+```bash
+docker compose up --build
+```
+
+This starts Quell and a PostgreSQL 17 database (data kept in the `quell-db` volume) and serves Quell
+on port 8080. Settings come from environment variables: `DB_PASSWORD` (the database password),
+`PUBLIC_URL` (the address people use, for links in Slack and Teams messages) and `DEMO_MODE`
+(`false` to hide the demo sign-in buttons). Put a reverse proxy with HTTPS in front of it for real use.

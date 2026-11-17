@@ -1,599 +1,135 @@
-# I-ITSM
+<p align="center">
+  <img src="src/main/resources/static/img/logo-192.png" width="72" alt="Quell logo">
+</p>
 
-Intelligent IT Service Management & Incident Resolution System, built for the CS F213 / MAC F212 OOP project. The project brief is in [`docs/brief.pdf`](docs/brief.pdf).
+<h1 align="center">Quell</h1>
 
-**What it does:**
+<p align="center"><b>Intelligent IT service management.</b> IT incidents resolved before they escalate.</p>
 
-- Sign-in with three roles, one home screen and navbar per role, every URL checked on the server.
-- Employees report incidents and follow them. Each incident gets a code (`INC-0001`, …).
-- The priority is calculated from impact, urgency and service criticality, and the SLA deadlines are set from it.
-- A technician is assigned automatically by one of three strategies. An administrator can switch strategy while the app runs, and can reassign by hand.
-- Incidents move through a fixed lifecycle. Each role sees only the buttons it may use. Technicians add investigation notes, ask for information and record the resolution; employees answer, confirm or reopen, and rate the resolution.
-- A background job checks every open incident against its SLA once a minute: at risk at 75%, breached past the deadline, paused while waiting for information.
-- People are notified in the app (the bell) and by simulated email.
-- Four intelligent features, each explaining itself on screen: duplicate detection, automatic escalation, category suggestion and an SLA risk list.
-- Search with eight filters, an administrator dashboard, and pages to manage users, technicians, services, categories and SLA policies.
-- Every change is recorded in an audit trail, shown as a timeline on the incident page and, for administrators, as one audit log across all incidents.
-- Reports for administrators: incidents by status, priority and category, SLA compliance, time to resolve against the SLA target, and figures per technician.
-- A technician or administrator can correct an incident's category, impact and urgency; the priority and deadlines are worked out again.
-- One click fills the application with 23 realistic past incidents, so the dashboard and reports have something to show.
-- **Live updates:** when an incident is created or changes, the administrator's dashboard, the technician's queue and the incident lists update by themselves, and the number on the bell changes at once. No page refresh.
+<p align="center">
+  <a href="https://github.com/PresidentOfBirTawil/itsm/releases/latest"><b>Download for Windows, macOS or Linux</b></a> ·
+  <a href="docs/report/Quell-Project-Report.pdf">Project report (PDF)</a> ·
+  <a href="docs/video-script.md">Video script</a> ·
+  <a href="docs/INSTALL.md">Install guide</a>
+</p>
 
-**Documents for the report:** [report notes](docs/report-notes.md) · [20 documented test cases](docs/test-cases.md) · [UML and other diagrams](docs/diagrams/)
+![The administrator's live overview: service health, probable root cause, SLA risk with predictions](docs/report/screenshots/11-admin-overview.jpg)
 
-## Run it
+Employees report IT problems in seconds, on a form, by chatting with an assistant or by voice. Quell
+then prioritises, routes, tracks and escalates them on its own, learns from every resolved incident,
+finds the root cause when several services fail together, and keeps everyone informed live, in the app,
+as desktop alerts, and in Slack or Microsoft Teams.
 
-You need **JDK 25**. Check with `java -version`. Maven is not needed: the `mvnw` script downloads it on first use.
+## What it does
+
+| | |
+|---|---|
+| **Reporting** | A form with smart suggestions, a **chat assistant** with voice input, **screenshots** by drag-and-drop or paste, "**I'm affected too**" for known outages, a public **status page**. |
+| **Triage** | Priority from impact × urgency × service criticality, SLA deadlines, duplicate detection, a **machine-learning classifier** (naive Bayes) for the category, automatic assignment by skill, workload or round robin. |
+| **Resolution** | A queue ordered by deadline, **suggested solutions** from the knowledge base and past fixes (TF-IDF), a **predicted finish time and breach risk**, a nine-status lifecycle with the right buttons for each role, a **knowledge base** fed by resolved incidents. |
+| **Oversight** | A **live dashboard**, SLA monitoring every minute (warning at 75%, breaches, pause while waiting for information), automatic **escalation**, **root-cause analysis** over a service **dependency map**, reports and an audit trail nobody can edit. |
+| **Integrations** | A documented **REST API** with personal API keys, **webhooks** to Slack, Teams or any app (signed, retried, logged). |
+| **Everywhere** | Native **installers** with Java included, an **installable app** for phones (PWA) with an offline page, **Docker + PostgreSQL** for servers, dark and light themes, a ⌘K command palette. |
+| **Secure** | BCrypt, role and object checks on every request, CSRF protection, a strict content security policy, sign-in lockout, hashed API keys, safe file handling. |
+
+## Get it running
+
+**Easiest: the installer.** Download `Quell-Setup-Windows.exe`, `Quell-Mac.dmg` or `Quell-Linux.deb`
+from the [releases page](https://github.com/PresidentOfBirTawil/itsm/releases/latest), install it and
+open Quell. Nothing else is needed; your browser opens by itself. Details: [docs/INSTALL.md](docs/INSTALL.md).
+
+**On a server, with PostgreSQL:**
+
+```bash
+docker compose up --build
+```
+
+**From source** (JDK 25; Maven comes with the `mvnw` script):
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-On Windows use `mvnw.cmd spring-boot:run`.
+On Windows (PowerShell or Command Prompt) use `.\mvnw.cmd spring-boot:run`. Then open
+<http://localhost:8080>.
 
-Then open <http://localhost:8080>. The first start creates the database in `./data` and fills it with the demo data below.
+### Demo accounts
 
-> **Coming from an earlier version?** A database made by the first version (before incident reporting existed) must be deleted once: stop the app and delete the `data` folder. Databases made by later versions are upgraded in place when the app starts.
+The sign-in page has one-click buttons for these.
 
-## Demo logins
+| Role | E-mail | Password |
+|---|---|---|
+| Administrator | `admin@itsm.local` | `admin12345` |
+| Technicians | `tech1@itsm.local` … `tech4@itsm.local` | `tech12345` |
+| Employees | `emp1@itsm.local` … `emp4@itsm.local` | `emp12345` |
 
-| Role          | Email              | Password     | Lands on                |
-|---------------|--------------------|--------------|-------------------------|
-| Administrator | `admin@itsm.local` | `admin12345` | `/admin/dashboard`      |
-| Technician    | `tech1@itsm.local` | `tech12345`  | `/technician/dashboard` |
-| Technician    | `tech2@itsm.local` | `tech12345`  | `/technician/dashboard` |
-| Technician    | `tech3@itsm.local` | `tech12345`  | `/technician/dashboard` |
-| Technician    | `tech4@itsm.local` | `tech12345`  | `/technician/dashboard` |
-| Employee      | `emp1@itsm.local`  | `emp12345`   | `/employee/dashboard`   |
-| Employee      | `emp2@itsm.local`  | `emp12345`   | `/employee/dashboard`   |
-| Employee      | `emp3@itsm.local`  | `emp12345`   | `/employee/dashboard`   |
-| Employee      | `emp4@itsm.local`  | `emp12345`   | `/employee/dashboard`   |
+To fill the app with 83 realistic incidents, sign in as the administrator and press *System → Settings
+→ Reset and add sample incidents*. *Switch demo SLA on* shortens the deadlines to minutes for
+demonstrations.
 
-New employees can sign themselves up at `/register`. Technicians and administrators cannot be created that way.
+### REST API
 
-The four technicians have different skills:
-
-| Technician  | Login   | Skills                            | Max workload |
-|-------------|---------|-----------------------------------|--------------|
-| Ravi Kumar  | `tech1` | Network, Hardware                 | 5            |
-| Meera Nair  | `tech2` | Database, Storage, Cloud          | 4            |
-| Arjun Singh | `tech3` | Security, Authentication, Network | 3            |
-| Sara Thomas | `tech4` | Software, Application, Cloud      | 5            |
-
-The seed data also has 6 IT services (criticality 1 to 3), the brief's 9 incident categories with keywords, and the brief's SLA policies:
-
-| Priority      | Respond within | Resolve within |
-|---------------|----------------|----------------|
-| P1 · Critical | 5 min          | 30 min         |
-| P2 · High     | 15 min         | 2 h            |
-| P3 · Medium   | 1 h            | 8 h            |
-| P4 · Low      | 4 h            | 24 h           |
-
-## Sample data
-
-A new database has users, services, categories and SLA policies, but no incidents. To see the dashboard, reports, search and audit log with realistic content:
-
-1. Sign in as the administrator.
-2. **System** → **Settings** → **Demo data** → **Reset and add sample incidents**.
-
-This removes every incident (with its timeline, notifications and emails), starts the numbering again at INC-0001 and adds 23 incidents spread over the last ten days: 12 finished ones (with resolutions and ratings, one of them resolved late) and 11 open ones in every stage, including one about to breach, one breached and escalated, one paused while waiting for information, a pair of possible duplicates and one that no technician could take. Users, services, categories and SLA policies are kept. The settings go back to their defaults (skill-based assignment, demo SLA off).
-
-The sample incidents are not copied into the tables. Each one is played through the same model methods a real incident uses (`prioritise`, `assignTo`, `transitionTo`, `refreshSla`), only with times in the past, so every one of them obeys the rules. They send no notifications.
-
-**Reset to an empty incident list** does the same without adding the samples. Use it before recording the demo workflows below, so that the first incident you report is INC-0001.
-
-## Demo scripts
-
-Use separate browser windows that do not share a login (a normal window, a private window, another browser), one per person, so everyone stays signed in. All passwords are in the table above. To get the same incident codes as below, start with no incidents: as the administrator use **System → Settings → Demo data → Reset to an empty incident list** (or stop the app and delete the `data` folder).
-
-### Workflow 1: employee reports → system prioritises → technician assigned → notification generated
-
-1. Sign in as `emp1@itsm.local`. Click **Report an incident**.
-2. Enter title `Payment application unavailable` and description `Users are unable to complete transactions.` Choose service **Payment Application**. Leave **Category** on *Let the system choose*. Choose impact **High** and urgency **High**. Click **Report incident**.
-3. You are on the page of `INC-0001`. Point out:
-   - Category **Application**, with the line "chosen automatically because the report mentions: application, payment, unavailable".
-   - Priority **P1 · Critical**, and the box "How the priority was worked out": 3 × 3 × 3 = 27.
-   - "Respond by" 5 minutes and "Resolve by" 30 minutes after "Reported"; SLA badge **On track**.
-   - Status **Assigned**, assigned to **Sara Thomas** (the only technician with the Application skill).
-   - The timeline: reported, category chosen, priority calculated, technician assigned.
-4. In a second window sign in as `tech4@itsm.local`. The bell shows **1**. Click it: "INC-0001 has been assigned to you".
-5. In a third window sign in as `admin@itsm.local`. Click **System → Email outbox**: the same news as simulated emails to the reporter and the technician.
-
-### Workflow 2: technician investigates → SLA monitored → incident resolved → user notified
-
-Continue from workflow 1.
-
-1. As the technician, click the notification (or **My queue** → `INC-0001`). Click **Acknowledge**, then **Start work**.
-2. In "Add an investigation note" type `The gateway log shows TLS errors.` and click **Add to the timeline**.
-3. In the "Change status" box type `Does it fail for every customer?` and click **Request information**. The SLA badge turns **Paused**: the resolution clock stops while the technician waits.
-4. As the employee, open **Dashboard**. The card **Waiting for you** lists the incident. Open it, type an answer and click **Send information**. The SLA badge is **On track** again and "Resolve by" has moved back by the time spent waiting.
-5. As the technician, reload. Type what you did, for example `Renewed the expired certificate.`, and click **Resolve**. The SLA badge turns **Met**.
-6. As the employee, the bell has a new notification: "INC-0001 has been resolved". Click it. The page shows the **Resolution**. Click **Confirm it is fixed** (or type why not and click **Not fixed, reopen**).
-7. A box **Rate the resolution** appears. Choose **5**, add a comment, click **Send rating**.
-8. As the administrator, open **Incidents** → `INC-0001` and click **Close**. The timeline shows the whole story.
-
-### Workflow 3: several incidents reported → duplicates identified → escalated
-
-1. As the administrator, open **System → Settings** and click **Switch demo SLA on** (P1: respond within 1 minute).
-2. As `emp1@itsm.local`, report `Payment application unavailable` against **Payment Application**, impact and urgency **High**.
-3. As `emp2@itsm.local` (another window), report `Payment transaction failing` against the same service. Its page shows a yellow box: "Possible duplicate of INC-0002 (similarity 0.50, same service, less than a minute apart)".
-4. As `emp3@itsm.local`, report `Unable to make payment` against the same service. Its page shows "Possible duplicate of INC-0002 (similarity 1.00, …)".
-5. As `emp1@itsm.local` again, try to report `Payment application unavailable` a second time. The form refuses: "You have already reported this: INC-0002 is still open."
-6. As the administrator, open **Incidents**: the two later ones carry a **possible duplicate** badge. Open the first one: "Later incidents that look like duplicates of this one" links to both.
-7. Open **Dashboard**. The list **Most likely to breach next** shows the three incidents with the reason, for example "Response due in 40 s · 33% of the time used · not acknowledged yet".
-8. Do not acknowledge anything. Wait until a minute has passed since the first report, then open **System → Settings** and click **Run the SLA check now** (or wait up to a minute more for the background job).
-9. Open **Dashboard**: SLA breaches has gone up and a black card says "3 escalated incidents need your attention". The bell shows the escalation notifications. Open an incident: badges **Breached** and **Escalated**, and the reason in a grey box and in the timeline.
-10. Switch demo SLA off again on the **Settings** page.
-
-### Show an SLA breach in under two minutes
-
-1. As the administrator: **System → Settings** → **Switch demo SLA on**.
-2. As an employee: report any incident with impact **High** and urgency **High** against **Payment Application**. Note the time.
-3. Do nothing for one minute. (After about 45 seconds the SLA badge turns **At risk** once the check has run.)
-4. As the administrator: **System → Settings** → **Run the SLA check now**.
-5. Open the incident: SLA badge **Breached**, "Respond by … **missed**", and "SLA breached" in the timeline. The administrator's bell has the notification.
-
-Without the button, the background job finds the breach by itself within one more minute.
-
-### Show live updates
-
-1. Open three windows side by side: the administrator on **Dashboard**, `tech4@itsm.local` on **My queue**, and `emp1@itsm.local`. Each navbar has a small dot next to the bell; it is green while the page is connected.
-2. As the employee, report an incident with impact **High** and urgency **High** against **Payment Application**.
-3. Do not touch the other two windows. Within a second the administrator's counters go up and the incident appears under "Most likely to breach next"; the incident appears in the technician's queue and the technician's bell shows **1**. The part that changed is outlined for a moment.
-4. As the technician, open the incident and click **Acknowledge**. The administrator's dashboard and the employee's home screen follow.
-5. As the administrator, open the incident page. As the technician, click **Start work**. The administrator's page shows "This incident has just been changed" with a button **Show the latest**. (The incident page is not replaced by itself, because someone may be half-way through writing a note on it.)
-
-Other things worth showing:
-
-- **Nobody can take it.** Report four incidents with category **Security** (give each its own title). Only Arjun has that skill and his maximum is 3, so the fourth stays **Classified**; the administrator sees a warning and assigns it by hand.
-- **Switch strategy.** **System → Settings** → choose **Least loaded** or **Round robin** → **Use this strategy**. The next incident is assigned differently.
-- **Refused actions.** An employee who opens another employee's incident gets the 403 page with the reason.
-
-## How it works
-
-### Priority
-
-`PriorityCalculator` is an interface; `WeightedPriorityCalculator` is the implementation in use.
-
-> Score = impact × urgency × service criticality, each from 1 to 3.
-
-| Score   | Priority      |
-|---------|---------------|
-| 18 – 27 | P1 · Critical |
-| 9 – 17  | P2 · High     |
-| 4 – 8   | P3 · Medium   |
-| 1 – 3   | P4 · Low      |
-
-The result (the priority, the score and the three numbers) is stored with the incident, so the incident page always shows the calculation that was really made. The SLA policy for that priority then sets the two deadlines, counted from the time the incident was reported.
-
-### Lifecycle
-
-```mermaid
-stateDiagram-v2
-    [*] --> NEW
-    NEW --> CLASSIFIED: priority set
-    CLASSIFIED --> ASSIGNED: technician assigned
-    ASSIGNED --> ACKNOWLEDGED: Acknowledge
-    ACKNOWLEDGED --> IN_PROGRESS: Start work
-    IN_PROGRESS --> AWAITING_INFO: Request information
-    AWAITING_INFO --> IN_PROGRESS: Send information
-    IN_PROGRESS --> RESOLVED: Resolve
-    RESOLVED --> IN_PROGRESS: Reopen
-    RESOLVED --> VERIFIED: Confirm it is fixed
-    VERIFIED --> CLOSED: Close
-    CLOSED --> [*]
-```
-
-| From          | To            | Who                                | Button                                | Note needed |
-|---------------|---------------|------------------------------------|---------------------------------------|-------------|
-| NEW           | CLASSIFIED    | the system, when the priority is set | –                                   | –           |
-| CLASSIFIED    | ASSIGNED      | the system, when a technician is assigned | –                              | –           |
-| ASSIGNED      | ACKNOWLEDGED  | the assigned technician            | Acknowledge                           | no          |
-| ACKNOWLEDGED  | IN_PROGRESS   | the assigned technician            | Start work                            | no          |
-| IN_PROGRESS   | AWAITING_INFO | the assigned technician            | Request information                   | yes         |
-| AWAITING_INFO | IN_PROGRESS   | the reporter, or the technician    | Send information / Resume work        | yes         |
-| IN_PROGRESS   | RESOLVED      | the assigned technician            | Resolve                               | yes         |
-| RESOLVED      | VERIFIED      | the reporter                       | Confirm it is fixed                   | no          |
-| RESOLVED      | IN_PROGRESS   | the reporter, or an administrator  | Not fixed, reopen / Reopen            | yes         |
-| VERIFIED      | CLOSED        | the technician, or an administrator | Close                                | no          |
-
-Any other move throws `InvalidStateTransitionException` and changes nothing. `incident.transitionTo()` is the only way the status changes: there is no `setStatus`.
-
-There is one class per status in `com.itsm.domain.state` (`NewState`, `ClassifiedState`, …), each implementing `IncidentState`. A state class says which moves are allowed from it and who may make them, what must be true before an incident can enter it (for example, ASSIGNED needs a technician), and what happens on entry (for example, RESOLVED records the resolution time).
-
-### Assignment
-
-`AssignmentStrategy` is an interface with three implementations:
-
-| Strategy     | How it chooses                                                                 |
-|--------------|--------------------------------------------------------------------------------|
-| Skill-based  | A technician whose skills include the incident's category; among those, the one with the fewest open incidents. This is the default. |
-| Least loaded | The technician with the fewest open incidents, whatever their skills.          |
-| Round robin  | The technicians in turn, one after the other.                                  |
-
-Every strategy skips technicians who are not available or already at their maximum workload. If nobody is left, the strategy throws `TechnicianUnavailableException`; the incident stays CLASSIFIED, the failure is written to its timeline, and administrators see a warning on their dashboard and in the navbar.
-
-The active strategy is stored in the database (table `settings`) and read each time an incident is assigned, which is why switching it on the **Settings** page takes effect at once and survives a restart.
-
-A manual assignment by an administrator obeys the same two rules: an unavailable technician is refused with `TechnicianUnavailableException`, a full one with `WorkloadExceededException`. Reassigning an incident that already has a technician keeps its status.
-
-### Audit trail
-
-Every change to an incident publishes an `IncidentEvent`. `AuditTrailListener` listens and saves an `AuditEntry` with the time, the user (or "System"), the action, the old and new status and a note. Publisher and listener run in the same database transaction, so a change and its audit entry are saved together or not at all.
-
-### SLA monitoring
-
-Each incident has two deadlines, set from the SLA policy of its priority and counted from the time it was reported:
-
-| Deadline   | Met when the incident becomes | Paused |
-|------------|-------------------------------|--------|
-| Response   | ACKNOWLEDGED                  | never  |
-| Resolution | RESOLVED                      | while it is AWAITING_INFO |
-
-`SlaMonitor` runs once a minute (`@Scheduled`) and checks every open incident. The same check also runs straight after every status change.
-
-| SLA status | Meaning |
-|------------|---------|
-| On track   | The clock is running and less than 75% of the time is used. |
-| At risk    | 75% or more of the time for the next deadline is used. A warning event is published once. |
-| Paused     | The incident is waiting for information. When the answer arrives, the resolution deadline moves back by exactly the time spent waiting. The same happens when a resolved incident is reopened. |
-| Breached   | A deadline was missed. The time the breach was noticed is recorded once, an event is published, and the status never changes back. |
-| Met        | The incident was resolved and no deadline was missed. |
-
-The arithmetic is in `SlaTarget` (how much time is used, how much is left, is it late); `Incident.refreshSla` applies it and reports what is new.
-
-**Demo SLA:** on the **Settings** page an administrator can switch on short deadlines (P1: 1 min / 3 min, P2: 2 / 5, P3: 3 / 8, P4: 5 / 10) for incidents reported from then on, and run the check at once.
-
-### Notifications
-
-`NotificationChannel` is an interface with three implementations:
-
-| Channel        | What it does |
-|----------------|--------------|
-| `InAppChannel` | Saves a notification row. The bell in the navbar shows the unread count; clicking a notification marks it read and opens the incident. |
-| `LiveChannel`  | Sends the recipient's new unread count to every browser tab they have open, so the bell changes without a refresh (see [Live updates](#live-updates)). |
-| `EmailChannel` | Simulated. Saves the email in an outbox table (administrators read it under **System → Email outbox**) and writes it to the log. |
-
-`NotificationChannelFactory` hands out the channels for a kind of news: the app (stored, then pushed live) for everything, email as well for the important ones. `NotificationListener` listens to incident events and decides who is told:
-
-| Event | Who is told |
-|-------|-------------|
-| Reported | the reporter (a confirmation) |
-| Assigned or reassigned | the technician, and the reporter |
-| Nobody could be assigned | the administrators |
-| Information requested, resolved | the reporter |
-| The reporter answered, confirmed or reopened | the technician |
-| Closed | the reporter and the technician |
-| Any other status change, a note | the other people on the incident |
-| SLA at risk, SLA breached | the technician and the administrators |
-| Escalated | the administrators |
-| Rated | the technician |
-
-Messages are sent only after the incident change has been committed, and each channel sends each message in its own database transaction inside its own try/catch. So a failing channel cannot block the others and cannot roll back the incident change.
-
-### Live updates
-
-Every signed-in page keeps one connection open to `/live`. It is a stream of server-sent events: plain HTTP, built into every browser (`EventSource`), no extra library. The server sends three kinds of message down it:
-
-| Message | Sent when | Sent to | The page then |
-|---------|-----------|---------|---------------|
-| `incident` | an incident was created or changed in any way | administrators, technicians, and the employee who reported it | fetches itself again in the background and replaces the parts marked `data-live` |
-| `bell` | a notification was stored, or the user read some | that user only | changes the number on the bell at once |
-| `refresh` | the demo data was reset | everyone | fetches itself again |
-
-How it is built:
-
-- `LiveUpdates` holds the open connections and sends the messages. `LiveController` is the `/live` address.
-- `LiveUpdateListener` is a third `IncidentEventListener`, next to the audit trail and the notifications. Nothing in the code that changes incidents was touched: this is the Observer pattern doing its job. It waits for the commit, so a page that fetches fresh content finds the new state and a rolled-back change is never announced, and it announces each incident once per action, however many events the action raised.
-- `LiveChannel` is a third `NotificationChannel`, handed out by the factory after the in-app channel.
-- `static/js/live.js` is the browser side, about a hundred lines. It does not know how a dashboard is built: it asks the server for the page again and swaps the marked parts. So the server still renders everything, and what a user sees is still decided by the normal access rules.
-
-What it is careful about:
-
-- **Privacy.** A message carries only an incident's code, never its content. Employees are sent only the codes of their own incidents.
-- **One slow browser cannot hold up anyone else.** Messages are sent from one background thread, never from the request that caused them.
-- **No database connection per open tab.** The `/live` request reads nothing from the database (who is asking comes from the session), so a hundred open tabs do not use up the connection pool.
-- **Forms are safe.** The incident page is never replaced while someone may be typing; it shows a notice instead. On the search pages only the results are replaced, not the filters.
-- **Connections end when they should:** at sign-out, when an account is disabled, when the tab closes (found by a keep-alive message every 25 seconds), and when the application stops.
-- **Nothing depends on it.** With JavaScript off, or if the connection fails, every page works as before and is refreshed by hand. The browser reconnects by itself after a network break.
-
-### Intelligent features
-
-All four are in `com.itsm.intelligence`, and each shows its reasoning on screen.
-
-| Feature | Rule | Where it shows |
-|---------|------|----------------|
-| Duplicate detection (`DuplicateDetector`) | On report, the title is compared with open incidents on the same service from the last 24 hours. Common words are removed, then similarity = shared words ÷ all words (Jaccard). At 0.4 or more the incident is linked to the most similar one. | Yellow box on the incident page: "Possible duplicate of INC-0007 (similarity 0.62, same service, 6 min apart)"; a badge in lists; a timeline entry. |
-| Automatic escalation (`EscalationPolicy`) | A P1 that no technician has acknowledged by its response deadline is escalated, once. | "Escalated" badge, the reason on the incident page and in the timeline, a card on the administrator's dashboard, a notification to the administrators. |
-| Category suggestion (`CategorySuggester`) | If the reporter leaves the category empty, the category whose keywords appear most often in the title and description is chosen. No keyword found: the form asks the reporter to choose. | Under the category on the incident page: "chosen automatically because the report mentions: vpn, wifi"; a timeline entry. |
-| SLA risk list (`SlaRiskRanker`) | Open incidents sorted by time left until their next deadline, least first. Paused incidents and deadlines already missed are left out. | "Most likely to breach next" on the administrator's dashboard, with the reason on each line. |
-
-"Common words" are filler words, words that only say *that* something is wrong ("unable", "failing", "unavailable") and general IT words ("application", "system"). With those removed, the brief's three examples reduce to {payment}, {payment, transaction} and {payment}, which is why they match.
-
-Separately, the very same title from the same person against the same service, while their first report is still open, is refused outright (`DuplicateIncidentException`).
-
-### Changing the classification
-
-The reporter chooses impact and urgency, and may get them wrong. While an incident is open, its technician or an administrator can correct the category, impact and urgency in the **Change classification** box on the incident page. The priority is calculated again and the two deadlines are set again from the SLA policy of the new priority (still counted from the moment of the report, plus any time the clock was paused). The timeline gets "Classification changed" and, if the priority is different, "Priority changed" with the new score. A changed priority is announced to the reporter and the technician in the app and by email. The status and the assigned technician stay as they are.
-
-### Reports and the audit log
-
-**Reports** (administrators): the number of incidents by status, priority and category; the share of settled incidents that met their SLA; the average time from report to resolution for each priority next to its SLA target; and for each technician how many incidents they have, how many are open, how many breached, and their average rating. `ReportService` works these out from the incidents; `Reports` is the result.
-
-**System → Audit log** (administrators): every recorded action on every incident, newest first, with who did it and how the status changed. It can be narrowed to one incident (type `7` or `INC-0007`) and to one kind of action. Entries are written by `AuditTrailListener` in the same transaction as the change, and there is no way to edit or delete one.
-
-### Users
-
-**Manage → Users** (administrators) lists everyone by role. **Add user** creates an employee or another administrator; technicians are added on the Technicians page, where their skills are set. **Disable** stops an account from signing in and ends its open sessions at once; nothing is deleted, so the person's incidents and history stay. A disabled technician is not given new incidents. An administrator cannot disable their own account.
-
-### Search
-
-Administrators (**Incidents**) and technicians (**Search**) can filter by code, status, priority, category, service, technician, date range and SLA status. Each filter is one small `Specification` in `IncidentSpecifications`; the ones that are filled in are joined with AND.
-
-### Errors
-
-Every error the application raises on purpose is an `ItsmException` (package `com.itsm.error`), with a message written for the user:
-
-| Exception | When | What the user sees |
-|-----------|------|--------------------|
-| `InvalidStateTransitionException` | a move the lifecycle forbids | message on the incident page |
-| `TechnicianUnavailableException` | nobody, or the chosen technician, can take an incident | message; for automatic assignment a warning to administrators |
-| `WorkloadExceededException` | the chosen technician is at their maximum | message |
-| `MissingSlaConfigurationException` | a priority has no SLA policy | message on the report form |
-| `DuplicateIncidentException` | the same report twice | message on the report form |
-| `InvalidInputException` | input the form checks could not catch | message |
-| `UnauthorizedOperationException` | an action the user may not take | the 403 page with the reason |
-| `NotFoundException`, `ServiceNotFoundException`, `IncidentNotFoundException` | the thing does not exist | the 404 page with the reason |
-
-Two failures come from outside the application:
-
-| Failure | What happens |
-|---------|--------------|
-| The database cannot be reached (`DataAccessException`) | A page with status 503, "The database could not be reached just now", and no technical detail. Whatever was being saved is rolled back. |
-| A notification cannot be delivered (the "network failure" of the brief) | The incident is already saved. The failing channel is logged and skipped; the other channel still delivers. |
-
-`ErrorHandler` (a `@ControllerAdvice`) turns these into pages and messages for every controller, and does the same for forms that fail their Bean Validation checks. In every case nothing has been changed.
-
-## Who can open what
-
-Every URL is checked on the server (`SecurityConfig`). Hiding a link or a button is never the only protection.
-
-| URL                                   | Who                    |
-|---------------------------------------|------------------------|
-| `/login`, `/register`, CSS, scripts and icons | everyone       |
-| `/employee/**`                        | role `EMPLOYEE`        |
-| `/technician/**`                      | role `TECHNICIAN`      |
-| `/admin/**`, `/h2-console/**`         | role `ADMIN`           |
-| anything else, including `/live`      | any signed-in user     |
-
-On top of the role, each incident is checked. An employee can open only the incidents they reported. A technician can read every incident (for search) but can act only on the ones assigned to them. An administrator can open and act on all of them. A button press is checked the same way, so sending the request by hand does not get around a missing button. `/notifications` shows each user only their own.
-
-A signed-in user who is refused gets the 403 page. A visitor who is not signed in is sent to `/login`.
-
-## Database
-
-H2 in file mode. The database is the file `./data/itsm.mv.db` and survives restarts.
-
-**H2 console (dev only):** sign in to the app as the administrator, then open <http://localhost:8080/h2-console> and connect with:
-
-| Field     | Value                      |
-|-----------|----------------------------|
-| JDBC URL  | `jdbc:h2:file:./data/itsm` |
-| User Name | `sa`                       |
-| Password  | *(leave empty)*            |
-
-**Reset the database:** stop the app and delete the `data` folder. The next start rebuilds it with the demo data. To remove only the incidents while the app is running, use **Settings → Demo data** (see [Sample data](#sample-data)).
-
-Hibernate adds new tables and columns on its own at startup, but it does not change columns that already exist. Reset after a change the old tables cannot follow, such as a new kind of user or a column that changes type. Adding a value to an enum (a new status, say) does **not** need a reset: enums are stored as plain text.
-
-## Profiles
-
-| Profile | When                                       | Database                    | H2 console |
-|---------|--------------------------------------------|-----------------------------|------------|
-| `dev`   | default, used by `./mvnw spring-boot:run`  | file `./data/itsm`          | on         |
-| `test`  | used by the tests                          | in memory, thrown away      | off        |
-| other   | e.g. `SPRING_PROFILES_ACTIVE=prod`         | file `./data/itsm`          | off        |
-
-## Tests
+Make a key under *avatar menu → API keys*, then:
 
 ```bash
-./mvnw test
+curl -H "Authorization: Bearer qk_..." http://localhost:8080/api/v1/incidents
 ```
 
-498 tests. The files marked "plain objects" need no database and run in milliseconds; the rest start the application against a throw-away in-memory database.
+Interactive documentation: <http://localhost:8080/api/docs> (OpenAPI 3.1 at `/api/openapi.json`).
 
-[`docs/test-cases.md`](docs/test-cases.md) documents 20 of them in full (ID, area, scenario, input, expected result, type), each with the test method that carries it out, and shows where each exception case of the brief is tested.
+## Screenshots
 
-| File | What it checks |
-|------|----------------|
-| `WeightedPriorityCalculatorTests` (plain objects) | The priority bands, including the edges (17 is P2, 18 is P1), and the score for every combination of inputs. |
-| `IncidentLifecycleTests` (plain objects) | All 81 pairs of statuses: the 10 legal moves succeed, the other 71 throw and change nothing. The buttons each role gets in each status. |
-| `AssignmentStrategyTests` (plain objects) | Each strategy's choice; all three skip unavailable and full technicians and throw when nobody is left. |
-| `SlaTests` (plain objects) | SLA arithmetic with exact times: 75% warning, breach recorded once, pausing and the deadline moving back, reopening. |
-| `NotificationDispatcherTests` (plain objects) | A failing channel does not stop the other one, whichever comes first. |
-| `DuplicateDetectorTests` (plain objects) | The brief's three payment examples match each other; the service, 24-hour and "still open" rules; the explanation text. |
-| `CategorySuggesterTests` (plain objects) | Suggestions for typical reports, whole-word matching, ties, no match. |
-| `EscalationAndRiskTests` (plain objects) | The escalation rule and the ordering of the SLA risk list. |
-| `IncidentWorkflowTests` | Reporting, automatic and manual assignment, switching strategy, the audit trail, who may do what. |
-| `FullWorkflowTests` | Investigation notes, asking and answering, recording the resolution, confirming, reopening and rating. |
-| `SlaMonitoringTests` | The minute job on real incidents: warning and breach each once, pause, demo SLA. |
-| `NotificationTests` | Notifications from end to end with real commits: who is told what; a failing channel neither blocks the other nor undoes the incident; the bell and the outbox. |
-| `IntelligenceTests` | The four intelligent features inside the running application and on its pages. |
-| `IncidentSearchTests` | One search with all eight filters together, each filter alone, and the search pages. |
-| `ErrorHandlingTests` | One test per kind of error: the right message or page, and nothing changed. |
-| `AdminManagementTests` | Dashboard totals; managing services, categories, technicians and SLA policies; settings. |
-| `ReclassificationTests` | Changing the category, impact and urgency: priority and deadlines recalculated, both changes in the audit trail, who is told, who may do it. |
-| `UserManagementTests` | Adding employees and administrators; a disabled account cannot sign in and its open session ends; a disabled technician gets no incidents. |
-| `AuditLogAndReportTests` | The audit log and its filters; the report figures worked out from known incidents. |
-| `DatabaseFailureTests` | A database failure gives a readable 503 page, saves nothing, and the application carries on. |
-| `DemoDataResetTests` | The reset removes incidents and keeps users and settings data; the 23 samples cover every stage and obey every rule; numbering restarts. |
-| `LiveUpdatesTests` (plain objects) | Who is sent which live message; a broken connection is dropped and harms nobody else; incident news waits for the commit and is sent once; nothing after a rollback. |
-| `LiveUpdatesWebTests` | The `/live` stream in the running application: sign-in required, the right messages after reporting, a status change, reading notifications and a reset; an open stream holds no database connection; streams close at sign-out and when an account is disabled. |
-| `IncidentWebTests` | Reporting and working on incidents through the pages. |
-| `SecurityTests`, `RegistrationTests` | Sign-in, role checks on every area, self-registration. |
-| `SeedDataTests`, `DomainModelTests`, `ItsmApplicationTests` | The seed data, the JPA mapping, and that the app starts. |
+| | |
+|---|---|
+| ![Assistant](docs/report/screenshots/04-assistant-known-outage.jpg) | ![Incident page](docs/report/screenshots/09-incident-page.jpg) |
+| The assistant recognises the service and offers a known outage | Suggested solutions and the predicted finish time |
+| ![Status page](docs/report/screenshots/10-status-page.jpg) | ![Integrations](docs/report/screenshots/14-integrations.jpg) |
+| Status page with root cause and dependency map | Webhooks to Slack, Teams and any app |
 
-A score of 17 cannot actually occur (three whole numbers from 1 to 3 never multiply to 17), so that edge is tested on the banding rule itself, and the full calculation is tested with the nearest scores that can occur (12 and 18).
+## How it is built
 
-## Design
+A layered Spring Boot application with an object-oriented domain model at its centre:
 
-### Patterns
+- **State**: each of the nine incident statuses is a class that knows its legal moves and who may make them;
+  the reporting assistant's conversation steps are a second State machine.
+- **Strategy**: assignment rules, the priority rule and notification channels are interchangeable classes
+  behind interfaces; the administrator switches the assignment rule while the app runs.
+- **Observer**: every change is an event; the audit trail, notifications, live updates, the learning
+  classifier and webhooks are listeners, added without touching the incident logic.
+- **Factory, Template Method, Decorator, Repository, Specification, transactional outbox**.
 
-| Pattern  | Where | Why |
-|----------|-------|-----|
-| State    | `IncidentState` and one class per status in `domain.state` | The rules of each status live in one class. The incident has no `if`/`switch` on its status. |
-| Strategy | `AssignmentStrategy` with three implementations; `PriorityCalculator` with one; `NotificationChannel` with three | The rule can be swapped, at runtime for assignment, without touching the code that uses it. |
-| Observer | `IncidentEventPublisher`, `IncidentEventListener`, with `AuditTrailListener`, `NotificationListener` and `LiveUpdateListener` as the observers | Code that changes an incident does not know who reacts to the change. Notifications, and later live updates, were added without touching that code. |
-| Factory  | `IncidentFactory`; `NotificationChannelFactory` | One place knows what a valid new incident needs, including its code. One place decides which notification channels exist and which news goes where. |
-| Template method | `AbstractAssignmentStrategy` | The shared rule (skip unavailable and full technicians) is written once; each strategy fills in only how it picks. |
-| Repository | the interfaces in `repository` | Database access is behind interfaces. |
+| Layer | Technology |
+|---|---|
+| Language and framework | Java 25, Spring Boot 4.1 (Spring MVC, Security, Data JPA), Hibernate 7 |
+| Pages | Thymeleaf, Bootstrap 5.3, Inter; plain JavaScript (live updates over server-sent events, chat, voice, service worker) |
+| API | REST with springdoc-openapi (Swagger UI), RFC 9457 problem details |
+| Data | H2 (desktop, development, tests), PostgreSQL (servers) |
+| Quality | 617 automated tests (JUnit, AssertJ, Mockito, MockMvc), GitHub Actions |
+| Delivery | jpackage installers for Windows, macOS and Linux; Docker |
 
-### Domain model
-
-```mermaid
-classDiagram
-    class User {
-        <<abstract>>
-        name
-        email
-        passwordHash
-        getRole()*
-        canView(incident)*
-        canWorkOn(incident)*
-    }
-    class Technician {
-        maxWorkload
-        available
-    }
-    class Category {
-        name
-    }
-    class ITService {
-        name
-        criticality
-    }
-    class SlaPolicy {
-        priority
-        responseMinutes
-        resolutionMinutes
-    }
-    class Incident {
-        code
-        title
-        description
-        impact
-        urgency
-        status
-        slaStatus
-        createdAt
-        responseDue
-        resolutionDue
-        resolution
-        rating
-        escalatedAt
-        transitionTo(status)
-        prioritise(assessment, policy)
-        assignTo(technician)
-        refreshSla(now)
-    }
-    class PriorityAssessment {
-        priority
-        score
-        impactWeight
-        urgencyWeight
-        serviceCriticality
-    }
-    class AuditEntry {
-        occurredAt
-        action
-        oldStatus
-        newStatus
-        note
-    }
-    class IncidentState {
-        <<interface>>
-        transitions()
-        checkEntry(incident)
-        onEnter(incident)
-    }
-    User <|-- Employee
-    User <|-- Technician
-    User <|-- Administrator
-    Technician "*" o-- "*" Category : skills
-    Category "1" *-- "*" Keyword : keywords
-    Incident "*" --> "1" Employee : reporter
-    Incident "*" --> "1" ITService : service
-    Incident "*" --> "0..1" Category : category
-    Incident "*" --> "0..1" Technician : assignee
-    Incident "1" *-- "0..1" PriorityAssessment : assessment
-    Incident "1" *-- "*" AuditEntry : history
-    Incident "*" --> "0..1" Incident : possibleDuplicateOf
-    AuditEntry "*" --> "0..1" User : actor
-    Incident ..> IncidentState : asks its current state
-    Incident ..> SlaPolicy : deadlines from
+```text
+src/main/java/com/itsm/
+  domain/ domain/state/     entities and the nine incident states        api/          REST API and API keys
+  service/ assignment/      reporting, lifecycle, assignment strategies  webhook/      webhooks (outbox, signing, retries)
+  sla/ priority/            SLA policies, monitoring, priority           assistant/    the reporting assistant
+  intelligence/             classifier, similarity, triage, duplicates   status/       service graph, root cause
+  event/ notification/ live/  events, notifications, live updates        security/ web/  sign-in, rules, pages
 ```
 
-- **Inheritance:** `Employee`, `Technician` and `Administrator` are all kinds of `User`. `User` is abstract and holds what they share. Each subclass says what its role is and which incidents it may open. All three are stored in one `users` table, and the `role` column records which kind each row is (single-table inheritance).
-- **Association:** an `Incident` points at the `Employee` who reported it, the `ITService` it affects, its `Category` and the `Technician` it is assigned to. A `Technician` points at the `Category` objects that are their skills. All of these exist on their own: deleting an incident deletes none of them.
-- **Composition:** a `Category` owns its keywords. An `Incident` owns its `PriorityAssessment` (stored in the incident's own row) and its history of `AuditEntry` objects: neither means anything without the incident.
-- **Polymorphism:** `canView(incident)` and `canWorkOn(incident)` are answered differently by `Employee`, `Technician` and `Administrator`; the code that asks never checks which kind of user it has. The same goes for the state classes, the assignment strategies and the notification channels.
-- **Encapsulation:** an incident's status, priority and assignee have no setters. They change only through `transitionTo`, `prioritise` and `assignTo`, which check the rules first.
+Run the tests with `./mvnw test` (Windows: `.\mvnw.cmd test`).
 
-## Project layout
+## Course project
 
-```
-src/main/java/com/itsm
-├── domain        entities, enums and SLA arithmetic (the model above)
-│   └── state     the lifecycle: IncidentState, one class per status, Transition
-├── priority      PriorityCalculator and WeightedPriorityCalculator
-├── assignment    AssignmentStrategy, the three strategies, AssignmentService
-├── sla           SlaService (policies, demo SLA, the check) and SlaMonitor (the minute job)
-├── event         IncidentEvent, the publisher, the listener interface, AuditTrailListener
-├── notification  NotificationChannel, the three channels, the factory, the dispatcher, NotificationListener
-├── intelligence  DuplicateDetector, EscalationPolicy, CategorySuggester, SlaRiskRanker
-├── live          live updates: LiveUpdates (the open connections), LiveController (/live), LiveUpdateListener
-├── search        IncidentSearchCriteria and IncidentSpecifications
-├── error         ItsmException and its subclasses
-├── service       IncidentService (report, change status, reclassify, notes, rating), IncidentFactory, RegistrationService
-├── report        ReportService and Reports: the figures on the Reports page
-├── repository    Spring Data JPA repositories, one per entity
-├── security      SecurityConfig (URL rules, form login, BCrypt), the user lookup for sign-in, SignedInSessions
-├── seed          DataSeeder: fills an empty database with the demo data; DemoDataService: the sample incidents
-└── web           controllers and form classes, ErrorHandler, GlobalModel
+Quell is our submission for the **CS F213 / MAC F212 Object-Oriented Programming** project
+*Intelligent IT Service Management & Incident Resolution System* (brief: [docs/brief.pdf](docs/brief.pdf)).
 
-src/main/resources
-├── application.properties        settings shared by all profiles
-├── application-dev.properties    dev profile: H2 console on
-├── static/css/app.css            small additions on top of Bootstrap
-├── static/js/live.js             the browser side of live updates
-└── templates
-    ├── fragments      layout, the navbar for each role, shared UI pieces (badges, incident table)
-    ├── auth           sign-in and registration pages
-    ├── employee       home screen, report form
-    ├── technician     home screen, queue
-    ├── admin          dashboard, reports, audit log, settings, email outbox, management pages
-    ├── incidents      incident list, search and the incident page shared by all roles
-    ├── notifications  the list behind the bell
-    └── error          403, 404 and "that did not work" pages
-```
+| Deliverable in the brief | Where |
+|---|---|
+| 1–5. Problem analysis, requirements, architecture, UML diagrams, technology stack and the nine questions | [Project report (PDF)](docs/report/Quell-Project-Report.pdf), sections 1–11 · editable [DOCX](docs/report/Quell-Project-Report.docx) |
+| UML and ER diagrams (sources and pictures) | [docs/diagrams](docs/diagrams/) |
+| 6. Source code | this repository |
+| 7. Database design | report section 12 |
+| 8. Testing (36 documented cases, 617 automated tests) | report section 13 · [docs/test-cases.md](docs/test-cases.md) |
+| 9. Project demonstration (three workflows) | report section 15 · [video script](docs/video-script.md) |
 
-## Documentation
-
-| Document | What is in it |
-|----------|---------------|
-| [`docs/brief.pdf`](docs/brief.pdf) | The project brief. |
-| [`docs/report-notes.md`](docs/report-notes.md) | Notes for the report: problem analysis and stakeholders, requirements, business rules, architecture, OOP concepts, design patterns (pattern → class → why), the priority algorithm, intelligent features, security, the nine technology questions, scaling, and what was left out. |
-| [`docs/test-cases.md`](docs/test-cases.md) | 20 documented test cases mapped to test methods, and a table of all test classes. |
-| [`docs/diagrams/`](docs/diagrams/) | PlantUML sources and rendered pictures: use case, two class diagrams, incident state machine, sequence (an employee reports an incident), ER and architecture. |
-
-## Technology
-
-| Part        | Choice                                                        |
-|-------------|---------------------------------------------------------------|
-| Language    | Java 25                                                       |
-| Framework   | Spring Boot 4.1 (Spring MVC, Spring Security, Spring Data JPA, Validation) |
-| Pages       | Thymeleaf, Bootstrap 5 and Bootstrap Icons (served from the app, so the UI works offline) |
-| Live updates | Server-sent events: Spring MVC's `SseEmitter` on the server, the browser's own `EventSource`, no extra library |
-| Database    | H2 in file mode, through Hibernate                            |
-| Build       | Maven (wrapper included)                                      |
-| Tests       | JUnit, Spring MockMvc, Spring Security Test                   |
+The report is built from Markdown with `docs/report/build.sh` (pandoc and Chromium).

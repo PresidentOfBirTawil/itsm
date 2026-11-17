@@ -1,7 +1,10 @@
-# Report notes
+# Report notes (source text)
+
+This file is source text for the project report; read `docs/report/Quell-Project-Report.pdf` instead. Parts of it are
+copied into the report by `build-report.py`, with the outdated statements corrected there.
 
 Notes for the project report on the Intelligent IT Service Management & Incident Resolution System
-(I-ITSM). Each section matches a deliverable of the brief and says where in the code the claim can be
+(Quell). Each section matches a deliverable of the brief and says where in the code the claim can be
 checked. Class names are in `src/main/java/com/itsm/`. Diagrams are in [`docs/diagrams/`](diagrams/),
 the documented test cases in [`docs/test-cases.md`](test-cases.md).
 

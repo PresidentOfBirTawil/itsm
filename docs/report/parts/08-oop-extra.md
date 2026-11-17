@@ -1,0 +1,4 @@
+| **Generics** | `SimilarityIndex<T>`, `NaiveBayesClassifier<L>`, `PageView<T>`, `Match<T>`, `Prediction<L>` | The machine-learning algorithms are written once for any kind of item or label: the same `SimilarityIndex` ranks knowledge articles and past incidents; the classifier would label anything, here categories. |
+| **Enums with abstract methods** | `Step` (the assistant's conversation steps), `FileKind`, `WebhookEvent` | Each constant of `Step` implements its own `enter` and `handle`: a compact, type-safe State pattern. |
+| **Inheritance from a framework class** | `ApiTokenFilter extends OncePerRequestFilter` | The framework guarantees the filter runs exactly once per request; the subclass adds only the key check. |
+| **Wrapping instead of inheriting** | `LockoutAuthenticationProvider` holds an `AuthenticationProvider` | Adds the lockout rule to Spring's password check without changing or subclassing it (Decorator). |
