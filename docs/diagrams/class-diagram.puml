@@ -1,7 +1,7 @@
 @startuml class-diagram
 ' The domain model, drawn from the classes in com.itsm.domain.
 ' Legend:  <|--  inheritance    -->  association    *--  composition    ..>  uses
-title I-ITSM · Class diagram 1: the domain model (com.itsm.domain)
+title Quell · Class diagram 1: the domain model (com.itsm.domain)
 
 set separator none
 skinparam shadowing false

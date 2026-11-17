@@ -1,6 +1,6 @@
 @startuml sequence-report-incident
 ' What happens, class by class, when an employee presses "Report incident".
-title I-ITSM · Sequence: an employee reports an incident
+title Quell · Sequence: an employee reports an incident
 
 skinparam shadowing false
 skinparam sequenceMessageAlign center

@@ -1,0 +1,133 @@
+@startuml class-diagram-integrations
+' Class diagram 3: the intelligent features, the assistant and the integrations.
+' Every class, attribute and method here exists in src/main/java/com/itsm.
+title Quell · Class diagram (4): integrations, security and files
+
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #4A5568
+}
+skinparam package {
+  BackgroundColor #F7F9FC
+  BorderColor #A0AEC0
+}
+
+interface IncidentEventListener <<Observer>> {
+  + onIncidentEvent(event : IncidentEvent) : void
+}
+
+package "webhook (integrations)" {
+  class WebhookListener <<transactional outbox>>
+  class WebhookDispatcher {
+    + dispatchSoon() : void
+    + dispatchDue() : int
+    + send(delivery : WebhookDelivery) : boolean
+  }
+  class WebhookSender {
+    + send(url, body, secret, event, id) : Result
+    + {static} sign(secret : String, text : String) : String
+  }
+  class WebhookPayloads {
+    + build(kind : WebhookKind, event : WebhookEvent, facts : Facts) : String
+  }
+  class Webhook <<entity>> {
+    - name : String
+    - kind : WebhookKind
+    - url : String
+    - secret : String
+    - events : Set<WebhookEvent>
+    - majorOnly : boolean
+    + wants(event : WebhookEvent, priority : Priority) : boolean
+  }
+  class WebhookDelivery <<entity>> {
+    - state : State
+    - attempts : int
+    - payload : String
+    + delivered(status : int, now) : void
+    + failed(status : Integer, reason : String, now) : void
+  }
+  enum WebhookKind {
+    GENERIC
+    SLACK
+    TEAMS
+  }
+}
+
+package "api and security" {
+  class ApiTokenService {
+    + create(owner : User, name : String, days : Integer) : CreatedToken
+    + authenticate(key : String) : Optional<ApiToken>
+    + revoke(id : Long, actor : User) : ApiToken
+  }
+  class ApiToken <<entity>> {
+    - tokenHash : String
+    - prefix : String
+    - expiresAt : LocalDateTime
+    - revokedAt : LocalDateTime
+    + isUsable(now : LocalDateTime) : boolean
+  }
+  class ApiTokenFilter
+  abstract class OncePerRequestFilter <<Spring>>
+  class ApiRateLimiter {
+    + take(tokenId : Long) : Decision
+  }
+  interface AuthenticationProvider <<Spring>> {
+    + authenticate(authentication) : Authentication
+  }
+  class LockoutAuthenticationProvider <<Decorator>>
+  class LoginAttempts {
+    + {static} MAX_FAILURES : int = 5
+    + isLocked(email : String) : boolean
+    + failed(email : String) : boolean
+    + succeeded(email : String) : void
+  }
+}
+
+package "attachment" {
+  class AttachmentService {
+    + attach(code, uploader : User, fileName, data : byte[]) : Attachment
+    + check(fileName : String, data : byte[]) : FileKind
+    + open(id : Long, viewer : User) : Download
+  }
+  class Attachment <<entity>> {
+    + {static} MAX_BYTES : int = 5 MB
+    - fileName : String
+    - kind : FileKind
+    - size : long
+  }
+  class AttachmentContent <<entity>> {
+    - data : byte[]
+  }
+  enum FileKind {
+    PNG
+    JPEG
+    GIF
+    WEBP
+    PDF
+    TEXT
+    + {static} detect(data : byte[], fileName : String) : Optional<FileKind>
+  }
+}
+
+IncidentEventListener <|.. WebhookListener
+WebhookListener ..> WebhookDelivery : queues
+WebhookListener ..> WebhookDispatcher : after commit
+WebhookDispatcher --> WebhookSender
+WebhookDispatcher --> WebhookPayloads
+Webhook "1" *-- "0..*" WebhookDelivery
+Webhook --> WebhookKind
+OncePerRequestFilter <|-- ApiTokenFilter
+ApiTokenFilter --> ApiTokenService
+ApiTokenFilter --> ApiRateLimiter
+ApiTokenService ..> ApiToken
+AuthenticationProvider <|.. LockoutAuthenticationProvider
+LockoutAuthenticationProvider o-- AuthenticationProvider : wraps the password check
+LockoutAuthenticationProvider --> LoginAttempts
+AttachmentService ..> FileKind : checks content
+Attachment *-- "1" AttachmentContent : bytes
+Attachment --> FileKind
+@enduml

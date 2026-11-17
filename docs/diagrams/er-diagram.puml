@@ -1,6 +1,6 @@
 @startuml er-diagram
 ' The tables as Hibernate creates them from the entities (H2).
-title I-ITSM · Entity-relationship diagram
+title Quell · Entity-relationship diagram
 
 hide circle
 hide methods
@@ -31,7 +31,7 @@ entity "categories" as categories {
 
 entity "category_keywords" as keywords {
   * category_id : bigint <<FK>>
-  * keyword : varchar(60)
+  {field} * keyword : varchar(60)
 }
 
 entity "technician_skills" as skills {

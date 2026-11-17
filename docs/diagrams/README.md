@@ -5,16 +5,19 @@ The diagrams are written in [PlantUML](https://plantuml.com). Each `.puml` file 
 
 | Diagram | Source | Picture |
 |---|---|---|
+| Architecture: components, layers and integrations | [architecture.puml](architecture.puml) | [architecture.png](architecture.png) |
 | Use cases: who can do what | [use-case.puml](use-case.puml) | [use-case.png](use-case.png) |
 | Class diagram 1: the domain model (inheritance, associations, composition) | [class-diagram.puml](class-diagram.puml) | [class-diagram.png](class-diagram.png) |
 | Class diagram 2: interfaces and design patterns | [class-diagram-patterns.puml](class-diagram-patterns.puml) | [class-diagram-patterns.png](class-diagram-patterns.png) |
+| Class diagram 3: intelligence, service map and assistant | [class-diagram-intelligence.puml](class-diagram-intelligence.puml) | [class-diagram-intelligence.png](class-diagram-intelligence.png) |
+| Class diagram 4: integrations, security and files | [class-diagram-integrations.puml](class-diagram-integrations.puml) | [class-diagram-integrations.png](class-diagram-integrations.png) |
 | Incident state machine | [state-machine.puml](state-machine.puml) | [state-machine.png](state-machine.png) |
 | Sequence: an employee reports an incident | [sequence-report-incident.puml](sequence-report-incident.puml) | [sequence-report-incident.png](sequence-report-incident.png) |
-| Entity-relationship diagram (the database tables) | [er-diagram.puml](er-diagram.puml) | [er-diagram.png](er-diagram.png) |
-| Architecture: layers and packages | [architecture.puml](architecture.puml) | [architecture.png](architecture.png) |
+| Entity-relationship diagram 1: the core tables | [er-diagram.puml](er-diagram.puml) | [er-diagram.png](er-diagram.png) |
+| Entity-relationship diagram 2: knowledge, service map, files, API and webhooks | [er-diagram-extensions.puml](er-diagram-extensions.puml) | [er-diagram-extensions.png](er-diagram-extensions.png) |
 
-The class diagram is split in two so that each half stays readable on a page. Both are drawn from the
-real classes: every class, method and relationship in them exists in `src/main/java/com/itsm`.
+The class diagram is split in four, and the ER diagram in two, so that each part stays readable on a page.
+All are drawn from the real classes: every class, method and relationship in them exists in `src/main/java/com/itsm`.
 
 ## Rendering them again
 

@@ -1,0 +1,125 @@
+@startuml class-diagram-intelligence
+' Class diagram 3: the intelligent features, the assistant and the integrations.
+' Every class, attribute and method here exists in src/main/java/com/itsm.
+title Quell · Class diagram (3): intelligence, service map and assistant
+
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #4A5568
+}
+skinparam package {
+  BackgroundColor #F7F9FC
+  BorderColor #A0AEC0
+}
+
+interface IncidentEventListener <<Observer>> {
+  + onIncidentEvent(event : IncidentEvent) : void
+}
+
+package "intelligence (machine learning, no external service)" {
+  class "SimilarityIndex<T>" as SimilarityIndex <<generic, TF-IDF>> {
+    - items : List<T>
+    - vectors : List<Map<String, Double>>
+    - inverseDocumentFrequency : Map<String, Double>
+    + {static} build(items : Collection<T>, text : Function<T, String>) : SimilarityIndex<T>
+    + search(query : String, limit : int, minScore : double) : List<Match<T>>
+  }
+  class "NaiveBayesClassifier<L>" as NaiveBayes <<generic, multinomial>> {
+    - examplesPerLabel : Map<L, Double>
+    - wordCounts : Map<L, Map<String, Double>>
+    - vocabulary : Set<String>
+    + NaiveBayesClassifier(examples : List<Example<L>>)
+    + predict(text : String) : List<Prediction<L>>
+    + labels() : Set<L>
+    + exampleCount() : double
+  }
+  class CategoryClassifier {
+    + {static} CONFIDENT : double = 0.5
+    + predict(text : String) : Optional<CategoryPrediction>
+    + rank(text : String, limit : int) : List<CategoryPrediction>
+    + markStale() : void
+  }
+  class ResolutionRecommender {
+    + recommend(incident : Incident, limit : int) : List<Recommendation>
+    + articlesFor(text : String, limit : int) : List<Match<KnowledgeArticle>>
+  }
+  class SlaPredictor {
+    + forecast(incident : Incident, now : LocalDateTime) : Optional<SlaForecast>
+  }
+  class TriageAdvisor {
+    + advise(text : String) : TriageAdvice
+  }
+  class ServiceDetector {
+    + detect(text : String, services : Collection<ITService>) : Optional<Detection>
+  }
+}
+
+package "status (service map)" {
+  class ServiceGraph {
+    + upstream(service : ITService) : Set<ITService>
+    + downstream(service : ITService) : Set<ITService>
+    + layers() : Map<ITService, Integer>
+  }
+  class RootCauseAnalyzer {
+    + {static} WINDOW_HOURS : int = 3
+    + analyse(graph, open : List<Incident>, now) : Optional<RootCause>
+  }
+  class StatusService {
+    + overview() : StatusOverview
+    + knownIssuesFor(serviceId : Long) : List<Incident>
+  }
+}
+
+package "assistant (chat reporting)" {
+  class ReportingAssistant {
+    + start(conversation, employee) : void
+    + answer(conversation, employee, text : String) : void
+    + restart(conversation, employee) : void
+  }
+  class Conversation <<Serializable, in the session>> {
+    ~ step : Step
+    ~ description : String
+    ~ serviceId : Long
+    ~ impact : Impact
+    ~ urgency : Urgency
+    + getTranscript() : List<ChatMessage>
+  }
+  enum Step <<State>> {
+    DESCRIBE
+    SERVICE
+    KNOWN_ISSUE
+    ARTICLES
+    WHO
+    URGENCY
+    CATEGORY
+    CONFIRM
+    DONE
+    ~ {abstract} enter(conversation, context) : AssistantTurn
+    ~ {abstract} handle(conversation, text, context, said) : Step
+  }
+  class ChatMessage <<record>> {
+    + fromAssistant : boolean
+    + text : String
+    + parts() : List<Part>
+  }
+}
+
+IncidentEventListener <|.. CategoryClassifier
+CategoryClassifier o-- NaiveBayes : trains
+ResolutionRecommender o-- SimilarityIndex : articles, past fixes
+StatusService --> ServiceGraph
+StatusService --> RootCauseAnalyzer
+RootCauseAnalyzer ..> ServiceGraph
+ReportingAssistant ..> Conversation : moves on
+Conversation *-- "1..*" ChatMessage : transcript
+Conversation --> Step : current step
+Step ..> ServiceDetector
+Step ..> TriageAdvisor
+Step ..> ResolutionRecommender
+Step ..> StatusService : known outages
+Step ..> CategoryClassifier
+@enduml

@@ -1,114 +1,139 @@
 @startuml architecture
 ' Layers and packages, and which way the dependencies point.
-title I-ITSM · Architecture
+title Quell · System architecture
 
 skinparam shadowing false
 skinparam componentStyle rectangle
 skinparam defaultTextAlignment center
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #4A5568
 skinparam rectangle {
   BackgroundColor #F7F9FC
   BorderColor #4A5568
+  RoundCorner 12
 }
 skinparam component {
   BackgroundColor #FFFFFF
   BorderColor #4A5568
 }
-
-actor "Employee\nTechnician\nAdministrator" as User
-node "Browser" as Browser {
-  [HTML pages\nBootstrap 5] as Pages
-  [live.js\nEventSource] as LiveJs
+skinparam node {
+  BackgroundColor #EEF2FF
+  BorderColor #4F46E5
+}
+skinparam cloud {
+  BackgroundColor #ECFEFF
+  BorderColor #0891B2
 }
 
-node "One Spring Boot 4.1 application (Java 25, embedded Tomcat)" as App {
+actor "Employee\nTechnician\nAdministrator" as User
 
-  rectangle "Security · com.itsm.security" as SecurityLayer {
-    [Spring Security filter chain\nform login · BCrypt · CSRF\nURL rules per role · sessions] as Filters
+node "Browser or installed app (PWA / desktop launcher)" as Browser {
+  [HTML pages · Bootstrap 5\ndark / light theme] as Pages
+  [live.js\nserver-sent events] as LiveJs
+  [assistant.js · voice input\nattachments.js · palette] as Js
+  [service worker\noffline page · alerts] as SW
+}
+
+cloud "Your tools" as Tools {
+  [Scripts · monitoring\n(REST API client)] as ApiClient
+  [Slack · Microsoft Teams\nany webhook receiver] as Receivers
+}
+
+node "Quell server: one Spring Boot 4.1 application (Java 25, embedded Tomcat)" as App {
+
+  rectangle "Security · com.itsm.security, com.itsm.api" as Sec {
+    [Web chain: form login · BCrypt · CSRF\nsessions · lockout · CSP headers] as WebChain
+    [API chain: bearer API keys (SHA-256)\nstateless · rate limit · problem JSON] as ApiChain
   }
 
-  rectangle "Presentation · com.itsm.web + templates" as Web {
-    [Controllers\nEmployee · Technician · Admin…] as Controllers
-    [Form objects\nBean Validation] as Forms
-    [Thymeleaf templates] as Views
-    [ErrorHandler\n@ControllerAdvice] as Errors
+  rectangle "Presentation" as Web {
+    [Web controllers + Thymeleaf\nemployee · technician · admin\nassistant · status · knowledge] as Controllers
+    [REST controllers /api/v1\nOpenAPI docs /api/docs] as Rest
+    [ErrorHandler · ApiExceptionHandler] as Errors
   }
 
   rectangle "Application services" as Services {
     [IncidentService\nIncidentFactory] as IncidentSvc
     [AssignmentService\n3 strategies] as AssignSvc
     [SlaService\nSlaMonitor @Scheduled] as SlaSvc
-    [ReportService\nDemoDataService] as ReportSvc
-    [intelligence\nduplicates · category\nescalation · SLA risk] as Intel
-    [PriorityCalculator] as Prio
+    [ReportingAssistant\n(chat, State pattern)] as Assistant
+    [AttachmentService\nKnowledgeService] as Content
+    [StatusService\nServiceGraph · RootCauseAnalyzer] as Status
+    [ApiTokenService\nWebhookService] as Integrations
   }
 
-  rectangle "Events · com.itsm.event + notification + live" as Events {
+  rectangle "Intelligence · com.itsm.intelligence, priority, sla" as Intel {
+    [PriorityCalculator\nimpact × urgency × criticality] as Prio
+    [CategoryClassifier\nnaive Bayes] as NB
+    [ResolutionRecommender\nDuplicateDetector · TF-IDF] as TfIdf
+    [SlaPredictor\nTriageAdvisor · ServiceDetector] as Predict
+  }
+
+  rectangle "Events (Observer) · com.itsm.event" as Events {
     [IncidentEventPublisher] as Publisher
     [AuditTrailListener] as AuditL
-    [NotificationListener\nNotificationDispatcher] as NotifL
-    [Channels: in-app · live · email\n(NotificationChannelFactory)] as Channels
-    [LiveUpdateListener] as LiveL
-    [LiveUpdates\nopen connections\n(server-sent events)] as Live
+    [NotificationListener\nin-app · live · email] as NotifL
+    [LiveUpdateListener\nLiveUpdates (SSE)] as LiveL
+    [WebhookListener\n(transactional outbox)] as HookL
+    [WebhookDispatcher\nsigned · retried] as HookD
   }
 
   rectangle "Domain model · com.itsm.domain" as Domain {
-    [Incident + 9 state classes\n(State pattern)] as IncidentD
+    [Incident + 9 state classes] as IncidentD
     [User · Employee · Technician · Administrator] as UsersD
-    [ITService · Category · SlaPolicy\nAuditEntry · Notification] as OtherD
-    [ItsmException hierarchy\ncom.itsm.error] as Exceptions
+    [ITService · Category · SlaPolicy · KnowledgeArticle\nAttachment · ApiToken · Webhook · AuditEntry] as OtherD
   }
 
   rectangle "Persistence · com.itsm.repository" as Persistence {
-    [Spring Data JPA repositories\nSpecifications for search] as Repos
-    [Hibernate] as Hibernate
+    [Spring Data JPA repositories\nSpecifications · Hibernate 7] as Repos
   }
 }
 
-database "H2 database\nfile ./data/itsm" as DB
+database "H2 (desktop, development)\nPostgreSQL (server, Docker)" as DB
 
 User --> Pages
-Pages --> Filters : HTTP request\n(session cookie, CSRF token)
-Filters --> Controllers
-Controllers --> Forms
-Controllers --> Views
+Pages --> WebChain : HTTPS · session cookie · CSRF token
+Js --> WebChain
+ApiClient --> ApiChain : HTTPS · Authorization: Bearer qk_…
+WebChain --> Controllers
+ApiChain --> Rest
 Controllers --> IncidentSvc
-Controllers --> AssignSvc
-Controllers --> ReportSvc
-Controllers --> Repos : simple lists
-Errors ..> Exceptions : turns into\nmessages and pages
+Controllers --> Assistant
+Controllers --> Content
+Controllers --> Status
+Controllers --> Integrations
+Rest --> IncidentSvc
+Rest --> Status
+Errors .. Controllers
+Assistant --> IncidentSvc
 IncidentSvc --> Prio
 IncidentSvc --> AssignSvc
 IncidentSvc --> SlaSvc
-IncidentSvc --> Intel
+IncidentSvc --> TfIdf
+IncidentSvc --> NB
+SlaSvc --> Predict
 IncidentSvc --> Publisher
 AssignSvc --> Publisher
 SlaSvc --> Publisher
-SlaSvc --> Intel
 Publisher --> AuditL
 Publisher --> NotifL
 Publisher --> LiveL
-LiveL --> Live : after commit
-Channels --> Live : bell count
-Live ..> LiveJs : pushes "incident", "bell"\nover the open /live connection
-LiveJs ..> Filters : fetches the page again,\nswaps the live parts
-NotifL --> Channels : after commit
+Publisher --> HookL
+Publisher --> NB : retrain
+HookL --> HookD : after commit
+HookD --> Receivers : POST JSON\nHMAC-SHA256 signature
+LiveL ..> LiveJs : "incident", "bell"\n(after commit)
+LiveJs ..> SW : desktop alert
 IncidentSvc --> IncidentD
 AssignSvc --> UsersD
-IncidentSvc --> Repos
-AuditL --> Repos
-Channels --> Repos
-Repos --> Hibernate
-Hibernate --> DB : JDBC
-Hibernate ..> Domain : maps entities
+Services --> Repos
+Events --> Repos
+Repos --> DB : JDBC
+Repos ..> Domain : maps entities
 
 note right of Domain
   The rules live here. The domain model
-  depends on nothing above it: no Spring,
+  depends on nothing above it: no Spring MVC,
   no web, no repositories.
-end note
-
-note bottom of DB
-  Dev: file database, H2 console for admins.
-  Tests: a fresh in-memory database per run.
 end note
 @enduml

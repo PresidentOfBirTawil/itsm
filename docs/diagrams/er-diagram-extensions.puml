@@ -1,0 +1,149 @@
+@startuml er-diagram-extensions
+' The tables added for the intelligent features and integrations (H2 types; PostgreSQL uses bytea/varchar).
+title Quell · Entity-relationship diagram (2): knowledge, service map, files, API and webhooks
+
+hide circle
+hide methods
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultFontName Helvetica
+skinparam class {
+  BackgroundColor #F7F9FC
+  BorderColor #4A5568
+}
+
+entity "users" as users {
+  * id : bigint <<PK>>
+  --
+  (see diagram 1)
+}
+
+entity "incidents" as incidents {
+  * id : bigint <<PK>>
+  --
+  * code : varchar(20) <<unique>>
+  (see diagram 1)
+}
+
+entity "it_services" as services {
+  * id : bigint <<PK>>
+  --
+  * name : varchar(100) <<unique>>
+  * criticality : integer  <<1 to 3>>
+}
+
+entity "categories" as categories {
+  * id : bigint <<PK>>
+  --
+  * name : varchar(60) <<unique>>
+}
+
+entity "service_dependencies" as deps {
+  * service_id : bigint <<FK>>
+  * depends_on_id : bigint <<FK>>
+}
+
+entity "service_keywords" as skeys {
+  * service_id : bigint <<FK>>
+  {field} * keyword : varchar(60) <<PK>>
+}
+
+entity "incident_affected_users" as affected {
+  * incident_id : bigint <<FK>>
+  * user_id : bigint <<FK>>
+}
+
+entity "knowledge_articles" as kb {
+  * id : bigint <<PK>>
+  --
+  * title : varchar(150)
+  * problem : varchar(4000)
+  * solution : varchar(4000)
+  category_id : bigint <<FK>>
+  service_id : bigint <<FK>>
+  author_id : bigint <<FK>>
+  source_incident_id : bigint <<FK, unique use>>
+  views, helpful_votes, not_helpful_votes : bigint
+  * created_at, updated_at : timestamp
+}
+
+entity "attachments" as att {
+  * id : bigint <<PK>>
+  --
+  * incident_id : bigint <<FK>>
+  * uploaded_by_id : bigint <<FK>>
+  * content_id : bigint <<FK, unique>>
+  * file_name : varchar(150)
+  * kind : enum  <<PNG, JPEG, GIF, WEBP, PDF, TEXT>>
+  * size : bigint  <<at most 5 MB>>
+  * created_at : timestamp
+}
+
+entity "attachment_contents" as content {
+  * id : bigint <<PK>>
+  --
+  * data : blob
+}
+
+entity "api_tokens" as tokens {
+  * id : bigint <<PK>>
+  --
+  * owner_id : bigint <<FK>>
+  * name : varchar(80)
+  * token_hash : varchar(64) <<unique, SHA-256>>
+  * prefix : varchar(12)
+  * created_at : timestamp
+  expires_at, last_used_at, revoked_at : timestamp
+}
+
+entity "webhooks" as hooks {
+  * id : bigint <<PK>>
+  --
+  * name : varchar(80)
+  * kind : enum  <<GENERIC, SLACK, TEAMS>>
+  * url : varchar(500)
+  * secret : varchar(64)  <<HMAC key>>
+  * major_only : boolean
+  * enabled : boolean
+  * created_at : timestamp
+}
+
+entity "webhook_events" as hookEvents {
+  * webhook_id : bigint <<FK>>
+  * event : enum
+}
+
+entity "webhook_deliveries" as deliveries {
+  * id : bigint <<PK>>
+  --
+  * webhook_id : bigint <<FK>>
+  * event : enum
+  incident_code : varchar(20)
+  actor_name : varchar(120)
+  note : varchar(2000)
+  payload : varchar(20000)  <<built at first send>>
+  * state : enum  <<PENDING, DELIVERED, FAILED>>
+  * attempts : integer
+  response_status : integer
+  error : varchar(500)
+  * created_at : timestamp
+  occurred_at, next_attempt_at, delivered_at : timestamp
+}
+
+services ||--o{ deps : needs
+services ||--o{ deps : is needed by
+services ||--o{ skeys : recognised by
+incidents ||--o{ affected : also affects
+users ||--o{ affected : follows
+categories |o--o{ kb : classifies
+services |o--o{ kb : about
+users |o--o{ kb : wrote
+incidents |o--o| kb : written up as
+incidents ||--o{ att : has
+users ||--o{ att : uploaded
+att ||--|| content : bytes kept apart
+users ||--o{ tokens : owns
+hooks ||--o{ hookEvents : listens to
+hooks ||--o{ deliveries : outbox
+incidents .. deliveries : by code\n(no foreign key: the log\noutlives a demo reset)
+@enduml

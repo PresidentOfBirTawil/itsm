@@ -1,6 +1,6 @@
 @startuml class-diagram-patterns
 ' The interfaces and the classes behind each design pattern, drawn from the real code.
-title I-ITSM · Class diagram 2: interfaces and design patterns
+title Quell · Class diagram 2: interfaces and design patterns
 
 set separator none
 left to right direction

@@ -1,10 +1,11 @@
 @startuml use-case
-' Use case diagram: who can do what in I-ITSM.
-title I-ITSM · Use cases
+' Use case diagram: who can do what in Quell.
+title Quell · Use cases
 
 left to right direction
 skinparam packageStyle rectangle
 skinparam shadowing false
+skinparam defaultFontName Helvetica
 skinparam usecase {
   BackgroundColor #F7F9FC
   BorderColor #4A5568
@@ -15,19 +16,25 @@ actor "Employee" as Employee
 actor "Technician" as Technician
 actor "Administrator" as Admin
 actor "Scheduler\n(every minute)" as Timer <<system>>
+actor "External tool\n(REST API key)" as Tool <<system>>
+actor "Slack · Teams · app\n(webhook receiver)" as Receiver <<system>>
 
-rectangle "I-ITSM" {
-
+rectangle "Quell" {
   package "Account" {
     usecase "Register as an employee" as UC_Register
-    usecase "Sign in / sign out" as UC_Login
-    usecase "Read notifications" as UC_Notifications
+    usecase "Sign in / sign out\n(paused after 5 wrong passwords)" as UC_Login
+    usecase "Read notifications\nand desktop alerts" as UC_Notifications
+    usecase "Manage personal API keys" as UC_Keys
   }
 
   package "Reporting" {
-    usecase "Report an incident" as UC_Report
+    usecase "Report an incident\n(form, with screenshot)" as UC_Report
+    usecase "Report by chatting\nwith the assistant (voice)" as UC_Chat
+    usecase "Join a known problem\n(\"I'm affected too\")" as UC_Join
+    usecase "Check service status" as UC_Status
+    usecase "Search the knowledge base" as UC_KB
     usecase "Track own incidents" as UC_Track
-    usecase "Answer an information request" as UC_Answer
+    usecase "Attach a file" as UC_Attach
     usecase "Confirm the fix or reopen" as UC_Verify
     usecase "Rate the resolution" as UC_Rate
   }
@@ -35,36 +42,35 @@ rectangle "I-ITSM" {
   package "Resolution" {
     usecase "View assigned queue" as UC_Queue
     usecase "Acknowledge and start work" as UC_Ack
-    usecase "Add an investigation note" as UC_Note
+    usecase "Use a suggested solution" as UC_Suggested
     usecase "Request information" as UC_Request
     usecase "Resolve with a resolution note" as UC_Resolve
+    usecase "Save the fix as an article" as UC_Article
     usecase "Change classification" as UC_Reclassify
     usecase "Search all incidents" as UC_Search
-    usecase "Close an incident" as UC_Close
   }
 
   package "Administration" {
-    usecase "Monitor the dashboard" as UC_Dashboard
+    usecase "Monitor the live dashboard\n(SLA risk, root cause)" as UC_Dashboard
     usecase "Assign or reassign a technician" as UC_Assign
+    usecase "Manage users, technicians,\nservices, dependencies, SLAs" as UC_Catalogue
     usecase "Choose the assignment strategy" as UC_Strategy
-    usecase "Manage users and technicians" as UC_Users
-    usecase "Manage services and categories" as UC_Catalogue
-    usecase "Configure SLA policies" as UC_Sla
-    usecase "View reports" as UC_Reports
-    usecase "Read the audit log" as UC_Audit
-    usecase "Reset demo data" as UC_Reset
+    usecase "View reports and the audit log" as UC_Reports
+    usecase "Connect webhooks" as UC_Webhooks
   }
 
   package "Automatic" {
     usecase "Calculate priority and SLA deadlines" as UC_Priority
-    usecase "Suggest a category" as UC_Suggest
+    usecase "Classify (keywords, naive Bayes)" as UC_Classify
     usecase "Detect a possible duplicate" as UC_Duplicate
     usecase "Assign a technician automatically" as UC_AutoAssign
-    usecase "Record the action in the audit trail" as UC_Trail
-    usecase "Notify the people concerned" as UC_Notify
-    usecase "Update open pages and the bell live" as UC_Live
-    usecase "Check SLAs: warn at 75%, record breaches" as UC_Check
-    usecase "Escalate an unacknowledged P1" as UC_Escalate
+    usecase "Audit, notify, update pages live" as UC_Notify
+    usecase "Send webhooks (signed, retried)" as UC_Send
+    usecase "Check SLAs, predict breaches,\nescalate unacknowledged P1s" as UC_Check
+  }
+
+  package "REST API" {
+    usecase "Report and follow incidents\nfrom other systems" as UC_Api
   }
 }
 
@@ -73,53 +79,46 @@ Visitor --> UC_Login
 
 Employee --> UC_Login
 Employee --> UC_Notifications
+Employee --> UC_Keys
 Employee --> UC_Report
+Employee --> UC_Chat
+Employee --> UC_Join
+Employee --> UC_Status
+Employee --> UC_KB
 Employee --> UC_Track
-Employee --> UC_Answer
+Employee --> UC_Attach
 Employee --> UC_Verify
 Employee --> UC_Rate
 
-Technician --> UC_Login
-Technician --> UC_Notifications
 Technician --> UC_Queue
 Technician --> UC_Ack
-Technician --> UC_Note
+Technician --> UC_Suggested
 Technician --> UC_Request
 Technician --> UC_Resolve
+Technician --> UC_Article
 Technician --> UC_Reclassify
 Technician --> UC_Search
-Technician --> UC_Close
+Technician --> UC_Attach
 
-Admin --> UC_Login
-Admin --> UC_Notifications
 Admin --> UC_Dashboard
 Admin --> UC_Assign
-Admin --> UC_Strategy
-Admin --> UC_Users
 Admin --> UC_Catalogue
-Admin --> UC_Sla
+Admin --> UC_Strategy
 Admin --> UC_Reports
-Admin --> UC_Audit
-Admin --> UC_Reset
+Admin --> UC_Webhooks
 Admin --> UC_Search
-Admin --> UC_Reclassify
-Admin --> UC_Close
 
 Timer --> UC_Check
+Tool --> UC_Api
+UC_Send --> Receiver
 
 UC_Report ..> UC_Priority : <<include>>
 UC_Report ..> UC_AutoAssign : <<include>>
 UC_Report ..> UC_Duplicate : <<include>>
-UC_Suggest ..> UC_Report : <<extend>>\nno category chosen
-UC_Reclassify ..> UC_Priority : <<include>>
-UC_Check ..> UC_Escalate : <<include>>
-
-note bottom of UC_Trail
-  Every use case that changes an incident
-  includes "Record the action in the audit trail",
-  "Notify the people concerned" and
-  "Update open pages and the bell live".
-end note
-UC_Trail -[hidden]- UC_Notify
-UC_Notify -[hidden]- UC_Live
+UC_Classify ..> UC_Report : <<extend>>\nno category chosen
+UC_Chat ..> UC_Report : <<include>>
+UC_Join ..> UC_Chat : <<extend>>\nknown outage found
+UC_Api ..> UC_Report : <<include>>
+UC_Resolve ..> UC_Notify : <<include>>
+UC_Notify ..> UC_Send : <<include>>\nwhen subscribed
 @enduml
