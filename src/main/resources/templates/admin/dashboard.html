@@ -2,14 +2,36 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page('Administrator dashboard', 'dashboard', ~{::main})}">
 <body>
-<!-- data-live: this part is replaced in place when an incident changes (static/js/live.js). -->
+<!--/* data-live: this part is replaced in place when an incident changes (static/js/live.js). */-->
 <main data-live="page">
-    <div class="mb-4">
-        <h1 class="h3 mb-1">Administration</h1>
-        <p class="text-body-secondary mb-0">Administrator workspace · how the service desk is doing right now.</p>
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+        <div>
+            <h1 class="page-title mb-1">Overview</h1>
+            <p class="text-body-secondary mb-0">How the service desk is doing right now. Updates live.</p>
+        </div>
+        <!--/* Service health at a glance; the full picture is on the status page */-->
+        <a class="d-flex flex-wrap gap-2 text-decoration-none health-strip" th:href="@{/status}" title="Service status">
+            <span class="badge text-bg-light d-inline-flex align-items-center" th:each="item : ${status.services}">
+                <span class="health-dot" th:classappend="|dot-${item.tone}|"></span><span th:text="${item.service.name}">Service</span>
+            </span>
+        </a>
     </div>
 
-    <!-- Totals -->
+    <!--/* Probable root cause when several services fail together (RootCauseAnalyzer) */-->
+    <a class="card mb-4 text-decoration-none border-danger-subtle root-cause-card" th:if="${status.rootCause != null}"
+       th:href="@{/status}">
+        <div class="card-body d-flex align-items-center gap-3">
+            <div class="feature-icon mb-0 flex-shrink-0 root-cause-icon"><i class="bi bi-diagram-3"></i></div>
+            <div class="flex-grow-1">
+                <div class="small text-uppercase fw-semibold text-danger-emphasis">Probable root cause</div>
+                <div class="fw-semibold text-body"><span th:text="${status.rootCause.service.name}">Corporate Network</span></div>
+                <div class="small text-body-secondary" th:text="${status.rootCause.explain()}">Explanation</div>
+            </div>
+            <i class="bi bi-chevron-right text-body-secondary"></i>
+        </div>
+    </a>
+
+    <!--/* Totals */-->
     <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
         <div class="col">
             <a class="stat-link" th:href="@{/admin/incidents}">
@@ -34,7 +56,7 @@
         </div>
     </div>
 
-    <!-- Warning: incidents no technician could be found for -->
+    <!--/* Warning: incidents no technician could be found for */-->
     <div class="card border border-warning mb-4" th:unless="${#lists.isEmpty(waiting)}">
         <div class="card-header text-warning-emphasis">
             <i class="bi bi-exclamation-triangle me-1"></i>
@@ -50,7 +72,7 @@
         </div>
     </div>
 
-    <!-- Escalated: P1 incidents nobody acknowledged in time -->
+    <!--/* Escalated: P1 incidents nobody acknowledged in time */-->
     <div class="card border border-dark mb-4" th:unless="${#lists.isEmpty(escalated)}">
         <div class="card-header">
             <i class="bi bi-arrow-up-circle me-1"></i>
@@ -66,7 +88,7 @@
         </div>
     </div>
 
-    <!-- SLA risk list: who misses a deadline next if nobody acts -->
+    <!--/* SLA risk list: who misses a deadline next if nobody acts */-->
     <div class="card mb-4">
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
             <span><i class="bi bi-graph-up-arrow me-1"></i>Most likely to breach next</span>
@@ -85,6 +107,7 @@
                     <th scope="col">Priority</th>
                     <th scope="col">Assignee</th>
                     <th scope="col" style="min-width: 8rem">Time used</th>
+                    <th scope="col">Predicted</th>
                     <th scope="col">Why it is on this list</th>
                 </tr>
                 </thead>
@@ -103,6 +126,16 @@
                                  th:classappend="${risk.percentUsed() >= 75} ? 'bg-warning' : 'bg-success'"></div>
                         </div>
                     </td>
+                    <!--/* The chance of missing the deadline, learned from similar past incidents (SlaPredictor) */-->
+                    <td class="text-nowrap">
+                        <span th:with="forecast=${forecasts[risk.incident.code]}">
+                            <span th:if="${forecast != null}" class="badge"
+                                  th:classappend="${forecast.level() == 'high'} ? 'text-bg-danger' : (${forecast.level() == 'medium'} ? 'text-bg-warning' : 'text-bg-success')"
+                                  th:title="|Predicted from ${forecast.basis}|"
+                                  th:text="|${forecast.breachPercent}% risk|">20% risk</span>
+                            <span th:if="${forecast == null}" class="text-body-secondary small">—</span>
+                        </span>
+                    </td>
                     <td class="small" th:text="${risk.explain()}">Response due in 3 min · 40% of the time used</td>
                 </tr>
                 </tbody>
@@ -111,7 +144,7 @@
     </div>
 
     <div class="row g-4">
-        <!-- Technician workload -->
+        <!--/* Technician workload */-->
         <div class="col-lg-7">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -161,7 +194,7 @@
             </div>
         </div>
 
-        <!-- Incidents per service -->
+        <!--/* Incidents per service */-->
         <div class="col-lg-5">
             <div class="card h-100">
                 <div class="card-header">Incidents per service</div>

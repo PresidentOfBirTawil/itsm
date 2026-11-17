@@ -1,10 +1,21 @@
 package com.itsm.domain;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -57,6 +68,52 @@ public class ITService {
 
     public int getCriticality() {
         return criticality;
+    }
+
+    /**
+     * The services this one needs in order to work: if one of them fails, this
+     * one is probably affected too. Used for the status page, the dependency
+     * map and root-cause detection.
+     */
+    @ManyToMany
+    @JoinTable(name = "service_dependencies",
+            joinColumns = @JoinColumn(name = "service_id"),
+            inverseJoinColumns = @JoinColumn(name = "depends_on_id"))
+    @OrderBy("name")
+    private Set<ITService> dependsOn = new LinkedHashSet<>();
+
+    /** Words people use when this service is in trouble ("vpn", "wifi"), to recognise it in a report. */
+    @ElementCollection
+    @CollectionTable(name = "service_keywords", joinColumns = @JoinColumn(name = "service_id"))
+    @Column(name = "keyword", nullable = false, length = 60)
+    @OrderBy
+    private Set<String> keywords = new LinkedHashSet<>();
+
+    /** A read-only view: changed with {@link #replaceDependencies}, after the cycle check in ServiceGraph. */
+    public Set<ITService> getDependsOn() {
+        return Collections.unmodifiableSet(dependsOn);
+    }
+
+    public void replaceDependencies(Collection<ITService> services) {
+        if (services.contains(this)) {
+            throw new IllegalArgumentException("A service cannot depend on itself");
+        }
+        dependsOn.clear();
+        dependsOn.addAll(services);
+    }
+
+    public Set<String> getKeywords() {
+        return Collections.unmodifiableSet(keywords);
+    }
+
+    /** Replaces the keywords: lower case, trimmed, without blanks or repeats. */
+    public void replaceKeywords(Collection<String> words) {
+        keywords.clear();
+        words.stream()
+                .filter(word -> word != null && !word.isBlank())
+                .map(word -> word.trim().toLowerCase())
+                .map(word -> word.length() <= 60 ? word : word.substring(0, 60))
+                .forEach(keywords::add);
     }
 
     public void setCriticality(int criticality) {

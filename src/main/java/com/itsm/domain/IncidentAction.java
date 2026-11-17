@@ -17,7 +17,8 @@ public enum IncidentAction {
     NOTE_ADDED("Note added"),
     RATED("Resolution rated"),
     CLASSIFICATION_CHANGED("Classification changed"),
-    PRIORITY_CHANGED("Priority changed");
+    PRIORITY_CHANGED("Priority changed"),
+    AFFECTED_USER_ADDED("Also affected");
 
     private final String label;
 

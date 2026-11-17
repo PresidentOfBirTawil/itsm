@@ -122,6 +122,7 @@ public class DemoDataService {
         emails.deleteAllInBatch();
         knowledgeArticles.forgetSourceIncidents(); // articles stay; only their link to an incident goes
         auditEntries.deleteAllInBatch();
+        incidents.clearAffectedUsers();
         incidents.clearDuplicateLinks();
         incidents.deleteAllInBatch();
         settings.deleteAllInBatch(); // back to the skill-based strategy, demo SLA off
@@ -305,6 +306,19 @@ public class DemoDataService {
         all.stream()
                 .sorted((a, b) -> Long.compare(b.minutesAgo(), a.minutesAgo()))
                 .forEach(sample -> added.add(play(sample, now, administrator, added)));
+        // Two colleagues hit the same payment problem and said so instead of reporting it again.
+        added.stream().filter(incident -> incident.getTitle().equals("Card payments are declined for some customers"))
+                .findFirst().ifPresent(payments -> {
+                    LocalDateTime when = payments.getCreatedAt();
+                    for (String colleague : List.of("emp1", "emp4")) {
+                        User user = demoUser(colleague);
+                        when = when.plusMinutes(4);
+                        payments.addAffectedUser(user);
+                        record(payments, when, user, IncidentAction.AFFECTED_USER_ADDED, payments.getStatus(),
+                                payments.getStatus(), "%s is affected too. %d people are affected now."
+                                        .formatted(user.getName(), payments.getAffectedCount()));
+                    }
+                });
         return added.size();
     }
 

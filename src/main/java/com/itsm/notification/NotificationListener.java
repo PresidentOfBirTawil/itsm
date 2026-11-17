@@ -79,6 +79,9 @@ public class NotificationListener implements IncidentEventListener {
 
             case STATUS_CHANGED -> statusChanged(event, outbox);
 
+            case AFFECTED_USER_ADDED -> outbox.add(NotificationType.AFFECTED_USER_ADDED, incident.getAssignee(),
+                    "%s: %d people are affected now".formatted(code, incident.getAffectedCount()), event.note());
+
             case SLA_AT_RISK -> {
                 outbox.add(NotificationType.SLA_AT_RISK, incident.getAssignee(), code + ": SLA at risk", event.note());
                 outbox.addAll(NotificationType.SLA_AT_RISK, administrators.findAll(),
@@ -134,6 +137,9 @@ public class NotificationListener implements IncidentEventListener {
             outbox.add(NotificationType.RESOLVED, incident.getReporter(),
                     code + " has been resolved",
                     "Please confirm that it is fixed, or reopen it. What was done: " + note);
+            // Everyone who said "I'm affected too" wants to know it works again.
+            outbox.addAll(NotificationType.RESOLVED, List.copyOf(incident.getAffectedUsers()),
+                    code + " has been resolved", "The problem that affected you has been fixed: " + note);
         } else if (to == Status.CLOSED) {
             outbox.add(NotificationType.CLOSED, incident.getReporter(), code + " has been closed", note);
             outbox.add(NotificationType.CLOSED, incident.getAssignee(), code + " has been closed", note);

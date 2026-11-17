@@ -15,6 +15,8 @@ import com.itsm.intelligence.DuplicateMatch;
 import com.itsm.intelligence.ResolutionRecommender;
 import com.itsm.knowledge.KnowledgeService;
 import com.itsm.sla.SlaPredictor;
+import com.itsm.status.RootCause;
+import com.itsm.status.StatusService;
 import com.itsm.domain.AuditEntry;
 import com.itsm.domain.Impact;
 import com.itsm.domain.Incident;
@@ -66,12 +68,13 @@ public class IncidentPages {
     private final CategoryClassifier classifier;
     private final SlaPredictor slaPredictor;
     private final KnowledgeService knowledge;
+    private final StatusService statusService;
 
     public IncidentPages(IncidentService incidentService, PriorityCalculator priorityCalculator,
                          IncidentRepository incidents, CategoryRepository categories,
                          ITServiceRepository services, TechnicianRepository technicians,
                          ResolutionRecommender recommender, CategoryClassifier classifier, SlaPredictor slaPredictor,
-                         KnowledgeService knowledge) {
+                         KnowledgeService knowledge, StatusService statusService) {
         this.incidentService = incidentService;
         this.priorityCalculator = priorityCalculator;
         this.incidents = incidents;
@@ -82,6 +85,7 @@ public class IncidentPages {
         this.classifier = classifier;
         this.slaPredictor = slaPredictor;
         this.knowledge = knowledge;
+        this.statusService = statusService;
     }
 
     /**
@@ -201,6 +205,10 @@ public class IncidentPages {
                         .orElse(null)
                 : null;
         model.addAttribute("classifierOpinion", opinion);
+        // Part of a wider problem? When several services fail together, the status page names a probable root cause.
+        RootCause rootCause = open ? statusService.overview().rootCause() : null;
+        model.addAttribute("rootCause", rootCause != null && rootCause.affected().contains(incident.getService())
+                && !rootCause.service().equals(incident.getService()) ? rootCause : null);
         KnowledgeArticle article = knowledge.writtenFrom(incident).orElse(null);
         model.addAttribute("knowledgeArticle", article);
         model.addAttribute("canWriteArticle", article == null && incident.getResolution() != null && !open);

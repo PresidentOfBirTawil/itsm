@@ -3,7 +3,10 @@ package com.itsm.domain;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.itsm.error.InvalidInputException;
 import com.itsm.domain.state.IncidentState;
@@ -19,7 +22,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.SequenceGenerator;
@@ -159,6 +165,18 @@ public class Incident {
     /** When a missed resolution deadline was noticed. Recorded once, never changed. */
     @Column(name = "resolution_breached_at")
     private LocalDateTime resolutionBreachedAt;
+
+    /**
+     * People besides the reporter who said "I'm affected too". They can follow
+     * the incident and are told when it is resolved, and how many people are
+     * affected feeds into the impact.
+     */
+    @ManyToMany
+    @JoinTable(name = "incident_affected_users",
+            joinColumns = @JoinColumn(name = "incident_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @OrderBy("name")
+    private Set<User> affectedUsers = new LinkedHashSet<>();
 
     /** An earlier incident this one probably repeats. Set by duplicate detection when the incident is reported. */
     @ManyToOne(fetch = FetchType.LAZY)
@@ -408,6 +426,37 @@ public class Incident {
 
     public LocalDateTime getEscalatedAt() {
         return escalatedAt;
+    }
+
+    /**
+     * Someone else says the problem affects them too.
+     *
+     * @return false if they reported it themselves or were already counted
+     * @throws InvalidInputException if the incident is no longer open
+     */
+    public boolean addAffectedUser(User user) {
+        if (!status.isOpen()) {
+            throw new InvalidInputException("%s is %s, so it no longer needs to know who is affected."
+                    .formatted(code, status.getLabel().toLowerCase()));
+        }
+        if (user == null || user.equals(reporter)) {
+            return false;
+        }
+        return affectedUsers.add(user);
+    }
+
+    public Set<User> getAffectedUsers() {
+        return Collections.unmodifiableSet(affectedUsers);
+    }
+
+    /** True if this user said they are affected too. */
+    public boolean isAffecting(User user) {
+        return affectedUsers.contains(user);
+    }
+
+    /** How many people are affected: the reporter and everyone who said "me too". */
+    public int getAffectedCount() {
+        return 1 + affectedUsers.size();
     }
 
     public Incident getPossibleDuplicateOf() {

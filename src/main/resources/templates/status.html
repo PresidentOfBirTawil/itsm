@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Service status', 'status', ~{::main})}">
+<body>
+<!--/* data-live: the whole page is refreshed in place when an incident changes (static/js/live.js). */-->
+<main data-live="page">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+        <div>
+            <h1 class="page-title mb-1">Service status</h1>
+            <p class="text-body-secondary mb-0">How every IT service is doing right now, updated live.</p>
+        </div>
+        <span class="small text-body-secondary"
+              th:text="|As of ${#temporals.format(overview.asOf, 'dd MMM yyyy, HH:mm')}|">As of 01 Jan 2026, 10:00</span>
+    </div>
+
+    <!--/* The headline */-->
+    <div class="card mb-4 status-headline" th:classappend="|status-${overview.worst().tone}|">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+            <i class="bi fs-3" th:classappend="${overview.worst().icon}"></i>
+            <div>
+                <div class="fw-semibold fs-5" th:text="${overview.headline()}">All systems operational</div>
+                <div class="small text-body-secondary" th:if="${overview.problemCount() > 0}"
+                     th:text="|${overview.problemCount()} of ${overview.services.size()} services have open problems.|">2 of 6</div>
+                <div class="small text-body-secondary" th:if="${overview.problemCount() == 0}">No open incidents affect any service.</div>
+            </div>
+        </div>
+    </div>
+
+    <!--/* Probable root cause (RootCauseAnalyzer) */-->
+    <div class="card mb-4 border-danger-subtle" th:if="${overview.rootCause != null}">
+        <div class="card-body">
+            <div class="d-flex align-items-start gap-3">
+                <div class="feature-icon mb-0 flex-shrink-0 root-cause-icon"><i class="bi bi-diagram-3"></i></div>
+                <div>
+                    <div class="small text-uppercase fw-semibold text-danger-emphasis mb-1">Probable root cause</div>
+                    <div class="fs-5 fw-semibold" th:text="${overview.rootCause.service.name}">Corporate Network</div>
+                    <p class="text-body-secondary mb-2" th:text="${overview.rootCause.explain()}">Explanation</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge text-bg-light" th:each="incident : ${overview.rootCause.incidents}"
+                              th:text="|${incident.code} · ${incident.title}|">INC-0001 · Title</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!--/* Every service */-->
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header">Services</div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item py-3" th:each="item : ${overview.services}">
+                        <div class="d-flex justify-content-between align-items-center gap-2">
+                            <div class="fw-semibold" th:text="${item.service.name}">Payment Application</div>
+                            <span class="badge" th:classappend="|text-bg-${item.tone}|" th:text="${item.label}">Operational</span>
+                        </div>
+                        <div class="small text-body-secondary mt-1" th:if="${item.atRisk}">
+                            <i class="bi bi-arrow-down-right me-1"></i>Depends on
+                            <span th:text="${#strings.listJoin(item.upstreamTrouble.![name], ', ')}">Database Cluster</span>,
+                            which has an outage.
+                        </div>
+                        <!--/* Known problems: what to know before reporting the same thing again */-->
+                        <div class="mt-2 known-issue" th:each="incident : ${item.knownIssues}">
+                            <div class="d-flex flex-wrap align-items-center gap-2 small">
+                                <span th:replace="~{fragments/ui :: priorityBadge(${incident.priority})}"></span>
+                                <a th:unless="${employee}" th:href="@{|${incidentsPath}/${incident.code}|}"
+                                   th:text="${incident.code}">INC-0001</a>
+                                <span th:if="${employee}" class="text-body-secondary" th:text="${incident.code}">INC-0001</span>
+                                <span th:text="${incident.title}">Title</span>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-2 small text-body-secondary mt-1">
+                                <span th:text="|Since ${#temporals.format(incident.createdAt, 'HH:mm')} · ${incident.affectedCount} affected|">Since 10:00 · 3 affected</span>
+                                <th:block th:if="${employee}">
+                                    <form method="post" class="ms-auto" th:action="@{|/employee/incidents/${incident.code}/affected|}"
+                                          th:unless="${incident.reporter.id == viewerId or #lists.contains(incident.affectedUsers.![id], viewerId)}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary py-0">I'm affected too</button>
+                                    </form>
+                                    <a class="ms-auto" th:if="${incident.reporter.id == viewerId or #lists.contains(incident.affectedUsers.![id], viewerId)}"
+                                       th:href="@{|/employee/incidents/${incident.code}|}">Following</a>
+                                </th:block>
+                            </div>
+                        </div>
+                        <div class="small text-body-secondary mt-1"
+                             th:if="${#lists.isEmpty(item.knownIssues) and !#lists.isEmpty(item.openIncidents)}"
+                             th:text="|${item.openIncidents.size()} minor open incident(s)|">1 minor open incident</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--/* The dependency map, drawn from ServiceMap */-->
+        <div class="col-lg-7">
+            <div class="card position-sticky" style="top: 5rem">
+                <div class="card-header d-flex justify-content-between">
+                    <span>Dependency map</span>
+                    <span class="small fw-normal text-body-secondary">an arrow means "needs" · red: needs a service with an outage</span>
+                </div>
+                <div class="card-body">
+                    <svg class="service-map w-100" th:viewBox="|0 0 ${overview.map.width} ${overview.map.height}|"
+                         role="img" aria-label="Which service depends on which">
+                        <defs>
+                            <marker id="map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+                                    orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" class="map-arrow"></path>
+                            </marker>
+                        </defs>
+                        <path th:each="edge : ${overview.map.edges}" class="map-edge" th:classappend="${edge.troubled} ? 'troubled'"
+                              th:d="${edge.path()}" fill="none" marker-end="url(#map-arrow)"></path>
+                        <g th:each="node : ${overview.map.nodes}" class="map-node" th:classappend="|map-${node.tone}|">
+                            <rect rx="10" th:x="${node.x}" th:y="${node.y}" th:width="${node.width}" th:height="${node.height}"></rect>
+                            <circle r="5" th:cx="${node.dotX}" th:cy="${node.dotY}"></circle>
+                            <text class="map-name" th:x="${node.textX}" th:y="${node.nameY}" th:text="${node.name}">Service</text>
+                            <text class="map-label" th:x="${node.textX}" th:y="${node.labelY}" th:text="${node.label}">Operational</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

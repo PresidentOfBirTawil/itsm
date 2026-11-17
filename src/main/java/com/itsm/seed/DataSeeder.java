@@ -65,6 +65,7 @@ public class DataSeeder implements ApplicationRunner {
         seedServices();
         seedUsers();
         seedKnowledgeBase();
+        seedServiceDetails();
     }
 
     /** The nine categories from the project brief, each with keywords that hint at it. */
@@ -112,6 +113,41 @@ public class DataSeeder implements ApplicationRunner {
                 new ITService("Cloud Storage", 2),
                 new ITService("Email & Collaboration", 1)));
         log.info("Seeded {} IT services", services.count());
+    }
+
+    /**
+     * Which service needs which, and the words people use for each service.
+     * Also fills them in on databases made by earlier versions, but never
+     * overwrites what an administrator has set.
+     */
+    private void seedServiceDetails() {
+        java.util.Map<String, List<String>> keywords = java.util.Map.of(
+                "Payment Application", List.of("payment", "payments", "checkout", "card", "refund", "invoice", "billing", "transaction"),
+                "Authentication Service", List.of("login", "log in", "sign in", "password", "sso", "two-factor", "otp", "mfa", "locked"),
+                "Database Cluster", List.of("database", "sql", "query", "replication", "standby", "deadlock"),
+                "Corporate Network", List.of("vpn", "wifi", "wi-fi", "network", "internet", "dns", "router", "switch", "firewall"),
+                "Cloud Storage", List.of("drive", "share", "shared folder", "backup", "sync", "storage", "quota", "file"),
+                "Email & Collaboration", List.of("email", "mail", "mailbox", "outlook", "calendar", "teams", "meeting", "printer"));
+        java.util.Map<String, List<String>> needs = java.util.Map.of(
+                "Payment Application", List.of("Database Cluster", "Authentication Service", "Corporate Network"),
+                "Authentication Service", List.of("Database Cluster", "Corporate Network"),
+                "Database Cluster", List.of("Corporate Network"),
+                "Cloud Storage", List.of("Authentication Service", "Corporate Network"),
+                "Email & Collaboration", List.of("Authentication Service", "Corporate Network"));
+
+        List<ITService> all = services.findAll();
+        boolean anyDependencies = all.stream().anyMatch(service -> !service.getDependsOn().isEmpty());
+        for (ITService service : all) {
+            if (service.getKeywords().isEmpty() && keywords.containsKey(service.getName())) {
+                service.replaceKeywords(keywords.get(service.getName()));
+            }
+            if (!anyDependencies && needs.containsKey(service.getName())) {
+                service.replaceDependencies(needs.get(service.getName()).stream()
+                        .map(name -> services.findByName(name).orElse(null))
+                        .filter(java.util.Objects::nonNull)
+                        .toList());
+            }
+        }
     }
 
     /** One administrator, four technicians with different skills, four employees. */

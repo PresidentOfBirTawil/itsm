@@ -16,7 +16,8 @@ public enum NotificationType {
     ESCALATED(true),
     NOTE_ADDED(false),
     RATED(false),
-    PRIORITY_CHANGED(true);
+    PRIORITY_CHANGED(true),
+    AFFECTED_USER_ADDED(false);
 
     private final boolean emailed;
 

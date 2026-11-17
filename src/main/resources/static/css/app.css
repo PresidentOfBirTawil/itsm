@@ -1279,3 +1279,105 @@ a.kb-card:hover {
     color: var(--q-faint);
     font-size: .8rem;
 }
+
+/* ======================================================================
+   13. Service status page and dependency map
+   ====================================================================== */
+
+.status-headline {
+    border-width: 1px;
+}
+
+.status-success { border-color: var(--q-green-line); background: var(--q-green-bg); }
+.status-success i { color: var(--q-green); }
+.status-warning { border-color: var(--q-amber-line); background: var(--q-amber-bg); }
+.status-warning i { color: var(--q-amber); }
+.status-danger { border-color: var(--q-red-line); background: var(--q-red-bg); }
+.status-danger i { color: var(--q-red); }
+
+.root-cause-icon {
+    color: var(--q-red) !important;
+    background: var(--q-red-bg) !important;
+    border-color: var(--q-red-line) !important;
+}
+
+.known-issue {
+    padding: .55rem .7rem;
+    border-radius: .55rem;
+    background: var(--q-hover);
+    border: 1px solid var(--q-border);
+}
+
+.service-map {
+    height: auto;
+    font-family: inherit;
+}
+
+.service-map .map-edge {
+    stroke: var(--q-border-strong);
+    stroke-width: 1.6;
+}
+
+.service-map .map-edge.troubled {
+    stroke: #ef4444;
+    stroke-opacity: .8;
+    stroke-dasharray: 6 5;
+    animation: map-flow 1s linear infinite;
+}
+
+@keyframes map-flow {
+    to { stroke-dashoffset: -11; }
+}
+
+.service-map .map-arrow {
+    fill: var(--q-faint);
+}
+
+.service-map .map-node rect {
+    fill: var(--q-surface-2);
+    stroke: var(--q-border-strong);
+    stroke-width: 1.2;
+}
+
+.service-map .map-name {
+    fill: var(--q-text);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+
+.service-map .map-label {
+    fill: var(--q-muted);
+    font-size: 11.5px;
+}
+
+.service-map .map-success circle { fill: #22c55e; }
+.service-map .map-warning circle { fill: #f59e0b; }
+.service-map .map-warning rect { stroke: var(--q-amber-line); }
+.service-map .map-danger circle { fill: #ef4444; }
+.service-map .map-danger rect { stroke: var(--q-red-line); fill: var(--q-red-bg); }
+
+@media (prefers-reduced-motion: reduce) {
+    .service-map .map-edge.troubled { animation: none; }
+}
+
+.health-dot {
+    display: inline-block;
+    width: .55rem;
+    height: .55rem;
+    border-radius: 50%;
+    margin-right: .4rem;
+}
+
+.health-dot.dot-success { background: #22c55e; }
+.health-dot.dot-warning { background: #f59e0b; }
+.health-dot.dot-danger { background: #ef4444; }
+
+.health-strip .badge {
+    font-weight: 500;
+    font-size: .72rem;
+}
+
+a.root-cause-card:hover {
+    border-color: var(--q-red-line) !important;
+}

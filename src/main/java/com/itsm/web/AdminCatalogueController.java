@@ -46,9 +46,27 @@ public class AdminCatalogueController {
     @GetMapping("/services/new")
     public String newService(Model model) {
         model.addAttribute("form", new ServiceForm());
-        model.addAttribute("action", "/admin/services");
-        model.addAttribute("heading", "Add an IT service");
+        return serviceForm(model, "/admin/services", "Add an IT service", null);
+    }
+
+    private String serviceForm(Model model, String action, String heading, Long editingId) {
+        model.addAttribute("action", action);
+        model.addAttribute("heading", heading);
+        // Every other service can be a dependency; the loop check happens when the form is saved.
+        model.addAttribute("otherServices", services.findAllByOrderByCriticalityDescNameAsc().stream()
+                .filter(other -> !other.getId().equals(editingId)).toList());
         return "admin/service-form";
+    }
+
+    /** The chosen dependencies, or a form error if they would create a loop. */
+    private java.util.List<ITService> dependencies(ITService service, ServiceForm form, BindingResult result) {
+        java.util.List<ITService> chosen = services.findAllById(form.getDependencyIds());
+        if (service != null) {
+            com.itsm.status.ServiceGraph.loopIfDependsOn(service, chosen).ifPresent(loop -> result.rejectValue(
+                    "dependencyIds", "loop", "%s cannot depend on %s: %s already depends on %s, so they would wait for each other."
+                            .formatted(service.getName(), loop.getName(), loop.getName(), service.getName())));
+        }
+        return chosen;
     }
 
     @PostMapping("/services")
@@ -57,12 +75,14 @@ public class AdminCatalogueController {
         if (!result.hasFieldErrors("name") && services.existsByNameIgnoreCase(form.getName().trim())) {
             result.rejectValue("name", "duplicate", "There is already a service with this name");
         }
+        java.util.List<ITService> needs = dependencies(null, form, result);
         if (result.hasErrors()) {
-            model.addAttribute("action", "/admin/services");
-            model.addAttribute("heading", "Add an IT service");
-            return "admin/service-form";
+            return serviceForm(model, "/admin/services", "Add an IT service", null);
         }
-        services.save(new ITService(form.getName(), form.getCriticality()));
+        ITService created = new ITService(form.getName(), form.getCriticality());
+        created.replaceKeywords(form.keywordList());
+        created.replaceDependencies(needs);
+        services.save(created);
         redirect.addFlashAttribute("success", "Service \"%s\" has been added.".formatted(form.getName().trim()));
         return "redirect:/admin/services";
     }
@@ -73,10 +93,10 @@ public class AdminCatalogueController {
         ServiceForm form = new ServiceForm();
         form.setName(service.getName());
         form.setCriticality(service.getCriticality());
+        form.setKeywords(String.join(", ", service.getKeywords()));
+        form.setDependencyIds(service.getDependsOn().stream().map(ITService::getId).toList());
         model.addAttribute("form", form);
-        model.addAttribute("action", "/admin/services/" + id);
-        model.addAttribute("heading", "Change " + service.getName());
-        return "admin/service-form";
+        return serviceForm(model, "/admin/services/" + id, "Change " + service.getName(), id);
     }
 
     @PostMapping("/services/{id}")
@@ -86,13 +106,14 @@ public class AdminCatalogueController {
         if (!result.hasFieldErrors("name") && services.existsByNameIgnoreCaseAndIdNot(form.getName().trim(), id)) {
             result.rejectValue("name", "duplicate", "There is already a service with this name");
         }
+        java.util.List<ITService> needs = dependencies(service, form, result);
         if (result.hasErrors()) {
-            model.addAttribute("action", "/admin/services/" + id);
-            model.addAttribute("heading", "Change " + service.getName());
-            return "admin/service-form";
+            return serviceForm(model, "/admin/services/" + id, "Change " + service.getName(), id);
         }
         service.setName(form.getName());
         service.setCriticality(form.getCriticality());
+        service.replaceKeywords(form.keywordList());
+        service.replaceDependencies(needs);
         services.save(service);
         redirect.addFlashAttribute("success", "Service \"%s\" has been saved.".formatted(service.getName()));
         return "redirect:/admin/services";

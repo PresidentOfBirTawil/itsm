@@ -283,10 +283,20 @@ public class IncidentService {
             throw new InvalidInputException("Nothing was changed.");
         }
 
+        applyClassification(incident, actor, category, impact, urgency, "Changed " + String.join(", ", changes) + ".");
+        return incident;
+    }
+
+    /**
+     * Changes category, impact and urgency, works the priority and deadlines
+     * out again, and records both changes (announcing a changed priority).
+     */
+    private void applyClassification(Incident incident, User actor, Category category, Impact impact, Urgency urgency,
+                                     String note) {
         Priority before = incident.getPriority();
         incident.reclassify(category, impact, urgency);
         events.publish(new IncidentEvent(incident, actor, IncidentAction.CLASSIFICATION_CHANGED,
-                incident.getStatus(), incident.getStatus(), "Changed " + String.join(", ", changes) + "."));
+                incident.getStatus(), incident.getStatus(), note));
 
         PriorityAssessment assessment = priorityCalculator.calculate(incident);
         incident.prioritise(assessment, slaService.policyFor(assessment.priority()));
@@ -298,6 +308,43 @@ public class IncidentService {
                             DEADLINE.format(incident.getResponseDue()), DEADLINE.format(incident.getResolutionDue()))));
         }
         slaService.refresh(incident, LocalDateTime.now());
+    }
+
+    /** From this many affected people (reporter included) an incident's impact is at least Medium. */
+    public static final int AFFECTED_FOR_MEDIUM_IMPACT = 3;
+    /** From this many affected people the impact is High: many people are affected. */
+    public static final int AFFECTED_FOR_HIGH_IMPACT = 5;
+
+    /**
+     * An employee says an open incident affects them too. They can follow it
+     * from now on and are told when it is resolved. The number of people
+     * affected feeds into the impact: from {@value #AFFECTED_FOR_MEDIUM_IMPACT}
+     * people it is at least Medium, from {@value #AFFECTED_FOR_HIGH_IMPACT}
+     * High, and the priority is worked out again.
+     *
+     * @throws InvalidInputException if they reported it themselves, already said so, or it is no longer open
+     */
+    @Transactional
+    public Incident joinAsAffected(String code, Employee employee) {
+        Incident incident = get(code);
+        if (employee.equals(incident.getReporter())) {
+            throw new InvalidInputException("You reported %s yourself, so you are already counted.".formatted(code));
+        }
+        if (!incident.addAffectedUser(employee)) {
+            throw new InvalidInputException("You are already counted as affected by %s.".formatted(code));
+        }
+        int affected = incident.getAffectedCount();
+        events.publish(new IncidentEvent(incident, employee, IncidentAction.AFFECTED_USER_ADDED,
+                incident.getStatus(), incident.getStatus(),
+                "%s is affected too. %d people are affected now.".formatted(employee.getName(), affected)));
+
+        Impact needed = affected >= AFFECTED_FOR_HIGH_IMPACT ? Impact.HIGH
+                : affected >= AFFECTED_FOR_MEDIUM_IMPACT ? Impact.MEDIUM : Impact.LOW;
+        if (needed.getWeight() > incident.getImpact().getWeight()) {
+            applyClassification(incident, null, incident.getCategory(), needed, incident.getUrgency(),
+                    "Impact raised from %s to %s because %d people are affected."
+                            .formatted(incident.getImpact().getLabel(), needed.getLabel(), affected));
+        }
         return incident;
     }
 

@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page('Employee dashboard', 'dashboard', ~{::main})}">
 <body>
-<!-- data-live: this part is replaced in place when an incident changes (static/js/live.js). -->
+<!--/* data-live: this part is replaced in place when an incident changes (static/js/live.js). */-->
 <main data-live="page">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
         <div>
@@ -13,7 +13,7 @@
             <i class="bi bi-plus-circle me-1"></i>Report an incident</a>
     </div>
 
-    <!-- Incidents where the next step is the employee's -->
+    <!--/* Incidents where the next step is the employee's */-->
     <div class="card border border-primary-subtle mb-4" th:unless="${#lists.isEmpty(waitingForMe)}">
         <div class="card-header"><i class="bi bi-hand-index me-1"></i>Waiting for you</div>
         <div class="list-group list-group-flush">
@@ -49,17 +49,38 @@
             </div>
         </div>
         <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-header">IT services</div>
+            <!--/* Known problems this employee joined with "I'm affected too" */-->
+            <div class="card mb-4" th:unless="${#lists.isEmpty(alsoAffecting)}">
+                <div class="card-header">Also affecting you</div>
+                <div class="list-group list-group-flush">
+                    <a class="list-group-item list-group-item-action" th:each="incident : ${alsoAffecting}"
+                       th:href="@{|/employee/incidents/${incident.code}|}">
+                        <div class="d-flex justify-content-between gap-2">
+                            <span class="fw-semibold small" th:text="${incident.code}">INC-0001</span>
+                            <span th:replace="~{fragments/ui :: statusBadge(${incident.status})}"></span>
+                        </div>
+                        <div class="small" th:text="${incident.title}">Title</div>
+                    </a>
+                </div>
+            </div>
+            <!--/* Live service health, as on the status page */-->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>IT services</span>
+                    <a class="small fw-normal" th:href="@{/status}">Status page <i class="bi bi-arrow-right"></i></a>
+                </div>
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item d-flex justify-content-between align-items-center"
-                        th:each="service : ${services}">
-                        <span th:text="${service.name}">Service</span>
-                        <span th:replace="~{fragments/ui :: criticalityBadge(${service.criticality})}"></span>
+                        th:each="item : ${status.services}">
+                        <span><span class="health-dot" th:classappend="|dot-${item.tone}|"></span><span
+                                th:text="${item.service.name}">Service</span></span>
+                        <span class="small text-body-secondary" th:text="${item.label}">Operational</span>
                     </li>
                 </ul>
-                <div class="card-footer bg-transparent small text-body-secondary">
-                    The badge shows how critical each service is to the business.
+                <div class="card-footer bg-transparent small text-body-secondary"
+                     th:if="${status.problemCount() > 0}">
+                    Something not working? Check the status page first: if it is a known problem, click
+                    <strong>I'm affected too</strong> instead of reporting it again.
                 </div>
             </div>
         </div>

@@ -79,6 +79,11 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
     // ---- resetting the demo data ----
 
     /** Removes the "possible duplicate of" links, so that incidents can be deleted in any order. */
+    /** Before incidents are deleted (demo-data reset): who said "I'm affected too". */
+    @Modifying
+    @Query(value = "delete from incident_affected_users", nativeQuery = true)
+    int clearAffectedUsers();
+
     @Modifying
     @Query("update Incident i set i.possibleDuplicateOf = null")
     void clearDuplicateLinks();
@@ -105,6 +110,9 @@ public interface IncidentRepository extends JpaRepository<Incident, Long>, JpaSp
             order by i.createdAt desc, i.id desc""")
     List<Incident> quickSearch(@Param("reporterId") Long reporterId, @Param("pattern") String pattern,
                                org.springframework.data.domain.Limit limit);
+
+    /** Incidents that someone said affect them too, newest first: their "also affecting me" list. */
+    List<Incident> findByAffectedUsersIdOrderByCreatedAtDescIdDesc(Long userId);
 
     /** Incidents that have been resolved at some point: the history the predictions learn from. */
     List<Incident> findByResolvedAtIsNotNull();

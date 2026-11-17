@@ -1,7 +1,8 @@
 /*
  * Smart suggestions on the report form. While the employee types, asks the
  * server (/employee/incidents/assist) what it makes of the text and shows:
- *   - a category, impact and urgency, each with its reason and a "Use" button;
+ *   - a known problem with the chosen service, with "I'm affected too";
+ *   - a service, category, impact and urgency, each with its reason and a "Use" button;
  *   - knowledge articles that may solve the problem without a ticket.
  * Nothing is chosen for the employee: every suggestion needs a click.
  */
@@ -20,7 +21,10 @@
     var timer = null;
     var lastQuery = '';
 
+    var knownBox = panel.querySelector('[data-assist-known]');
+    var csrf = document.querySelector('input[name="_csrf"]');
     var targets = {
+        service: { select: document.getElementById('serviceId'), name: 'Service' },
         category: { select: document.getElementById('categoryId'), name: 'Category' },
         impact: { select: document.getElementById('impact'), name: 'Impact' },
         urgency: { select: document.getElementById('urgency'), name: 'Urgency' }
@@ -65,13 +69,47 @@
     function refreshVisibility() {
         var hasFields = fields.children.length > 0;
         var hasArticles = articlesList.children.length > 0;
+        var hasKnown = knownBox.children.length > 0;
         articlesBox.classList.toggle('d-none', !hasArticles);
-        panel.classList.toggle('d-none', !hasFields && !hasArticles);
+        knownBox.classList.toggle('d-none', !hasKnown);
+        fields.parentElement.querySelector('.fw-semibold').classList.toggle('d-none', !hasFields && !hasArticles);
+        panel.classList.toggle('d-none', !hasFields && !hasArticles && !hasKnown);
+    }
+
+    /** A known problem: say so, and offer to join it with one click instead of reporting it again. */
+    function knownIssue(issue) {
+        var box = element('div', 'alert alert-warning mb-2 py-2');
+        var heading = element('div', 'fw-semibold small');
+        heading.appendChild(element('i', 'bi bi-broadcast me-1'));
+        heading.appendChild(document.createTextNode('Known problem with ' + issue.service + ': ' + issue.title));
+        box.appendChild(heading);
+        box.appendChild(element('div', 'small', issue.code + ' · ' + issue.priority + ' · reported ' + issue.since
+            + ' · ' + issue.affected + (issue.affected === 1 ? ' person' : ' people') + ' affected'));
+        var form = element('form', 'mt-2 d-flex flex-wrap align-items-center gap-2');
+        form.method = 'post';
+        form.action = '/employee/incidents/' + encodeURIComponent(issue.code) + '/affected';
+        if (csrf) {
+            var token = element('input');
+            token.type = 'hidden';
+            token.name = csrf.name;
+            token.value = csrf.value;
+            form.appendChild(token);
+        }
+        var join = element('button', 'btn btn-sm btn-primary', "I'm affected too");
+        join.type = 'submit';
+        form.appendChild(join);
+        form.appendChild(element('span', 'small', 'You will be told when it is fixed. No need to report it again.'));
+        box.appendChild(form);
+        return box;
     }
 
     function render(advice) {
         fields.replaceChildren();
-        ['category', 'impact', 'urgency'].forEach(function (key) {
+        knownBox.replaceChildren();
+        (advice.knownIssues || []).forEach(function (issue) {
+            knownBox.appendChild(knownIssue(issue));
+        });
+        ['service', 'category', 'impact', 'urgency'].forEach(function (key) {
             var row = suggestionRow(key, advice[key]);
             if (row) {
                 fields.appendChild(row);
@@ -93,8 +131,10 @@
     }
 
     function ask() {
-        var query = 'title=' + encodeURIComponent(title.value) + '&description=' + encodeURIComponent(description.value);
-        if (query === lastQuery || (title.value + description.value).trim().length < 4) {
+        var service = targets.service.select ? targets.service.select.value : '';
+        var query = 'title=' + encodeURIComponent(title.value) + '&description=' + encodeURIComponent(description.value)
+            + (service ? '&serviceId=' + encodeURIComponent(service) : '');
+        if (query === lastQuery || ((title.value + description.value).trim().length < 4 && !service)) {
             return;
         }
         lastQuery = query;

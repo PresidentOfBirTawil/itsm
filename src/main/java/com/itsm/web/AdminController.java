@@ -24,7 +24,9 @@ import com.itsm.search.IncidentSearchCriteria;
 import com.itsm.security.ItsmUserDetails;
 import com.itsm.seed.DemoDataService;
 import com.itsm.service.IncidentService;
+import com.itsm.sla.SlaPredictor;
 import com.itsm.sla.SlaService;
+import com.itsm.status.StatusService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -59,12 +61,15 @@ public class AdminController {
     private final SlaRiskRanker slaRiskRanker;
     private final DemoDataService demoDataService;
     private final LiveUpdates liveUpdates;
+    private final StatusService statusService;
+    private final SlaPredictor slaPredictor;
 
     public AdminController(AdministratorRepository administrators, IncidentRepository incidents,
                            AuditEntryRepository auditEntries, EmailMessageRepository emails,
                            IncidentService incidentService, AssignmentService assignmentService,
                            SlaService slaService, IncidentPages incidentPages, SlaRiskRanker slaRiskRanker,
-                           DemoDataService demoDataService, LiveUpdates liveUpdates) {
+                           DemoDataService demoDataService, LiveUpdates liveUpdates, StatusService statusService,
+                           SlaPredictor slaPredictor) {
         this.administrators = administrators;
         this.incidents = incidents;
         this.auditEntries = auditEntries;
@@ -76,6 +81,8 @@ public class AdminController {
         this.slaRiskRanker = slaRiskRanker;
         this.demoDataService = demoDataService;
         this.liveUpdates = liveUpdates;
+        this.statusService = statusService;
+        this.slaPredictor = slaPredictor;
     }
 
     @GetMapping
@@ -105,6 +112,9 @@ public class AdminController {
         model.addAttribute("activeStrategy", assignmentService.getActiveStrategy());
 
         // Intelligent features: who is likely to miss a deadline next, and what has been escalated.
+        model.addAttribute("status", statusService.overview());
+        model.addAttribute("forecasts", slaPredictor.forecastAll(incidents.findByStatusIn(Status.openStatuses()),
+                LocalDateTime.now()));
         model.addAttribute("slaRisks", slaRiskRanker.rank(incidents.findByStatusIn(Status.openStatuses()),
                 LocalDateTime.now(), 5));
         model.addAttribute("escalated", incidents.findByEscalatedAtIsNotNullAndStatusInOrderByEscalatedAtDescIdDesc(

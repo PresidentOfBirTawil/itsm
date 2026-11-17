@@ -19,6 +19,16 @@
 
     <a class="small text-decoration-none" th:href="@{${basePath}}"><i class="bi bi-arrow-left me-1"></i>Back to the list</a>
 
+    <!--/* Part of a wider problem: the probable root cause covers this incident's service. */-->
+    <div class="alert alert-danger d-flex gap-2 mt-3 mb-0" th:if="${staff and rootCause != null}">
+        <i class="bi bi-diagram-3"></i>
+        <div>
+            <strong>Probably part of a wider problem.</strong>
+            <span th:text="|${rootCause.service.name} may be the root cause: ${rootCause.explain()}|">Explanation</span>
+            <a th:href="@{/status}">See the status page</a>
+        </div>
+    </div>
+
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mt-2 mb-4">
         <div>
             <h1 class="h3 mb-1">
@@ -84,6 +94,13 @@
                             <div class="small text-body-secondary" th:if="${categoryNote != null}">
                                 <i class="bi bi-magic me-1"></i><span th:text="${categoryNote}">Chosen automatically.</span>
                             </div>
+                        </dd>
+
+                        <dt class="col-sm-4">People affected</dt>
+                        <dd class="col-sm-8">
+                            <span th:text="${incident.affectedCount == 1} ? 'Only the reporter' : |${incident.affectedCount} people|">3 people</span>
+                            <span class="small text-body-secondary" th:if="${staff and !#sets.isEmpty(incident.affectedUsers)}"
+                                  th:text="|· also ${#strings.listJoin(incident.affectedUsers.![name], ', ')}|">· also Rahul Verma</span>
                         </dd>
 
                         <dt class="col-sm-4">Impact · urgency</dt>

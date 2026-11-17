@@ -33,4 +33,35 @@ public class ServiceForm {
     public void setCriticality(Integer criticality) {
         this.criticality = criticality;
     }
+
+    /** Words people use when this service is in trouble, separated by commas. */
+    @Size(max = 1000, message = "The keywords can be at most 1000 characters in total")
+    private String keywords;
+
+    /** The services this one needs. */
+    private java.util.List<Long> dependencyIds = new java.util.ArrayList<>();
+
+    public String getKeywords() {
+        return keywords;
+    }
+
+    public void setKeywords(String keywords) {
+        this.keywords = keywords;
+    }
+
+    /** The keywords as a list: split at commas, trimmed, empty ones dropped. */
+    public java.util.List<String> keywordList() {
+        if (keywords == null) {
+            return java.util.List.of();
+        }
+        return java.util.Arrays.stream(keywords.split(",")).map(String::trim).filter(word -> !word.isEmpty()).toList();
+    }
+
+    public java.util.List<Long> getDependencyIds() {
+        return dependencyIds;
+    }
+
+    public void setDependencyIds(java.util.List<Long> dependencyIds) {
+        this.dependencyIds = dependencyIds == null ? new java.util.ArrayList<>() : dependencyIds;
+    }
 }

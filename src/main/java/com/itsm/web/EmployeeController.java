@@ -18,6 +18,7 @@ import com.itsm.security.ItsmUserDetails;
 import com.itsm.intelligence.ReportAdvice;
 import com.itsm.intelligence.ReportAssistant;
 import com.itsm.service.IncidentService;
+import com.itsm.status.StatusService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -46,11 +47,12 @@ public class EmployeeController {
     private final IncidentService incidentService;
     private final IncidentPages incidentPages;
     private final ReportAssistant reportAssistant;
+    private final StatusService statusService;
 
     public EmployeeController(EmployeeRepository employees, IncidentRepository incidents,
                               ITServiceRepository services, CategoryRepository categories,
                               IncidentService incidentService, IncidentPages incidentPages,
-                              ReportAssistant reportAssistant) {
+                              ReportAssistant reportAssistant, StatusService statusService) {
         this.employees = employees;
         this.incidents = incidents;
         this.services = services;
@@ -58,6 +60,7 @@ public class EmployeeController {
         this.incidentService = incidentService;
         this.incidentPages = incidentPages;
         this.reportAssistant = reportAssistant;
+        this.statusService = statusService;
     }
 
     @GetMapping
@@ -78,7 +81,9 @@ public class EmployeeController {
                 .filter(incident -> incident.getStatus() == Status.AWAITING_INFO
                         || incident.getStatus() == Status.RESOLVED)
                 .toList());
-        model.addAttribute("services", services.findAllByOrderByCriticalityDescNameAsc());
+        model.addAttribute("alsoAffecting", incidents.findByAffectedUsersIdOrderByCreatedAtDescIdDesc(user.getId())
+                .stream().filter(incident -> incident.getStatus().isOpen()).toList());
+        model.addAttribute("status", statusService.overview());
         return "employee/dashboard";
     }
 
@@ -145,8 +150,21 @@ public class EmployeeController {
     @GetMapping("/incidents/assist")
     @ResponseBody
     public ReportAdvice assist(@RequestParam(defaultValue = "") String title,
-                               @RequestParam(defaultValue = "") String description) {
-        return reportAssistant.advise(title, description);
+                               @RequestParam(defaultValue = "") String description,
+                               @RequestParam(required = false) Long serviceId) {
+        return reportAssistant.advise(title, description, serviceId);
+    }
+
+    /** "I'm affected too": the employee follows a known problem instead of reporting it again. */
+    @PostMapping("/incidents/{code}/affected")
+    public String affected(@AuthenticationPrincipal ItsmUserDetails user, @PathVariable String code,
+                           RedirectAttributes redirect) {
+        return incidentPages.perform(INCIDENTS + "/" + code, redirect, () -> {
+            Incident incident = incidentService.joinAsAffected(code, currentEmployee(user));
+            int others = incident.getAffectedCount() - 1;
+            return "You are now following %s with %d other %s. You will be told when it is fixed."
+                    .formatted(code, others, others == 1 ? "person" : "people");
+        });
     }
 
     @GetMapping("/incidents/{code}")
