@@ -21,4 +21,17 @@ for new applications that are not yet signed with a paid certificate.
 **First steps:** on the sign-in page, click one of the demo accounts to look around, or see the
 [getting-started guide]({{GUIDE}}).
 
+## What's new in 1.2
+
+- **Reporting assistant**: report a problem by chatting or speaking; it recognises the service, offers a
+  known outage or a knowledge article, and files a complete incident.
+- **Screenshots and files** on incidents: drag and drop, paste with Ctrl+V, or attach when reporting.
+- **Root-cause analysis** over a service dependency map, a public **status page** and "I'm affected too".
+- **Learning features**: a machine-learning classifier, suggested solutions from past fixes, predicted
+  finish times and breach risk.
+- **Integrations**: a REST API with API keys and interactive documentation, webhooks to Slack, Microsoft
+  Teams and any app.
+- **Desktop alerts**, an **installable app** for phones, **Docker and PostgreSQL** for servers.
+- **Security**: content security policy and sign-in lockout after repeated wrong passwords.
+
 This release is rebuilt automatically from the latest code.
