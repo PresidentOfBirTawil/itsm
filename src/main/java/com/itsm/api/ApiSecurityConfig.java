@@ -23,7 +23,8 @@ public class ApiSecurityConfig {
                                                       ApiRateLimiter rateLimiter) throws Exception {
         http.securityMatcher("/api/**")
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/openapi.json", "/api/openapi.json/**", "/api/docs", "/api/docs/**")
+                        .requestMatchers("/api/openapi.json", "/api/openapi.json/**", "/api/docs", "/api/docs/**",
+                                "/api/swagger-ui/**")
                         .permitAll()
                         .anyRequest().authenticated())
                 .csrf(csrf -> csrf.disable())

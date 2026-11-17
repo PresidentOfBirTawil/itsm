@@ -275,6 +275,8 @@ class ApiTests {
                 .andExpect(jsonPath("$.paths['/api/v1/incidents']").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.apiKey.scheme").value("bearer"));
         mvc.perform(get("/api/docs")).andExpect(status().is3xxRedirection());
+        mvc.perform(get("/api/swagger-ui/index.html")).andExpect(status().isOk());
+        mvc.perform(get("/api/openapi.json/swagger-config")).andExpect(status().isOk());
     }
 
     @Test
