@@ -7,6 +7,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 
+import com.itsm.config.Json;
 import com.itsm.domain.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,28 +164,7 @@ public class LiveUpdates {
 
     /** A JSON string, with everything that needs it escaped. */
     static String json(String text) {
-        if (text == null) {
-            return "null";
-        }
-        StringBuilder json = new StringBuilder("\"");
-        for (char c : text.toCharArray()) {
-            switch (c) {
-                case '"' -> json.append("\\\"");
-                case '\\' -> json.append("\\\\");
-                case '\n' -> json.append("\\n");
-                case '\r' -> json.append("\\r");
-                case '\t' -> json.append("\\t");
-                case '<' -> json.append("\\u003c");   // never "</script>" or "<!--" in a message
-                default -> {
-                    if (c < 0x20 || c == 0x2028 || c == 0x2029) {
-                        json.append("\\u%04x".formatted((int) c));
-                    } else {
-                        json.append(c);
-                    }
-                }
-            }
-        }
-        return json.append('"').toString();
+        return Json.quote(text);
     }
 
     /** Everything may have changed: every open page fetches its content again. */

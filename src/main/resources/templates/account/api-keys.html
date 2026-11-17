@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('API keys', 'account', ~{::main})}">
+<body>
+<main>
+    <div class="row justify-content-center">
+        <div class="col-xl-9">
+            <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+                <div>
+                    <h1 class="page-title mb-1">API keys</h1>
+                    <p class="text-body-secondary mb-0">
+                        Let your own tools (monitoring, chat bots, scripts) use the REST API on your behalf.
+                        A key can do exactly what you can do.
+                    </p>
+                </div>
+                <a class="btn btn-outline-secondary" th:href="@{/api/docs}" target="_blank" rel="noopener">
+                    <i class="bi bi-book me-1"></i>API documentation</a>
+            </div>
+
+            <!--/* Shown once, right after the key is made */-->
+            <div class="card border-success-subtle mb-4" th:if="${newKey}">
+                <div class="card-body">
+                    <div class="fw-semibold mb-1"><i class="bi bi-key me-1"></i>Your new key "<span th:text="${newKeyName}">Monitoring</span>"</div>
+                    <p class="small text-body-secondary mb-2">Copy it now and keep it somewhere safe: for your security it is never shown again.</p>
+                    <div class="input-group">
+                        <input type="text" class="form-control font-monospace" id="new-key" th:value="${newKey}" readonly
+                               aria-label="Your new API key">
+                        <button type="button" class="btn btn-primary" data-copy="#new-key"><i class="bi bi-clipboard me-1"></i><span>Copy</span></button>
+                    </div>
+                    <div class="small text-body-secondary mt-2">Try it:
+                        <code th:text="|curl -H &quot;Authorization: Bearer ${newKey}&quot; ${apiBase}/api/v1/me|">curl …</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Make a key</div>
+                <div class="card-body">
+                    <form method="post" th:action="@{/account/api-keys}" class="row g-2 align-items-end">
+                        <div class="col-md-6">
+                            <label for="key-name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="key-name" name="name" maxlength="80" required
+                                   placeholder="e.g. Monitoring alerts">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="key-days" class="form-label">Works for</label>
+                            <select class="form-select" id="key-days" name="days">
+                                <option value="30">30 days</option>
+                                <option value="90" selected>90 days</option>
+                                <option value="365">1 year</option>
+                                <option value="">No end</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-grid">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Make key</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span>Your keys</span>
+                    <span class="small text-body-secondary" th:text="|at most ${maxKeys} working keys|">at most 10</span>
+                </div>
+                <div class="text-center text-body-secondary py-4" th:if="${#lists.isEmpty(keys)}">
+                    <i class="bi bi-key fs-2 d-block mb-1"></i>No keys yet.
+                </div>
+                <div class="table-responsive" th:unless="${#lists.isEmpty(keys)}">
+                    <table class="table mb-0 align-middle">
+                        <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Key</th>
+                            <th scope="col">Made</th>
+                            <th scope="col">Last used</th>
+                            <th scope="col">Works until</th>
+                            <th scope="col"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="key : ${keys}" th:classappend="${key.revoked or key.isExpired(now)} ? 'text-body-secondary'">
+                            <td class="fw-semibold" th:text="${key.name}">Monitoring</td>
+                            <td><code th:text="|${key.prefix}…|">qk_7Fh2…</code></td>
+                            <td class="text-nowrap" th:text="${#temporals.format(key.createdAt, 'dd MMM yyyy')}">17 Nov 2026</td>
+                            <td class="text-nowrap" th:text="${key.lastUsedAt != null} ? ${#temporals.format(key.lastUsedAt, 'dd MMM, HH:mm')} : 'Never'">Never</td>
+                            <td class="text-nowrap">
+                                <span th:if="${key.revoked}" class="badge text-bg-secondary">Revoked</span>
+                                <span th:if="${!key.revoked and key.isExpired(now)}" class="badge text-bg-warning">Expired</span>
+                                <span th:if="${!key.revoked and !key.isExpired(now)}"
+                                      th:text="${key.expiresAt != null} ? ${#temporals.format(key.expiresAt, 'dd MMM yyyy')} : 'No end'">15 Feb 2027</span>
+                            </td>
+                            <td class="text-end">
+                                <form method="post" th:if="${!key.revoked}" th:action="@{|/account/api-keys/${key.id}/revoke|}"
+                                      th:attr="data-confirm=|Revoke the key ${key.name}? Tools using it stop working at once.|">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Revoke</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

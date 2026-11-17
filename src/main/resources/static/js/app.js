@@ -76,6 +76,33 @@
         }
     });
 
+    // ---- copy to the clipboard: <button data-copy="#field"> ----
+
+    document.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-copy]');
+        if (!button) {
+            return;
+        }
+        var field = document.querySelector(button.getAttribute('data-copy'));
+        if (!field) {
+            return;
+        }
+        field.select();
+        var done = function () {
+            var label = button.querySelector('span');
+            if (label) {
+                label.textContent = 'Copied';
+                setTimeout(function () { label.textContent = 'Copy'; }, 2000);
+            }
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(field.value).then(done);
+        } else {
+            document.execCommand('copy');
+            done();
+        }
+    });
+
     // ---- desktop alerts (shown by live.js when a notification arrives in the background) ----
 
     function showAlertsState() {

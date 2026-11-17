@@ -20,9 +20,16 @@
         <java.version>25</java.version>
         <bootstrap.version>5.3.8</bootstrap.version>
         <bootstrap-icons.version>1.13.2</bootstrap-icons.version>
+        <springdoc.version>3.2.0</springdoc.version>
     </properties>
 
     <dependencies>
+        <!-- REST API documentation: OpenAPI description at /api/openapi.json, interactive docs at /api/docs -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
         <!-- Web layer: Spring MVC + Thymeleaf server-side pages -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

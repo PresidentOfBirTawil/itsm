@@ -1,15 +1,28 @@
 package com.itsm.security;
 
+import java.util.Map;
+
 import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.ExceptionMappingAuthenticationFailureHandler;
+import org.springframework.security.web.header.writers.ContentSecurityPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.AnyRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 /**
@@ -29,6 +42,28 @@ public class SecurityConfig {
 
     private static final String H2_CONSOLE = "/h2-console/**";
 
+    /**
+     * Only this site's own scripts run: no inline scripts, no scripts from
+     * elsewhere, so injected markup cannot run code. Styles may be inline
+     * (progress bars set their width that way). Nothing may frame the app.
+     */
+    static final String CONTENT_SECURITY_POLICY = String.join("; ",
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: blob:",
+            "font-src 'self'",
+            "connect-src 'self'",
+            "worker-src 'self'",
+            "manifest-src 'self'",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'");
+
+    /** Browser features the app does not use are switched off; the microphone is for voice input. */
+    static final String PERMISSIONS_POLICY = "camera=(), geolocation=(), payment=(), usb=(), microphone=(self)";
+
     /** True only when the H2 console is switched on (the dev profile). */
     private final boolean h2ConsoleEnabled;
 
@@ -44,6 +79,8 @@ public class SecurityConfig {
             auth.requestMatchers("/css/**", "/js/**", "/img/**", "/webjars/**", "/favicon.svg").permitAll();
             // The installable app: its description, its service worker and its offline page.
             auth.requestMatchers("/manifest.webmanifest", "/sw.js", "/offline.html").permitAll();
+            // The API documentation pages (the API itself has its own rules, see ApiSecurityConfig).
+            auth.requestMatchers("/swagger-ui/**").permitAll();
             // The live-updates connection (/live) is checked when it is opened, like any other
             // address. When the server later finishes it, that is not a new request to check.
             auth.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll();
@@ -58,11 +95,15 @@ public class SecurityConfig {
             auth.anyRequest().authenticated();
         });
 
+        // A paused account (too many wrong passwords) gets its own message; everything else is "wrong email or password".
+        ExceptionMappingAuthenticationFailureHandler failures = new ExceptionMappingAuthenticationFailureHandler();
+        failures.setExceptionMappings(Map.of(LockedException.class.getName(), "/login?locked"));
+        failures.setDefaultFailureUrl("/login?error");
         http.formLogin(form -> form
                 .loginPage("/login")
                 .usernameParameter("email")
                 .defaultSuccessUrl("/dashboard", true)
-                .failureUrl("/login?error"));
+                .failureHandler(failures));
 
         http.logout(logout -> logout
                 .logoutSuccessUrl("/login?logout"));
@@ -82,6 +123,16 @@ public class SecurityConfig {
                     }
                 }));
 
+        // Security headers on every page: what the browser may load and run, and what it may tell other sites.
+        RequestMatcher appPages = h2ConsoleEnabled
+                ? new NegatedRequestMatcher(PathPatternRequestMatcher.withDefaults().matcher(H2_CONSOLE))
+                : AnyRequestMatcher.INSTANCE;
+        http.headers(headers -> headers
+                .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(appPages,
+                        new ContentSecurityPolicyHeaderWriter(CONTENT_SECURITY_POLICY)))
+                .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                .permissionsPolicyHeader(permissions -> permissions.policy(PERMISSIONS_POLICY)));
+
         if (h2ConsoleEnabled) {
             // The H2 console is a small third-party web app: it has no CSRF
             // tokens and shows its pages in frames, so relax both for it only.
@@ -90,6 +141,18 @@ public class SecurityConfig {
         }
 
         return http.build();
+    }
+
+    /**
+     * Email and password, checked with BCrypt, behind the protection against
+     * password guessing (see {@link LoginAttempts}).
+     */
+    @Bean
+    public AuthenticationProvider authenticationProvider(ItsmUserDetailsService users, PasswordEncoder passwordEncoder,
+                                                         LoginAttempts loginAttempts) {
+        DaoAuthenticationProvider passwords = new DaoAuthenticationProvider(users);
+        passwords.setPasswordEncoder(passwordEncoder);
+        return new LockoutAuthenticationProvider(passwords, loginAttempts);
     }
 
     /** The sessions of everyone who is signed in. */
