@@ -15,7 +15,8 @@
 
             <div class="card">
                 <div class="card-body p-4">
-                    <form th:action="@{/employee/incidents}" th:object="${form}" method="post" novalidate>
+                    <form th:action="@{/employee/incidents}" th:object="${form}" method="post" novalidate
+                          enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="title" class="form-label">Title</label>
                             <input type="text" class="form-control" id="title" th:field="*{title}"
@@ -101,6 +102,22 @@
                             </div>
                         </div>
 
+                        <!--/* An optional screenshot: drop, paste or choose (static/js/attachments.js) */-->
+                        <div class="mb-4" data-attach-form>
+                            <label class="form-label" for="screenshot">Screenshot
+                                <span class="fw-normal text-body-secondary">(optional, helps the technician a lot)</span></label>
+                            <label class="drop-zone" for="screenshot" data-drop-zone
+                                   th:classappend="${#fields.hasErrors('screenshot')} ? 'drop-zone-error'">
+                                <i class="bi bi-image fs-4 d-block mb-1"></i>
+                                <span data-drop-label><strong>Drop a screenshot here</strong>, paste it with Ctrl+V, or click to choose one.</span>
+                                <span class="d-block small text-body-secondary mt-1">PNG, JPEG, GIF, WebP, PDF or text, up to 5 MB.</span>
+                            </label>
+                            <input type="file" id="screenshot" name="screenshot" class="visually-hidden"
+                                   accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,.txt,.log,.csv">
+                            <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('screenshot')}"
+                                 th:errors="*{screenshot}">Screenshot error</div>
+                        </div>
+
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">Report incident</button>
                             <a class="btn btn-outline-secondary" th:href="@{/employee/incidents}">Cancel</a>
@@ -112,6 +129,7 @@
     </div>
     <script th:src="@{/js/voice-input.js}" defer></script>
     <script th:src="@{/js/report-assist.js}" defer></script>
+    <script th:src="@{/js/attachments.js}" defer></script>
 </main>
 </body>
 </html>

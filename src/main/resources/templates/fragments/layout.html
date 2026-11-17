@@ -67,6 +67,9 @@
     <meta name="application-name" th:content="${@brand.name}" content="Quell">
     <meta name="description" th:content="|${@brand.name}: ${@brand.tagline}. Report IT problems in seconds; they are prioritised, routed and tracked automatically.|">
     <meta name="theme-color" content="#09090b">
+    <link rel="manifest" th:href="@{/manifest.webmanifest}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" th:content="${@brand.name}" content="Quell">
     <title th:text="|${title} · ${@brand.name}|">Quell</title>
     <!-- Sets dark or light before anything is drawn, so the page never flashes the wrong theme. -->
     <script th:src="@{/js/theme.js}"></script>

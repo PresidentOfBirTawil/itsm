@@ -42,6 +42,8 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> {
             auth.requestMatchers("/", "/login", "/register", "/error").permitAll();
             auth.requestMatchers("/css/**", "/js/**", "/img/**", "/webjars/**", "/favicon.svg").permitAll();
+            // The installable app: its description, its service worker and its offline page.
+            auth.requestMatchers("/manifest.webmanifest", "/sw.js", "/offline.html").permitAll();
             // The live-updates connection (/live) is checked when it is opened, like any other
             // address. When the server later finishes it, that is not a new request to check.
             auth.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll();

@@ -155,6 +155,54 @@
                 </div>
             </div>
 
+            <!--/* Screenshots, PDFs and logs (AttachmentController); static/js/attachments.js adds drag-and-drop and paste */-->
+            <div class="card mb-4" id="attachments" th:if="${canAttach or !#lists.isEmpty(attachments)}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-paperclip me-1"></i>Attachments</span>
+                    <span class="small text-body-secondary" th:unless="${#lists.isEmpty(attachments)}"
+                          th:text="${attachments.size() == 1} ? '1 file' : |${attachments.size()} files|">2 files</span>
+                </div>
+                <div class="card-body">
+                    <div class="attachment-grid mb-3" th:unless="${#lists.isEmpty(attachments)}">
+                        <div class="attachment" th:each="file : ${attachments}">
+                            <a class="attachment-preview" th:href="@{|/attachments/${file.id}|}" target="_blank" rel="noopener"
+                               th:title="|Open ${file.fileName}|">
+                                <img th:if="${file.image}" th:src="@{|/attachments/${file.id}|}" alt="" loading="lazy">
+                                <i th:unless="${file.image}" class="bi" th:classappend="${file.icon}"></i>
+                            </a>
+                            <div class="attachment-meta">
+                                <a class="attachment-name" th:href="@{|/attachments/${file.id}|}" target="_blank" rel="noopener"
+                                   th:text="${file.fileName}">screenshot.png</a>
+                                <div class="small text-body-secondary">
+                                    <span th:text="${file.sizeLabel}">240 KB</span> ·
+                                    <span th:text="${file.uploadedBy.name}">Priya Sharma</span>
+                                </div>
+                            </div>
+                            <form method="post" class="attachment-remove" th:action="@{|/attachments/${file.id}/delete|}"
+                                  th:if="${incident.status.name() != 'CLOSED' and (file.uploadedBy.id == viewerId or viewerRole.name() == 'ADMIN')}"
+                                  th:attr="data-confirm=|Remove ${file.fileName}?|">
+                                <button type="submit" class="btn btn-sm btn-link text-body-secondary p-0" title="Remove">
+                                    <i class="bi bi-x-lg"></i><span class="visually-hidden">Remove</span></button>
+                            </form>
+                        </div>
+                    </div>
+                    <form th:if="${canAttach}" method="post" enctype="multipart/form-data" data-attach-form
+                          th:action="@{|/incidents/${incident.code}/attachments|}">
+                        <label class="drop-zone" for="attachment-file" data-drop-zone>
+                            <i class="bi bi-cloud-arrow-up fs-4 d-block mb-1"></i>
+                            <span data-drop-label><strong>Drop a screenshot here</strong>, paste it with Ctrl+V, or click to choose a file.</span>
+                            <span class="d-block small text-body-secondary mt-1">PNG, JPEG, GIF, WebP, PDF or text, up to 5 MB.</span>
+                        </label>
+                        <input type="file" id="attachment-file" name="file" class="visually-hidden" required
+                               accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,.txt,.log,.csv">
+                        <div class="d-flex justify-content-end mt-2">
+                            <button type="submit" class="btn btn-sm btn-primary" data-attach-submit>
+                                <i class="bi bi-paperclip me-1"></i>Attach</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- The resolution, and what the reporter thought of it -->
             <div class="card mb-4 border border-success-subtle" th:if="${incident.resolution != null}">
                 <div class="card-header text-success-emphasis"><i class="bi bi-check2-circle me-1"></i>Resolution</div>
@@ -448,6 +496,7 @@
             </div>
         </div>
     </div>
+    <script th:src="@{/js/attachments.js}" defer></script>
 </main>
 </body>
 </html>

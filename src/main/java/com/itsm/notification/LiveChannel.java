@@ -29,9 +29,17 @@ public class LiveChannel implements NotificationChannel {
         return "live";
     }
 
+    /**
+     * Updates the bell, and passes on what the notification says so that the
+     * browser can show a desktop alert. Clicking it opens the notification,
+     * which marks it read and goes to the incident.
+     */
     @Override
     public void send(NotificationMessage message) {
-        liveUpdates.unreadCount(message.recipientId(),
-                notifications.countByRecipientIdAndReadAtIsNull(message.recipientId()));
+        long unread = notifications.countByRecipientIdAndReadAtIsNull(message.recipientId());
+        String url = notifications.findFirstByRecipientIdOrderByIdDesc(message.recipientId())
+                .map(stored -> "/notifications/" + stored.getId())
+                .orElse("/notifications");
+        liveUpdates.notified(message.recipientId(), unread, message.title(), message.body(), url);
     }
 }

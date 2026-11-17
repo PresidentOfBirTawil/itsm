@@ -5,6 +5,7 @@ import com.itsm.domain.Urgency;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.springframework.web.multipart.MultipartFile;
 
 /** What an employee fills in to report an incident, with the rules each field must meet. */
 public class IncidentForm {
@@ -28,6 +29,17 @@ public class IncidentForm {
 
     @NotNull(message = "Please choose the urgency")
     private Urgency urgency;
+
+    /** Optional: a screenshot (or PDF, or log) attached to the new incident. */
+    private MultipartFile screenshot;
+
+    public MultipartFile getScreenshot() {
+        return screenshot;
+    }
+
+    public void setScreenshot(MultipartFile screenshot) {
+        this.screenshot = screenshot;
+    }
 
     public String getTitle() {
         return title;

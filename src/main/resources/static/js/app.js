@@ -8,6 +8,11 @@
  *           data-fill-text="...">
  *   <button data-theme-toggle>            switches between dark and light (remembered)
  *   <kbd data-shortcut-mod>               shows ⌘ on a Mac and Ctrl elsewhere
+ *   <button data-desktop-alerts>          asks the browser for permission to show desktop alerts
+ *   <button data-install-app>             installs Quell as an app (browsers that offer it)
+ *
+ * It also registers the service worker (static/sw.js) that makes Quell an
+ * installable app with an offline page.
  */
 (function () {
     'use strict';
@@ -68,6 +73,79 @@
             target.focus();
             target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             target.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    });
+
+    // ---- desktop alerts (shown by live.js when a notification arrives in the background) ----
+
+    function showAlertsState() {
+        if (!('Notification' in window)) {
+            return;
+        }
+        document.querySelectorAll('[data-desktop-alerts]').forEach(function (button) {
+            var label = button.querySelector('span');
+            button.classList.remove('d-none');
+            button.disabled = Notification.permission !== 'default';
+            if (Notification.permission === 'granted') {
+                label.textContent = 'Desktop alerts are on';
+                button.title = 'You get an alert for new notifications while Quell is in the background.';
+            } else if (Notification.permission === 'denied') {
+                label.textContent = 'Desktop alerts are blocked';
+                button.title = 'Allow notifications for this site in your browser settings to turn them on.';
+            } else {
+                label.textContent = 'Turn on desktop alerts';
+                button.title = 'Get an alert for new notifications, even while Quell is in the background.';
+            }
+        });
+    }
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('[data-desktop-alerts]') || !('Notification' in window)) {
+            return;
+        }
+        Notification.requestPermission().then(function (permission) {
+            showAlertsState();
+            if (permission === 'granted') {
+                try {
+                    new Notification('Desktop alerts are on', {
+                        body: 'You will be told about new notifications while Quell is in the background.',
+                        icon: '/img/logo-192.png'
+                    });
+                } catch (e) {
+                    // Phones show alerts through the service worker only; nothing to demonstrate here.
+                }
+            }
+        });
+    });
+    showAlertsState();
+
+    // ---- the installable app (Progressive Web App) ----
+
+    if ('serviceWorker' in navigator && window.isSecureContext) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/sw.js').catch(function () {
+                // Without it Quell works the same, only without the offline page.
+            });
+        });
+    }
+
+    var installPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();                  // offer it in the menu instead of the browser's own bar
+        installPrompt = event;
+        document.querySelectorAll('[data-install-app]').forEach(function (button) {
+            button.classList.remove('d-none');
+        });
+    });
+    window.addEventListener('appinstalled', function () {
+        installPrompt = null;
+        document.querySelectorAll('[data-install-app]').forEach(function (button) {
+            button.classList.add('d-none');
+        });
+    });
+    document.addEventListener('click', function (event) {
+        if (event.target.closest('[data-install-app]') && installPrompt) {
+            installPrompt.prompt();
         }
     });
 })();

@@ -1412,6 +1412,11 @@ a.root-cause-card:hover {
     max-width: 85%;
 }
 
+/* A short conversation sits at the bottom, next to the buttons, like in any messenger. */
+.chat-row:first-child {
+    margin-top: auto;
+}
+
 /* Only messages that have just arrived slide in (assistant.js marks them). */
 .chat-row.chat-new {
     animation: chat-in .22s ease-out both;
@@ -1581,4 +1586,105 @@ a.root-cause-card:hover {
 @media (max-width: 575.98px) {
     .chat-row { max-width: 95%; }
     .chat-replies { padding-left: 1rem; }
+}
+
+/* ======================================================================
+   Attachments
+   ====================================================================== */
+
+.attachment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+    gap: .75rem;
+}
+
+.attachment {
+    position: relative;
+    border: 1px solid var(--q-border);
+    border-radius: .75rem;
+    overflow: hidden;
+    background: var(--q-surface-2);
+}
+
+.attachment-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    height: 6.5rem;
+    background: var(--q-bg);
+    color: var(--q-faint);
+    font-size: 2rem;
+    border-bottom: 1px solid var(--q-border);
+}
+
+.attachment-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.attachment-meta {
+    padding: .45rem .6rem;
+    min-width: 0;
+}
+
+.attachment-name {
+    display: block;
+    font-size: .85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-decoration: none;
+}
+
+.attachment-remove {
+    position: absolute;
+    top: .35rem;
+    right: .35rem;
+}
+
+.attachment-remove .btn {
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--q-surface) 85%, transparent);
+    backdrop-filter: blur(4px);
+}
+
+.drop-zone {
+    display: block;
+    text-align: center;
+    padding: 1.1rem 1rem;
+    border: 1.5px dashed var(--q-border-strong);
+    border-radius: .75rem;
+    color: var(--q-muted);
+    cursor: pointer;
+    transition: border-color .15s, background-color .15s;
+}
+
+.drop-zone:hover,
+.drop-zone-over {
+    border-color: var(--q-accent);
+    background: var(--q-accent-soft);
+}
+
+.drop-zone-ready {
+    border-style: solid;
+    border-color: var(--q-green-line);
+    background: var(--q-green-bg);
+    color: var(--q-text);
+}
+
+.drop-zone-error {
+    border-style: solid;
+    border-color: var(--q-red-line);
+    background: var(--q-red-bg);
+    color: var(--q-red);
+}
+
+/* The offline page of the installed app (static/offline.html). */
+.offline-panel {
+    max-width: 28rem;
 }

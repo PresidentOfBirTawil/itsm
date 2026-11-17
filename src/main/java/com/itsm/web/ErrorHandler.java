@@ -2,6 +2,7 @@ package com.itsm.web;
 
 import java.net.URI;
 
+import com.itsm.domain.Attachment;
 import com.itsm.error.InvalidInputException;
 import com.itsm.error.ItsmException;
 import com.itsm.error.NotFoundException;
@@ -17,6 +18,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.support.RequestContextUtils;
@@ -90,6 +92,13 @@ public class ErrorHandler {
     }
 
     /** A request with a missing or unreadable value, such as a status that does not exist. */
+    /** A file bigger than the upload limit: back to the page, which still has everything else that was typed. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ModelAndView tooBig(MaxUploadSizeExceededException e, HttpServletRequest request) {
+        return backWithMessageOrPage(request, HttpStatus.PAYLOAD_TOO_LARGE,
+                "That file is too big. Files can be at most %s.".formatted(Attachment.sizeLabel(Attachment.MAX_BYTES)));
+    }
+
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
     public ModelAndView unreadableRequest(Exception e, HttpServletRequest request) {
         return backWithMessageOrPage(request, HttpStatus.BAD_REQUEST,

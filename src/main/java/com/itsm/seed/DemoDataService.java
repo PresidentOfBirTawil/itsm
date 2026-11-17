@@ -29,6 +29,7 @@ import com.itsm.intelligence.DuplicateDetector;
 import com.itsm.intelligence.EscalationPolicy;
 import com.itsm.priority.PriorityCalculator;
 import com.itsm.repository.AdministratorRepository;
+import com.itsm.repository.AttachmentRepository;
 import com.itsm.repository.AuditEntryRepository;
 import com.itsm.repository.CategoryRepository;
 import com.itsm.repository.EmailMessageRepository;
@@ -82,6 +83,7 @@ public class DemoDataService {
     private final EntityManager entityManager;
     private final KnowledgeArticleRepository knowledgeArticles;
     private final CategoryClassifier categoryClassifier;
+    private final AttachmentRepository attachments;
 
     public DemoDataService(IncidentRepository incidents, AuditEntryRepository auditEntries,
                            NotificationRepository notifications, EmailMessageRepository emails,
@@ -90,7 +92,8 @@ public class DemoDataService {
                            CategoryRepository categories, SlaPolicyRepository slaPolicies,
                            PriorityCalculator priorityCalculator, DuplicateDetector duplicateDetector,
                            EscalationPolicy escalationPolicy, EntityManager entityManager,
-                           KnowledgeArticleRepository knowledgeArticles, CategoryClassifier categoryClassifier) {
+                           KnowledgeArticleRepository knowledgeArticles, CategoryClassifier categoryClassifier,
+                           AttachmentRepository attachments) {
         this.incidents = incidents;
         this.auditEntries = auditEntries;
         this.notifications = notifications;
@@ -108,6 +111,7 @@ public class DemoDataService {
         this.entityManager = entityManager;
         this.knowledgeArticles = knowledgeArticles;
         this.categoryClassifier = categoryClassifier;
+        this.attachments = attachments;
     }
 
     /**
@@ -122,6 +126,8 @@ public class DemoDataService {
         emails.deleteAllInBatch();
         knowledgeArticles.forgetSourceIncidents(); // articles stay; only their link to an incident goes
         auditEntries.deleteAllInBatch();
+        attachments.deleteAllAttachments();
+        attachments.deleteAllContents();
         incidents.clearAffectedUsers();
         incidents.clearDuplicateLinks();
         incidents.deleteAllInBatch();

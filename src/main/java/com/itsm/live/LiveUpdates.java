@@ -148,6 +148,45 @@ public class LiveUpdates {
         broadcast("bell", "{\"unread\":" + unread + "}", connection -> connection.userId().equals(userId));
     }
 
+    /**
+     * A user has a new notification: the number on the bell, and what the
+     * notification says, so that the browser can show it as a desktop alert
+     * when the page is in the background.
+     *
+     * @param url where clicking the alert goes
+     */
+    public void notified(Long userId, long unread, String title, String body, String url) {
+        broadcast("bell", "{\"unread\":%d,\"title\":%s,\"body\":%s,\"url\":%s}"
+                        .formatted(unread, json(title), json(body), json(url)),
+                connection -> connection.userId().equals(userId));
+    }
+
+    /** A JSON string, with everything that needs it escaped. */
+    static String json(String text) {
+        if (text == null) {
+            return "null";
+        }
+        StringBuilder json = new StringBuilder("\"");
+        for (char c : text.toCharArray()) {
+            switch (c) {
+                case '"' -> json.append("\\\"");
+                case '\\' -> json.append("\\\\");
+                case '\n' -> json.append("\\n");
+                case '\r' -> json.append("\\r");
+                case '\t' -> json.append("\\t");
+                case '<' -> json.append("\\u003c");   // never "</script>" or "<!--" in a message
+                default -> {
+                    if (c < 0x20 || c == 0x2028 || c == 0x2029) {
+                        json.append("\\u%04x".formatted((int) c));
+                    } else {
+                        json.append(c);
+                    }
+                }
+            }
+        }
+        return json.append('"').toString();
+    }
+
     /** Everything may have changed: every open page fetches its content again. */
     public void everythingChanged() {
         broadcast("refresh", "{}", connection -> true);

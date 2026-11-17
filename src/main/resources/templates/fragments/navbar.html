@@ -216,6 +216,9 @@
             <li><a class="dropdown-item" th:href="@{/notifications}"><i class="bi bi-bell me-2"></i>Notifications</a></li>
             <li><a class="dropdown-item" th:href="@{/kb}"><i class="bi bi-life-preserver me-2"></i>Help and knowledge base</a></li>
             <li><button type="button" class="dropdown-item" data-theme-toggle><i class="bi bi-sun me-2"></i>Switch theme</button></li>
+            <!--/* Shown by app.js when the browser can do it */-->
+            <li><button type="button" class="dropdown-item d-none" data-desktop-alerts><i class="bi bi-app-indicator me-2"></i><span>Turn on desktop alerts</span></button></li>
+            <li><button type="button" class="dropdown-item d-none" data-install-app><i class="bi bi-download me-2"></i>Install the app</button></li>
             <li><hr class="dropdown-divider"></li>
             <li>
                 <form th:action="@{/logout}" method="post" class="m-0">

@@ -226,8 +226,11 @@ class LiveUpdatesWebTests {
 
         reportPaymentIncident(employee(1));                          // assigned to Sara: she is notified
 
+        // The number on the bell, and what the notification says, for a desktop alert.
         await().atMost(SOON).untilAsserted(() ->
-                assertThat(saraTab.messages("bell")).contains("{\"unread\":" + (before + 1) + "}"));
+                assertThat(saraTab.messages("bell")).anySatisfy(message -> assertThat(message)
+                        .startsWith("{\"unread\":" + (before + 1) + ",\"title\":\"INC-")
+                        .contains("\"url\":\"/notifications/")));
         assertThat(raviTab.messages("bell")).isEmpty();              // nobody else's bell moves
     }
 

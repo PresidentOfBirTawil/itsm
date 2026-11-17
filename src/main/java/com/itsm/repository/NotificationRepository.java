@@ -1,6 +1,7 @@
 package com.itsm.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.itsm.domain.Notification;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -16,4 +17,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     /** The number shown on the bell. */
     long countByRecipientIdAndReadAtIsNull(Long recipientId);
+
+    /** The newest notification of a user. */
+    Optional<Notification> findFirstByRecipientIdOrderByIdDesc(Long recipientId);
 }

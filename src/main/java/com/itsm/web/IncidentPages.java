@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.itsm.attachment.AttachmentService;
 import com.itsm.error.ItsmException;
 import com.itsm.error.NotFoundException;
 import com.itsm.error.UnauthorizedOperationException;
@@ -69,12 +70,13 @@ public class IncidentPages {
     private final SlaPredictor slaPredictor;
     private final KnowledgeService knowledge;
     private final StatusService statusService;
+    private final AttachmentService attachmentService;
 
     public IncidentPages(IncidentService incidentService, PriorityCalculator priorityCalculator,
                          IncidentRepository incidents, CategoryRepository categories,
                          ITServiceRepository services, TechnicianRepository technicians,
                          ResolutionRecommender recommender, CategoryClassifier classifier, SlaPredictor slaPredictor,
-                         KnowledgeService knowledge, StatusService statusService) {
+                         KnowledgeService knowledge, StatusService statusService, AttachmentService attachmentService) {
         this.incidentService = incidentService;
         this.priorityCalculator = priorityCalculator;
         this.incidents = incidents;
@@ -86,6 +88,7 @@ public class IncidentPages {
         this.slaPredictor = slaPredictor;
         this.knowledge = knowledge;
         this.statusService = statusService;
+        this.attachmentService = attachmentService;
     }
 
     /**
@@ -117,6 +120,11 @@ public class IncidentPages {
         model.addAttribute("canAddNote", canWorkOn && incident.getState().allowsNotes());
         model.addAttribute("canRate", viewer.getRole() == Role.EMPLOYEE && canWorkOn
                 && incident.getState().allowsRating() && incident.getRating() == null);
+
+        // Screenshots and other files: everyone who can see the incident sees them; the people on it can add more.
+        model.addAttribute("attachments", attachmentService.of(incident));
+        model.addAttribute("canAttach", attachmentService.mayAttach(viewer, incident) && incident.getStatus() != Status.CLOSED);
+        model.addAttribute("viewerId", viewer.getId());
 
         // Technicians (on their own incidents) and administrators can correct the classification while it is open.
         boolean canReclassify = canWorkOn && viewer.getRole() != Role.EMPLOYEE && incident.getStatus().isOpen();

@@ -18,7 +18,9 @@ public enum IncidentAction {
     RATED("Resolution rated"),
     CLASSIFICATION_CHANGED("Classification changed"),
     PRIORITY_CHANGED("Priority changed"),
-    AFFECTED_USER_ADDED("Also affected");
+    AFFECTED_USER_ADDED("Also affected"),
+    ATTACHMENT_ADDED("File attached"),
+    ATTACHMENT_REMOVED("File removed");
 
     private final String label;
 

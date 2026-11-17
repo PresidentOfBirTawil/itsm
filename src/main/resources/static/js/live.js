@@ -134,8 +134,49 @@
     source.addEventListener('open', function () { connected(true); });
     source.addEventListener('error', function () { connected(false); });
 
+    // ---- desktop alerts: a new notification while the page is in the background ----
+
+    function desktopAlert(message) {
+        if (!message.title || !('Notification' in window) || Notification.permission !== 'granted') {
+            return;
+        }
+        if (document.visibilityState === 'visible' && document.hasFocus()) {
+            return;                               // the bell is enough when someone is looking
+        }
+        var options = {
+            body: message.body || '',
+            icon: '/img/logo-192.png',
+            badge: '/img/logo-192.png',
+            tag: 'quell-' + message.url,          // one alert per notification, however many tabs are open
+            data: { url: message.url }
+        };
+        try {
+            var alert = new Notification(message.title, options);
+            alert.onclick = function () {
+                window.focus();
+                window.location.href = message.url;
+                alert.close();
+            };
+        } catch (e) {
+            // Phones only allow alerts through the service worker (static/sw.js).
+            if (navigator.serviceWorker) {
+                navigator.serviceWorker.ready.then(function (registration) {
+                    return registration.showNotification(message.title, options);
+                }).catch(function () {
+                    // No alerts in this browser; the bell still counts.
+                });
+            }
+        }
+    }
+
     source.addEventListener('bell', function (event) {
-        showUnread(data(event).unread || 0);
+        var message = data(event);
+        var badge = document.querySelector('.navbar-bell-count');
+        var before = badge ? parseInt(badge.textContent, 10) || 0 : 0;
+        if ((message.unread || 0) > before) {
+            desktopAlert(message);
+        }
+        showUnread(message.unread || 0);
         if (document.querySelector('[data-live="notifications"]')) {
             refreshSoon();                        // the list behind the bell is open: show the new entry
         }

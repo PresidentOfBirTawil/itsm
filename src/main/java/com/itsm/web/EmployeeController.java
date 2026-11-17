@@ -1,7 +1,9 @@
 package com.itsm.web;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.itsm.attachment.AttachmentService;
 import com.itsm.error.InvalidInputException;
 import com.itsm.error.ItsmException;
 import com.itsm.error.NotFoundException;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /** Pages for employees. Everything under /employee needs the EMPLOYEE role (see SecurityConfig). */
@@ -48,11 +51,13 @@ public class EmployeeController {
     private final IncidentPages incidentPages;
     private final ReportAssistant reportAssistant;
     private final StatusService statusService;
+    private final AttachmentService attachmentService;
 
     public EmployeeController(EmployeeRepository employees, IncidentRepository incidents,
                               ITServiceRepository services, CategoryRepository categories,
                               IncidentService incidentService, IncidentPages incidentPages,
-                              ReportAssistant reportAssistant, StatusService statusService) {
+                              ReportAssistant reportAssistant, StatusService statusService,
+                              AttachmentService attachmentService) {
         this.employees = employees;
         this.incidents = incidents;
         this.services = services;
@@ -61,6 +66,7 @@ public class EmployeeController {
         this.incidentPages = incidentPages;
         this.reportAssistant = reportAssistant;
         this.statusService = statusService;
+        this.attachmentService = attachmentService;
     }
 
     @GetMapping
@@ -114,13 +120,29 @@ public class EmployeeController {
     public String report(@AuthenticationPrincipal ItsmUserDetails user,
                          @Valid @ModelAttribute("form") IncidentForm form, BindingResult result,
                          Model model, RedirectAttributes redirect) {
+        // The screenshot is checked first, so a wrong file never leaves a half-finished report behind.
+        byte[] screenshot = null;
+        MultipartFile file = form.getScreenshot();
+        if (file != null && !file.isEmpty()) {
+            try {
+                screenshot = file.getBytes();
+                attachmentService.check(file.getOriginalFilename(), screenshot);
+            } catch (IOException | ItsmException e) {
+                result.rejectValue("screenshot", "badFile",
+                        (e instanceof ItsmException ? e.getMessage() : "The file could not be read.") + " Please choose it again.");
+            }
+        }
         if (result.hasErrors()) {
             addFormChoices(model);
             return "employee/incident-form";
         }
         try {
-            Incident incident = incidentService.report(currentEmployee(user), form.getTitle(), form.getDescription(),
+            Employee employee = currentEmployee(user);
+            Incident incident = incidentService.report(employee, form.getTitle(), form.getDescription(),
                     form.getServiceId(), form.getCategoryId(), form.getImpact(), form.getUrgency());
+            if (screenshot != null) {
+                attachmentService.attach(incident.getCode(), employee, file.getOriginalFilename(), screenshot);
+            }
             redirect.addFlashAttribute("success", "Incident %s has been reported.".formatted(incident.getCode()));
             return "redirect:" + INCIDENTS + "/" + incident.getCode();
         } catch (NotFoundException e) {

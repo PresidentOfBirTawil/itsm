@@ -309,7 +309,7 @@ class LiveUpdatesTests {
     // ---- the third notification channel ----
 
     @Test
-    void theLiveChannelSendsTheRecipientTheirUnreadCount() {
+    void theLiveChannelSendsTheRecipientTheirUnreadCountAndWhatTheNotificationSays() {
         NotificationRepository notifications = mock(NotificationRepository.class);
         when(notifications.countByRecipientIdAndReadAtIsNull(anyLong())).thenReturn(4L);
         LiveChannel channel = new LiveChannel(notifications, live);
@@ -320,7 +320,18 @@ class LiveUpdatesTests {
                 7L, "INC-0007", "INC-0007 has been assigned to you", null));
 
         assertThat(channel.getName()).isEqualTo("live");
-        assertThat(sara.messages("bell")).containsExactly("{\"unread\":4}");
+        assertThat(sara.messages("bell")).containsExactly(
+                "{\"unread\":4,\"title\":\"INC-0007 has been assigned to you\",\"body\":null,\"url\":\"/notifications\"}");
         assertThat(ravi.messages("bell")).isEmpty();
+    }
+
+    @Test
+    void whatANotificationSaysIsSentAsSafeJson() {
+        Tab sara = open(SARA, Role.TECHNICIAN);
+
+        live.notified(SARA, 1, "\"Printer\" says </script>", "line one\nline two \\ done", "/notifications/5");
+
+        assertThat(sara.messages("bell")).containsExactly("{\"unread\":1,\"title\":\"\\\"Printer\\\" says \\u003c/script>\","
+                + "\"body\":\"line one\\nline two \\\\ done\",\"url\":\"/notifications/5\"}");
     }
 }
