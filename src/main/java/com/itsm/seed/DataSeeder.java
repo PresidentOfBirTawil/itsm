@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.itsm.domain.Administrator;
 import com.itsm.domain.Category;
@@ -100,9 +101,20 @@ public class DataSeeder implements ApplicationRunner {
         log.info("Seeded {} SLA policies", slaPolicies.count());
     }
 
-    /** Six services. Criticality: 3 = the business stops without it, 1 = an inconvenience. */
+    /** The services of the first versions; {@link #seedServices} adds Workplace Devices to an untouched list of them. */
+    private static final Set<String> FIRST_SERVICES = Set.of("Payment Application", "Authentication Service",
+            "Database Cluster", "Corporate Network", "Cloud Storage", "Email & Collaboration");
+
+    /** Seven services. Criticality: 3 = the business stops without it, 1 = an inconvenience. */
     private void seedServices() {
         if (services.count() > 0) {
+            // Databases made by earlier versions: add the service for laptops and printers,
+            // unless an administrator has already changed the list of services.
+            Set<String> names = services.findAll().stream().map(ITService::getName).collect(Collectors.toSet());
+            if (names.equals(FIRST_SERVICES)) {
+                services.save(new ITService("Workplace Devices", 1));
+                log.info("Added the Workplace Devices service");
+            }
             return;
         }
         services.saveAll(List.of(
@@ -111,7 +123,8 @@ public class DataSeeder implements ApplicationRunner {
                 new ITService("Database Cluster", 3),
                 new ITService("Corporate Network", 2),
                 new ITService("Cloud Storage", 2),
-                new ITService("Email & Collaboration", 1)));
+                new ITService("Email & Collaboration", 1),
+                new ITService("Workplace Devices", 1)));
         log.info("Seeded {} IT services", services.count());
     }
 
@@ -127,7 +140,9 @@ public class DataSeeder implements ApplicationRunner {
                 "Database Cluster", List.of("database", "sql", "query", "replication", "standby", "deadlock"),
                 "Corporate Network", List.of("vpn", "wifi", "wi-fi", "network", "internet", "dns", "router", "switch", "firewall"),
                 "Cloud Storage", List.of("drive", "share", "shared folder", "backup", "sync", "storage", "quota", "file"),
-                "Email & Collaboration", List.of("email", "mail", "mailbox", "outlook", "calendar", "teams", "meeting", "printer"));
+                "Email & Collaboration", List.of("email", "mail", "mailbox", "outlook", "calendar", "teams", "meeting"),
+                "Workplace Devices", List.of("laptop", "desktop", "computer", "printer", "monitor", "screen", "keyboard",
+                        "mouse", "battery", "headset", "webcam", "docking station", "charger"));
         java.util.Map<String, List<String>> needs = java.util.Map.of(
                 "Payment Application", List.of("Database Cluster", "Authentication Service", "Corporate Network"),
                 "Authentication Service", List.of("Database Cluster", "Corporate Network"),

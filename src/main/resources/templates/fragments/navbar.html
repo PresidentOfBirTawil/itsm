@@ -46,6 +46,10 @@
                            th:href="@{/employee/dashboard}"><i class="bi bi-house me-1"></i>Home</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" th:classappend="${active == 'assistant'} ? 'active'"
+                           th:href="@{/employee/assistant}"><i class="bi bi-chat-dots me-1"></i>Assistant</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" th:classappend="${active == 'report'} ? 'active'"
                            th:href="@{/employee/incidents/new}"><i class="bi bi-plus-circle me-1"></i>Report incident</a>
                     </li>

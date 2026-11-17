@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Assistant', 'assistant', ~{::main})}">
+<body>
+<main>
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-xl-8">
+            <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+                <div>
+                    <h1 class="page-title mb-1">Assistant</h1>
+                    <p class="text-body-secondary mb-0">
+                        Report a problem by chatting: type, or press the microphone and speak.
+                        Prefer a form? <a th:href="@{/employee/incidents/new}">Use the form</a>.
+                    </p>
+                </div>
+                <form method="post" th:action="@{/employee/assistant/restart}" data-chat-form>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Start over</button>
+                </form>
+            </div>
+
+            <div class="card chat-card">
+                <!--/* The part replaced after every answer (static/js/assistant.js) */-->
+                <div class="chat" th:fragment="chat" data-chat
+                     th:attr="data-placeholder=${conversation.placeholder ?: 'Type your answer…'}">
+                    <div class="chat-log" data-chat-log aria-live="polite" aria-label="Conversation">
+                        <div class="chat-row" th:each="message : ${conversation.transcript}"
+                             th:classappend="${message.fromAssistant} ? 'chat-in' : 'chat-out'">
+                            <div class="chat-avatar" th:if="${message.fromAssistant}" aria-hidden="true">
+                                <img th:src="@{/img/logo.svg}" alt="" width="18" height="18">
+                            </div>
+                            <div class="chat-bubble">
+                                <span class="chat-text"><th:block th:each="part : ${message.parts()}"><strong th:if="${part.bold}" th:text="${part.text}">INC-0001</strong><th:block th:unless="${part.bold}" th:text="${part.text}">Text</th:block></th:block></span>
+                                <div class="chat-links" th:unless="${#lists.isEmpty(message.links)}">
+                                    <a class="chat-link" th:each="link : ${message.links}" th:href="@{${link.url}}"
+                                       target="_blank" rel="noopener">
+                                        <i class="bi" th:classappend="${link.icon}"></i><span th:text="${link.label}">Article</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-replies" th:unless="${#lists.isEmpty(conversation.replies)}">
+                        <form method="post" th:action="@{/employee/assistant}" data-chat-form class="d-inline"
+                              th:each="reply : ${conversation.replies}">
+                            <input type="hidden" name="text" th:value="${reply.value}">
+                            <button type="submit" class="chat-chip" th:text="${reply.label}"
+                                    th:classappend="${#strings.endsWith(reply.label, '(suggested)')} ? 'chat-chip-suggested'">Reply</button>
+                        </form>
+                    </div>
+                </div>
+
+                <form method="post" th:action="@{/employee/assistant}" data-chat-form data-chat-input class="chat-input">
+                    <label for="assistant-text" class="visually-hidden">Your answer</label>
+                    <input type="text" name="text" id="assistant-text" class="form-control" autocomplete="off"
+                           maxlength="2000" autofocus
+                           th:placeholder="${conversation.placeholder ?: 'Type your answer…'}">
+                    <!--/* Shown by voice-input.js only in browsers that can turn speech into text */-->
+                    <button type="button" class="btn btn-outline-secondary chat-mic d-none" data-dictate="#assistant-text"
+                            title="Speak instead of typing"><i class="bi bi-mic"></i><span class="visually-hidden">Dictate</span></button>
+                    <button type="submit" class="btn btn-primary" title="Send"><i class="bi bi-arrow-up"></i><span class="visually-hidden">Send</span></button>
+                </form>
+            </div>
+            <p class="small text-body-secondary text-center mt-2 mb-0">
+                <i class="bi bi-shield-check me-1"></i>The assistant runs inside Quell. Nothing you write leaves your organisation.
+            </p>
+        </div>
+    </div>
+    <script th:src="@{/js/voice-input.js}" defer></script>
+    <script th:src="@{/js/assistant.js}" defer></script>
+</main>
+</body>
+</html>

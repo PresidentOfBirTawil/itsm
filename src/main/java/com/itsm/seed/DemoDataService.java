@@ -178,7 +178,7 @@ public class DemoDataService {
                     "Cloud Storage", "Storage", Impact.MEDIUM, Urgency.MEDIUM, 170 * H, Story.CLOSED, 2, 20, 150,
                     "Restored the write permission that was lost in last night's migration.", 4, null),
             new Sample(3, "Laptop will not charge", "The charging light stays off with two different chargers.",
-                    "Email & Collaboration", "Hardware", Impact.LOW, Urgency.MEDIUM, 160 * H, Story.CLOSED, 1, 50, 300,
+                    "Workplace Devices", "Hardware", Impact.LOW, Urgency.MEDIUM, 160 * H, Story.CLOSED, 1, 50, 300,
                     "Replaced the laptop battery.", 5, null),
             new Sample(4, "Suspicious email asking for my password", "It looks like it comes from IT but the address is odd.",
                     "Email & Collaboration", "Security", Impact.MEDIUM, Urgency.HIGH, 140 * H, Story.CLOSED, 3, 22, 240,
@@ -207,7 +207,7 @@ public class DemoDataService {
             new Sample(3, "Switch in server room B shows an amber light", "One of the switches in rack 4 has an amber status light.",
                     "Corporate Network", "Hardware", Impact.MEDIUM, Urgency.HIGH, 60, Story.AWAITING_INFO, 1, 7, -1, null, null, null),
             new Sample(4, "New starter needs a laptop set up", "A new colleague starts on Monday and needs a laptop.",
-                    "Email & Collaboration", "Hardware", Impact.LOW, Urgency.LOW, 2 * H, Story.ASSIGNED, 1, -1, -1, null, null, null),
+                    "Workplace Devices", "Hardware", Impact.LOW, Urgency.LOW, 2 * H, Story.ASSIGNED, 1, -1, -1, null, null, null),
             new Sample(1, "Phishing wave: several users clicked a link", "At least six people entered their password on a fake page.",
                     "Authentication Service", "Security", Impact.HIGH, Urgency.HIGH, 9, Story.ASSIGNED, 3, -1, -1, null, null, null),
             new Sample(2, "VPN connection drops every few minutes", "Working from home, the VPN disconnects all the time.",
@@ -240,11 +240,11 @@ public class DemoDataService {
             new Recurring("Cannot reach the intranet from the branch office", "The intranet times out from the branch, other sites work.",
                     "Corporate Network", "Network", "Fixed the DNS forwarder at the branch office."),
             new Recurring("Docking station does not detect the monitors", "The screens stay black when the laptop is docked.",
-                    "Email & Collaboration", "Hardware", "Updated the dock firmware and the display driver."),
+                    "Workplace Devices", "Hardware", "Updated the dock firmware and the display driver."),
             new Recurring("Printer on floor 3 jams on every job", "Every print job jams in tray 2.",
-                    "Email & Collaboration", "Hardware", "Removed torn paper from the fuser and replaced the tray 2 roller."),
+                    "Workplace Devices", "Hardware", "Removed torn paper from the fuser and replaced the tray 2 roller."),
             new Recurring("Laptop battery drains within an hour", "The battery goes from full to empty very fast.",
-                    "Email & Collaboration", "Hardware", "Replaced the swollen laptop battery."),
+                    "Workplace Devices", "Hardware", "Replaced the swollen laptop battery."),
             new Recurring("Nightly data load times out", "The overnight import into the reporting database did not finish.",
                     "Database Cluster", "Database", "Added an index on the import staging table and re-ran the load."),
             new Recurring("Deadlock errors when saving orders", "Order entry sometimes fails with a deadlock message.",
@@ -340,7 +340,7 @@ public class DemoDataService {
             Recurring problem = RECURRING.get(random.nextInt(RECURRING.size()));
             Impact impact = impacts[random.nextInt(impacts.length)];
             Urgency urgency = urgencies[random.nextInt(urgencies.length)];
-            ITService service = services.findByName(problem.service()).orElseThrow();
+            ITService service = service(problem.service());
             PriorityAssessment assessment = priorityCalculator.calculate(
                     new Incident(problem.title(), problem.description(), someone, service, impact, urgency));
             SlaPolicy policy = slaPolicies.findByPriority(assessment.priority()).orElseThrow();
@@ -358,12 +358,21 @@ public class DemoDataService {
         return history;
     }
 
+    /**
+     * A service of the sample incidents. Device problems go to Email &amp;
+     * Collaboration on databases from versions that had no Workplace Devices.
+     */
+    private ITService service(String name) {
+        return services.findByName(name)
+                .or(() -> "Workplace Devices".equals(name) ? services.findByName("Email & Collaboration") : java.util.Optional.empty())
+                .orElseThrow(() -> new InvalidInputException("The sample incidents need the service " + name));
+    }
+
     /** Takes one sample incident through its life, writing the audit entries as it goes. */
     private Incident play(Sample sample, LocalDateTime now, User administrator, List<Incident> earlier) {
         Employee reporter = (Employee) demoUser("emp" + sample.reporter());
         Technician technician = sample.technician() == 0 ? null : (Technician) demoUser("tech" + sample.technician());
-        ITService service = services.findByName(sample.service())
-                .orElseThrow(() -> new InvalidInputException("The sample incidents need the service " + sample.service()));
+        ITService service = service(sample.service());
         Category category = categories.findByNameIgnoreCase(sample.category())
                 .orElseThrow(() -> new InvalidInputException("The sample incidents need the category " + sample.category()));
         LocalDateTime reportedAt = now.minusMinutes(sample.minutesAgo());

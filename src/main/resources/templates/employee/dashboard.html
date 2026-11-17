@@ -9,8 +9,12 @@
             <h1 class="h3 mb-1">Welcome, <span th:text="${employee.name}">Employee</span></h1>
             <p class="text-body-secondary mb-0">Employee workspace · report IT incidents and follow their progress.</p>
         </div>
-        <a class="btn btn-primary" th:href="@{/employee/incidents/new}">
-            <i class="bi bi-plus-circle me-1"></i>Report an incident</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-secondary" th:href="@{/employee/assistant}">
+                <i class="bi bi-chat-dots me-1"></i>Ask the assistant</a>
+            <a class="btn btn-primary" th:href="@{/employee/incidents/new}">
+                <i class="bi bi-plus-circle me-1"></i>Report an incident</a>
+        </div>
     </div>
 
     <!--/* Incidents where the next step is the employee's */-->

@@ -94,8 +94,8 @@ class SeedDataTests {
     }
 
     @Test
-    void sixServicesWithCriticalityBetweenOneAndThree() {
-        assertThat(services.findAll()).hasSize(6)
+    void sevenServicesWithCriticalityBetweenOneAndThree() {
+        assertThat(services.findAll()).hasSize(7)
                 .allMatch(service -> service.getCriticality() >= 1 && service.getCriticality() <= 3);
         assertThat(services.findAll()).extracting(ITService::getCriticality).contains(1, 2, 3);
     }
@@ -122,7 +122,7 @@ class SeedDataTests {
         seeder.run(new DefaultApplicationArguments());
 
         assertThat(users.count()).isEqualTo(9);
-        assertThat(services.count()).isEqualTo(6);
+        assertThat(services.count()).isEqualTo(7);
         assertThat(categories.count()).isEqualTo(9);
         assertThat(slaPolicies.count()).isEqualTo(4);
     }
