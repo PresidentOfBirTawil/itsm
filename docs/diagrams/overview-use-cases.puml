@@ -1,0 +1,57 @@
+@startuml overview-use-cases
+!include style.iuml
+' Use cases at report size: what each kind of user does with Quell.
+' The complete diagram, with every use case, is use-case.puml.
+left to right direction
+skinparam packageStyle rectangle
+skinparam nodesep 5
+skinparam ranksep 34
+skinparam usecaseFontSize 13
+skinparam actorFontSize 13
+
+actor "Employee" as Employee
+actor "Technician" as Technician
+actor "Administrator" as Admin
+actor "Scheduler" as Timer <<system>>
+actor "Other system" as Tool <<REST API>>
+actor "Chat app" as Chat <<webhook>>
+
+rectangle "Quell" {
+  usecase "Report an incident\n(form, chat or voice)" as Report
+  usecase "Join a known problem" as Join
+  usecase "Track it, answer questions" as Track
+  usecase "Confirm, reopen or rate" as Verify
+  usecase "Work the queue\n(acknowledge … resolve)" as Queue
+  usecase "Request information" as Info
+  usecase "Use a suggested solution" as Suggest
+  usecase "Write a knowledge article" as Article
+  usecase "Watch the live dashboard" as Dashboard
+  usecase "Assign or reassign" as Assign
+  usecase "Configure services, SLAs,\ncategories, strategy" as Configure
+  usecase "Reports and audit log" as Reports
+  usecase "Check SLAs, escalate" as Check
+  usecase "Prioritise, classify,\ndetect duplicates, assign" as Auto
+  usecase "Notify people and apps" as Notify
+}
+
+Employee -- Report
+Employee -- Join
+Employee -- Track
+Employee -- Verify
+Technician -- Queue
+Technician -- Info
+Technician -- Suggest
+Technician -- Article
+Admin -- Dashboard
+Admin -- Assign
+Admin -- Configure
+Admin -- Reports
+Timer -- Check
+Tool --- Report
+Chat --- Notify
+
+Report ..> Auto : <<include>>
+Join ..> Report : <<extend>>
+Queue ..> Notify : <<include>>
+Check ..> Notify : <<include>>
+@enduml

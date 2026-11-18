@@ -1,0 +1,38 @@
+@startuml pattern-notification
+!include style.iuml
+' Factory and Strategy: the factory decides which channels a message goes through;
+' each channel is one interchangeable way of delivering it.
+
+set separator none
+hide empty members
+skinparam nodesep 18
+skinparam ranksep 36
+
+class NotificationListener {
+  + messagesFor(event) : List<NotificationMessage>
+}
+
+class NotificationDispatcher {
+  + sendAfterCommit(messages)
+}
+
+class NotificationChannelFactory {
+  + channelsFor(type) : List<NotificationChannel>
+}
+
+interface NotificationChannel {
+  + getName() : String
+  + send(message)
+}
+
+class InAppChannel
+class LiveChannel
+class EmailChannel
+
+NotificationListener --> NotificationDispatcher
+NotificationDispatcher --> NotificationChannelFactory
+NotificationChannelFactory ..> NotificationChannel : hands out
+NotificationChannel <|.. InAppChannel
+NotificationChannel <|.. LiveChannel
+NotificationChannel <|.. EmailChannel
+@enduml

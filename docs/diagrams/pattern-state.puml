@@ -1,0 +1,58 @@
+@startuml pattern-state
+!include style.iuml
+' State pattern: what an incident may do depends on its status, and each status is a class.
+' The hidden links only arrange the nine state classes in reading order, three per row.
+set separator none
+hide empty members
+skinparam nodesep 16
+skinparam ranksep 34
+
+class Incident {
+  - status : Status
+  + getState() : IncidentState
+  + transitionTo(target)
+}
+interface IncidentState {
+  + transitions() : List<Transition>
+  + canTransitionTo(target) : boolean
+  + onEnter(incident, from, now)
+  + onExit(incident, to, now)
+  + allowsRating() : boolean
+}
+class Transition <<record>> {
+  target : Status
+  labels : Map<Role, String>
+  noteRequired : boolean
+}
+class NewState
+class ClassifiedState
+class AssignedState
+class AcknowledgedState
+class InProgressState
+class AwaitingInfoState {
+  + onEnter() : pause SLA clock
+  + onExit() : resume it
+}
+class ResolvedState
+class VerifiedState
+class ClosedState {
+  + transitions() : none
+}
+Incident .right.> IncidentState : delegates to the\nstate of its status
+IncidentState .right.> Transition
+IncidentState <|.. NewState
+IncidentState <|.. ClassifiedState
+IncidentState <|.. AssignedState
+IncidentState <|.. AcknowledgedState
+IncidentState <|.. InProgressState
+IncidentState <|.. AwaitingInfoState
+IncidentState <|.. ResolvedState
+IncidentState <|.. VerifiedState
+IncidentState <|.. ClosedState
+NewState -[hidden]down- AcknowledgedState
+ClassifiedState -[hidden]down- InProgressState
+AssignedState -[hidden]down- AwaitingInfoState
+AcknowledgedState -[hidden]down- ResolvedState
+InProgressState -[hidden]down- VerifiedState
+AwaitingInfoState -[hidden]down- ClosedState
+@enduml

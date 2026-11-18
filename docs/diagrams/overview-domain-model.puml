@@ -1,0 +1,110 @@
+@startuml overview-domain-model
+!include style.iuml
+' The domain model at report size: the main classes with their key attributes and methods.
+' The complete model is class-diagram.puml.
+' <|-- inheritance   --> association   *-- composition   o-- aggregation   ..> dependency
+
+set separator none
+hide empty members
+skinparam nodesep 28
+skinparam ranksep 46
+
+abstract class User {
+  - name : String
+  - email : String
+  - passwordHash : String
+  - enabled : boolean
+  + {abstract} getRole() : Role
+  + {abstract} canView(incident) : boolean
+  + {abstract} canWorkOn(incident) : boolean
+}
+class Employee
+class Technician {
+  - maxWorkload : int
+  - available : boolean
+  + hasSkill(category) : boolean
+}
+class Administrator
+
+User <|-- Employee
+User <|-- Technician
+User <|-- Administrator
+
+class Incident {
+  - code : String
+  - title : String
+  - impact : Impact
+  - urgency : Urgency
+  - priority : Priority
+  - status : Status
+  - slaStatus : SlaStatus
+  - responseDue : LocalDateTime
+  - resolutionDue : LocalDateTime
+  --
+  + transitionTo(status)
+  + prioritise(assessment, policy)
+  + assignTo(technician)
+  + refreshSla(now) : List<SlaSignal>
+  + escalate(when)
+  + rate(stars, comment, when)
+}
+
+class PriorityAssessment <<record>> {
+  score : int
+  impactWeight : int
+  urgencyWeight : int
+  serviceCriticality : int
+  + formula() : String
+}
+
+class AuditEntry {
+  - occurredAt : LocalDateTime
+  - action : IncidentAction
+  - oldStatus : Status
+  - newStatus : Status
+  - note : String
+}
+
+class Attachment {
+  - fileName : String
+  - kind : FileKind
+  - size : long
+}
+
+class ITService {
+  - name : String
+  - criticality : int
+}
+
+class Category {
+  - name : String
+  - keywords : Set<String>
+}
+
+class SlaPolicy {
+  - priority : Priority
+  - responseMinutes : int
+  - resolutionMinutes : int
+}
+
+interface IncidentState {
+  + transitions() : List<Transition>
+  + onEnter(incident, from, now)
+  + onExit(incident, to, now)
+}
+
+Incident "*" -left-> "1" Employee : reporter
+Incident "*" -left-> "0..1" Technician : assignee
+Incident "*" o-left- "*" User : affected
+Incident "*" -right-> "1" ITService
+Incident "*" -right-> "0..1" Category
+Technician "*" --> "*" Category : skills
+ITService "*" --> "*" ITService : dependsOn
+
+Incident *-down- "1" PriorityAssessment
+Incident *-down- "*" AuditEntry : history
+Incident *-down- "*" Attachment
+
+Incident .up.> IncidentState : each move
+Incident .up.> SlaPolicy : deadlines
+@enduml

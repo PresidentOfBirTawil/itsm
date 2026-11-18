@@ -1,0 +1,38 @@
+@startuml overview-state-machine
+!include style.iuml
+' The incident lifecycle at report size: nine statuses, ten legal moves, who makes each.
+' The full diagram, with what happens on each move, is state-machine.puml.
+
+hide empty description
+skinparam ranksep 30
+skinparam nodesep 40
+skinparam ArrowFontSize 12
+skinparam stateFontSize 13
+skinparam stateFontName Geist SemiBold
+skinparam stateFontColor #0A0A0A
+
+[*] --> NEW : report
+NEW --> CLASSIFIED : system: priority, SLA
+CLASSIFIED --> ASSIGNED : system or admin: assign
+ASSIGNED --> ACKNOWLEDGED : technician: acknowledge
+ACKNOWLEDGED --> IN_PROGRESS : technician: start
+IN_PROGRESS --> AWAITING_INFO : technician:\nrequest info
+AWAITING_INFO --> IN_PROGRESS : employee: reply\ntechnician: resume
+IN_PROGRESS --> RESOLVED : technician:\nresolve
+RESOLVED --> IN_PROGRESS : employee or admin:\nreopen
+RESOLVED --> VERIFIED : employee: confirm
+VERIFIED --> CLOSED : technician or admin: close
+CLOSED --> [*]
+
+NEW : <font:Geist><color:#737373><size:11>NewState</size></color></font>
+CLASSIFIED : <font:Geist><color:#737373><size:11>ClassifiedState</size></color></font>
+ASSIGNED : <font:Geist><color:#737373><size:11>AssignedState</size></color></font>
+ACKNOWLEDGED : <font:Geist><color:#737373><size:11>AcknowledgedState</size></color></font>
+IN_PROGRESS : <font:Geist><color:#737373><size:11>InProgressState</size></color></font>
+AWAITING_INFO : <font:Geist><color:#737373><size:11>AwaitingInfoState</size></color></font>
+AWAITING_INFO : <font:Geist><color:#737373><size:11>SLA clock paused</size></color></font>
+RESOLVED : <font:Geist><color:#737373><size:11>ResolvedState</size></color></font>
+VERIFIED : <font:Geist><color:#737373><size:11>VerifiedState</size></color></font>
+CLOSED : <font:Geist><color:#737373><size:11>ClosedState</size></color></font>
+CLOSED : <font:Geist><color:#737373><size:11>final</size></color></font>
+@enduml

@@ -1,0 +1,110 @@
+@startuml overview-database
+!include style.iuml
+' The central tables at report size, with their keys and the columns that matter most.
+' The complete schema is er-diagram.puml and er-diagram-extensions.puml.
+
+hide circle
+hide methods
+skinparam linetype ortho
+skinparam nodesep 34
+skinparam ranksep 44
+
+entity "users" as users {
+  * id <<PK>>
+  --
+  * role  <<EMPLOYEE · TECHNICIAN · ADMIN>>
+  * email  <<unique>>
+  * password_hash  <<BCrypt>>
+  max_workload, available
+}
+
+entity "incidents" as incidents {
+  * id <<PK>>
+  --
+  * code  <<unique, INC-0001>>
+  * reporter_id  <<FK>>
+  assignee_id  <<FK>>
+  * service_id  <<FK>>
+  category_id  <<FK>>
+  possible_duplicate_of_id  <<FK>>
+  * status, impact, urgency
+  priority, priority_score
+  response_due, resolution_due
+  sla_status, escalated_at
+}
+
+entity "it_services" as services {
+  * id <<PK>>
+  --
+  * name  <<unique>>
+  * criticality  <<1 to 3>>
+}
+
+entity "service_dependencies" as deps {
+  * service_id  <<FK>>
+  * depends_on_id  <<FK>>
+}
+
+entity "categories" as categories {
+  * id <<PK>>
+  --
+  * name  <<unique>>
+}
+
+entity "technician_skills" as skills {
+  * technician_id  <<FK>>
+  * category_id  <<FK>>
+}
+
+entity "sla_policies" as sla {
+  * id <<PK>>
+  --
+  * priority  <<unique>>
+  * response_minutes
+  * resolution_minutes
+}
+
+entity "audit_entries" as audit {
+  * id <<PK>>
+  --
+  * incident_id  <<FK>>
+  actor_id  <<FK>>
+  * occurred_at, action
+  old_status, new_status
+}
+
+entity "incident_affected_users" as affected {
+  * incident_id  <<FK>>
+  * user_id  <<FK>>
+}
+
+entity "attachments" as attachments {
+  * id <<PK>>
+  --
+  * incident_id  <<FK>>
+  * uploaded_by_id  <<FK>>
+  * kind, size
+}
+
+entity "notifications" as notifications {
+  * id <<PK>>
+  --
+  * recipient_id  <<FK>>
+  incident_id  <<FK>>
+  read_at
+}
+
+users ||--o{ incidents : reports
+users |o--o{ incidents : assigned
+services ||--o{ incidents
+categories |o--o{ incidents
+incidents ||--o{ audit : history
+incidents ||--o{ attachments
+incidents ||--o{ affected
+users ||--o{ affected
+users ||--o{ notifications
+services ||--o{ deps
+users ||--o{ skills
+categories ||--o{ skills
+sla .. incidents : by priority
+@enduml

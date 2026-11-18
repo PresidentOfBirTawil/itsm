@@ -1,10 +1,11 @@
 <p align="center">
-  <img src="src/main/resources/static/img/logo-192.png" width="72" alt="Quell logo">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/quell-logo-white.svg">
+    <img src="docs/brand/quell-logo.svg" height="44" alt="Quell">
+  </picture>
 </p>
 
-<h1 align="center">Quell</h1>
-
-<p align="center"><b>Intelligent IT service management.</b> IT incidents resolved before they escalate.</p>
+<p align="center"><b>Intelligent IT service management.</b> IT incidents, resolved before they escalate.</p>
 
 <p align="center">
   <a href="https://github.com/PresidentOfBirTawil/itsm/releases/latest"><b>Download for Windows, macOS or Linux</b></a> ·
@@ -13,7 +14,10 @@
   <a href="docs/INSTALL.md">Install guide</a>
 </p>
 
-![The administrator's live overview: service health, probable root cause, SLA risk with predictions](docs/report/screenshots/11-admin-overview.jpg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/report/screenshots/09-dark-mode.jpg">
+  <img src="docs/report/screenshots/05-overview.jpg" alt="The administrator's live overview: probable root cause, totals, escalations and the incidents most likely to breach next">
+</picture>
 
 Employees report IT problems in seconds, on a form, by chatting with an assistant or by voice. Quell
 then prioritises, routes, tracks and escalates them on its own, learns from every resolved incident,
@@ -81,9 +85,9 @@ Interactive documentation: <http://localhost:8080/api/docs> (OpenAPI 3.1 at `/ap
 
 | | |
 |---|---|
-| ![Assistant](docs/report/screenshots/04-assistant-known-outage.jpg) | ![Incident page](docs/report/screenshots/09-incident-page.jpg) |
-| The assistant recognises the service and offers a known outage | Suggested solutions and the predicted finish time |
-| ![Status page](docs/report/screenshots/10-status-page.jpg) | ![Integrations](docs/report/screenshots/14-integrations.jpg) |
+| ![Assistant](docs/report/screenshots/02-assistant.jpg) | ![Incident page](docs/report/screenshots/04-incident.jpg) |
+| The assistant recognises the service and offers a known outage | Root cause, suggested fixes and the predicted finish time |
+| ![Status page](docs/report/screenshots/06-status.jpg) | ![Integrations](docs/report/screenshots/07-integrations.jpg) |
 | Status page with root cause and dependency map | Webhooks to Slack, Teams and any app |
 
 ## How it is built
@@ -101,10 +105,10 @@ A layered Spring Boot application with an object-oriented domain model at its ce
 | Layer | Technology |
 |---|---|
 | Language and framework | Java 25, Spring Boot 4.1 (Spring MVC, Security, Data JPA), Hibernate 7 |
-| Pages | Thymeleaf, Bootstrap 5.3, Inter; plain JavaScript (live updates over server-sent events, chat, voice, service worker) |
+| Pages | Thymeleaf, Bootstrap 5.3 under Quell's own design system, Geist and Geist Mono; plain JavaScript (live updates over server-sent events, chat, voice, service worker) |
 | API | REST with springdoc-openapi (Swagger UI), RFC 9457 problem details |
 | Data | H2 (desktop, development, tests), PostgreSQL (servers) |
-| Quality | 617 automated tests (JUnit, AssertJ, Mockito, MockMvc), GitHub Actions |
+| Quality | 617 automated tests in 41 classes (JUnit, AssertJ, Mockito, MockMvc), GitHub Actions |
 | Delivery | jpackage installers for Windows, macOS and Linux; Docker |
 
 ```text
@@ -120,16 +124,21 @@ Run the tests with `./mvnw test` (Windows: `.\mvnw.cmd test`).
 
 ## Course project
 
-Quell is our submission for the **CS F213 / MAC F212 Object-Oriented Programming** project
-*Intelligent IT Service Management & Incident Resolution System* (brief: [docs/brief.pdf](docs/brief.pdf)).
+Quell is the submission of **Group 94** (Yatharth Soni, 2025ADPS1461H) for the **CS F213 / MAC F212
+Object-Oriented Programming** project *Intelligent IT Service Management & Incident Resolution System*
+(brief: [docs/brief.pdf](docs/brief.pdf)).
 
 | Deliverable in the brief | Where |
 |---|---|
-| 1–5. Problem analysis, requirements, architecture, UML diagrams, technology stack and the nine questions | [Project report (PDF)](docs/report/Quell-Project-Report.pdf), sections 1–11 · editable [DOCX](docs/report/Quell-Project-Report.docx) |
-| UML and ER diagrams (sources and pictures) | [docs/diagrams](docs/diagrams/) |
+| 1. Problem analysis | [Project report (PDF)](docs/report/Quell-Project-Report.pdf), section 1 |
+| 2. Requirements specification | report section 2 and appendix A |
+| 3. System architecture | report section 3 |
+| 4. UML diagrams | report section 4 and appendix C · sources in [docs/diagrams](docs/diagrams/) |
+| 5. Technology stack and the nine questions | report section 7 |
 | 6. Source code | this repository |
-| 7. Database design | report section 12 |
-| 8. Testing (36 documented cases, 617 automated tests) | report section 13 · [docs/test-cases.md](docs/test-cases.md) |
-| 9. Project demonstration (three workflows) | report section 15 · [video script](docs/video-script.md) |
+| 7. Database design | report section 8 |
+| 8. Testing (36 documented cases, 617 automated tests) | report section 9 and appendix B · [docs/test-cases.md](docs/test-cases.md) |
+| 9. Project demonstration (three workflows) | report section 12 · [video script](docs/video-script.md) |
 
-The report is built from Markdown with `docs/report/build.sh` (pandoc and Chromium).
+The report is written in Markdown (`docs/report/content`) and built into a PDF with `docs/report/build.sh`
+(pandoc, Chromium and PlantUML diagrams).

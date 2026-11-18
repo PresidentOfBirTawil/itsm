@@ -1,35 +1,55 @@
 # Diagrams
 
-The diagrams are written in [PlantUML](https://plantuml.com). Each `.puml` file is the source and the
-`.png` next to it is the rendered picture, ready to paste into the report.
+Every diagram is written in [PlantUML](https://plantuml.com) and drawn from the real code: each class,
+method and relationship exists in `src/main/java/com/itsm`. Each `.puml` file is the source; the `.svg`
+(vector, used by the report) and `.png` next to it are the rendered pictures. All of them include
+[`style.iuml`](style.iuml), so they share one monochrome style set in Geist.
 
-| Diagram | Source | Picture |
-|---|---|---|
-| Architecture: components, layers and integrations | [architecture.puml](architecture.puml) | [architecture.png](architecture.png) |
-| Use cases: who can do what | [use-case.puml](use-case.puml) | [use-case.png](use-case.png) |
-| Class diagram 1: the domain model (inheritance, associations, composition) | [class-diagram.puml](class-diagram.puml) | [class-diagram.png](class-diagram.png) |
-| Class diagram 2: interfaces and design patterns | [class-diagram-patterns.puml](class-diagram-patterns.puml) | [class-diagram-patterns.png](class-diagram-patterns.png) |
-| Class diagram 3: intelligence, service map and assistant | [class-diagram-intelligence.puml](class-diagram-intelligence.puml) | [class-diagram-intelligence.png](class-diagram-intelligence.png) |
-| Class diagram 4: integrations, security and files | [class-diagram-integrations.puml](class-diagram-integrations.puml) | [class-diagram-integrations.png](class-diagram-integrations.png) |
-| Incident state machine | [state-machine.puml](state-machine.puml) | [state-machine.png](state-machine.png) |
-| Sequence: an employee reports an incident | [sequence-report-incident.puml](sequence-report-incident.puml) | [sequence-report-incident.png](sequence-report-incident.png) |
-| Entity-relationship diagram 1: the core tables | [er-diagram.puml](er-diagram.puml) | [er-diagram.png](er-diagram.png) |
-| Entity-relationship diagram 2: knowledge, service map, files, API and webhooks | [er-diagram-extensions.puml](er-diagram-extensions.puml) | [er-diagram-extensions.png](er-diagram-extensions.png) |
+## Report-sized views
 
-The class diagram is split in four, and the ER diagram in two, so that each part stays readable on a page.
-All are drawn from the real classes: every class, method and relationship in them exists in `src/main/java/com/itsm`.
+Small, focused diagrams that stay readable on an A4 page. The project report uses these in its main sections.
+
+| Diagram | Source |
+|---|---|
+| Use cases: what each kind of user does | [overview-use-cases.puml](overview-use-cases.puml) |
+| Domain model: main classes, attributes, methods and relationships | [overview-domain-model.puml](overview-domain-model.puml) |
+| Incident lifecycle: nine statuses, ten moves | [overview-state-machine.puml](overview-state-machine.puml) |
+| State pattern | [pattern-state.puml](pattern-state.puml) |
+| Strategy and Template Method | [pattern-strategy.puml](pattern-strategy.puml) |
+| Observer | [pattern-observer.puml](pattern-observer.puml) |
+| Factory and Strategy for notifications | [pattern-notification.puml](pattern-notification.puml) |
+| Exception hierarchy | [pattern-exceptions.puml](pattern-exceptions.puml) |
+| Database: the central tables | [overview-database.puml](overview-database.puml) |
+
+## Complete diagrams
+
+| Diagram | Source |
+|---|---|
+| Architecture: components, layers and integrations | [architecture.puml](architecture.puml) |
+| Use cases: every actor and use case | [use-case.puml](use-case.puml) |
+| Class diagram 1: the domain model (inheritance, associations, composition) | [class-diagram.puml](class-diagram.puml) |
+| Class diagram 2: interfaces and design patterns | [class-diagram-patterns.puml](class-diagram-patterns.puml) |
+| Class diagram 3: intelligence, service map and assistant | [class-diagram-intelligence.puml](class-diagram-intelligence.puml) |
+| Class diagram 4: integrations, security and files | [class-diagram-integrations.puml](class-diagram-integrations.puml) |
+| Incident state machine | [state-machine.puml](state-machine.puml) |
+| Sequence: an employee reports an incident | [sequence-report-incident.puml](sequence-report-incident.puml) |
+| Entity-relationship diagram 1: the core tables | [er-diagram.puml](er-diagram.puml) |
+| Entity-relationship diagram 2: knowledge, service map, files, API and webhooks | [er-diagram-extensions.puml](er-diagram-extensions.puml) |
 
 ## Rendering them again
 
-After changing a `.puml` file, render the pictures again with the PlantUML jar (it needs Java and
-[Graphviz](https://graphviz.org)):
+After changing a `.puml` file, render the pictures again with the PlantUML jar (it needs Java,
+[Graphviz](https://graphviz.org) and the Geist fonts installed), from this folder:
 
 ```bash
-java -jar plantuml.jar -tpng docs/diagrams/*.puml
+java -jar plantuml.jar -tsvg *.puml
 ```
 
-Or paste the text of a `.puml` file into the online editor at plantuml.com, or open it with the
-PlantUML plugin of IntelliJ IDEA or VS Code.
+```bash
+java -jar plantuml.jar -tpng -Sdpi=150 *.puml
+```
+
+Or open a `.puml` file with the PlantUML plugin of IntelliJ IDEA or VS Code.
 
 ## How to read the arrows in the class diagrams
 

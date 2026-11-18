@@ -1,6 +1,6 @@
 # Test cases
 
-The project has **617 automated tests** in 43 test classes (JUnit 5, AssertJ, Mockito, Spring's MockMvc,
+The project has **617 automated tests** in 41 test classes (JUnit 6, AssertJ, Mockito, Spring's MockMvc,
 Awaitility). They run with one command and need nothing installed except Java 25:
 
 ```bash
@@ -129,10 +129,9 @@ exception classes extend the one abstract `ItsmException`.
 | `UserManagementTests` | 12 | Adding users, disabling and enabling accounts, ending a disabled user's session. |
 | `AuditLogAndReportTests` | 8 | The administrator's audit log with its filters, and the report figures. |
 | `DatabaseFailureTests` | 4 | A database failure gives a readable 503 page and leaves nothing half-saved. |
-| `DemoDataResetTests` | 8 | "Reset demo data": what is removed, what is kept, and that the sample incidents obey the rules. |
-| `LiveUpdatesTests` | 14 | Live updates as plain objects: who is sent which message, broken connections, waiting for the commit. |
+| `DemoDataResetTests` | 9 | "Reset demo data": what is removed, what is kept, and that the sample incidents obey the rules. |
+| `LiveUpdatesTests` | 15 | Live updates as plain objects: who is sent which message, broken connections, waiting for the commit. |
 | `LiveUpdatesWebTests` | 13 | The live stream in the running application: sign-in required, the right messages arrive, streams close when they should. |
-| **Total** | **498** | |
 | `KnowledgeAndAiTests` | 14 | Knowledge base search, voting, permissions, suggested solutions, write-ups, the learning classifier and its second opinion, live form suggestions. |
 | `TextIntelligenceTests` | 12 | TF-IDF similarity, multinomial naive Bayes (probabilities, weights, no guessing) and smart triage of plain words. |
 | `SlaPredictorTests` | 7 | The predicted finish time and breach risk from similar past incidents, per technician speed. |
@@ -145,6 +144,7 @@ exception classes extend the one abstract `ItsmException`.
 | `SecurityHardeningTests` | 6 | Content security policy and other headers, no inline scripts, sign-in lockout and its expiry. |
 | `AppShellTests` | 3 | The installable app: manifest, service worker, offline page, desktop alert controls. |
 | `DesktopAndBrandTests` | 7 | The desktop launcher's data folder, single instance and port, and the product name everywhere. |
+| **Total** | **617** | |
 
 ## How the tests are built
 

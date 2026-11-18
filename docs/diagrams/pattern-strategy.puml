@@ -1,0 +1,48 @@
+@startuml pattern-strategy
+!include style.iuml
+' Strategy and Template Method: interchangeable assignment rules that share one skeleton.
+
+set separator none
+hide empty members
+skinparam nodesep 22
+skinparam ranksep 40
+
+class AssignmentService <<service>> {
+  + useStrategy(key)
+  + autoAssign(incident, actor) : boolean
+}
+
+interface AssignmentStrategy {
+  + getKey() : String
+  + choose(incident, loads) : Technician
+}
+
+abstract class AbstractAssignmentStrategy {
+  + {final} choose(incident, loads) : Technician
+  # {abstract} pick(incident, ableToTakeMore) : Optional<TechnicianLoad>
+}
+
+class SkillBasedStrategy {
+  # pick() : fewest open among the skilled
+}
+class LeastLoadedStrategy {
+  # pick() : fewest open incidents
+}
+class RoundRobinStrategy {
+  # pick() : next in turn
+}
+
+class TechnicianLoad <<record>> {
+  technician : Technician
+  openIncidents : long
+  + canTakeMore() : boolean
+}
+
+AssignmentService o-- "3" AssignmentStrategy : all, one active
+AssignmentStrategy <|.. AbstractAssignmentStrategy
+AbstractAssignmentStrategy <|-- SkillBasedStrategy
+AbstractAssignmentStrategy <|-- LeastLoadedStrategy
+AbstractAssignmentStrategy <|-- RoundRobinStrategy
+AssignmentStrategy .right.> TechnicianLoad
+
+@enduml

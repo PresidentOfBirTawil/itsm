@@ -1424,6 +1424,9 @@ a.kb-card:hover {
 }
 
 a.root-cause-card { color: inherit; }
+/* Long incident titles in the root-cause card wrap instead of pushing past the card on a phone. */
+.root-cause-body { min-width: 0; flex: 1 1 auto; }
+.root-cause-body .badge { white-space: normal; text-align: start; line-height: 1.4; }
 a.root-cause-card:hover { border-color: color-mix(in srgb, var(--red) 45%, transparent) !important; }
 
 .known-issue {

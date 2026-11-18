@@ -1,0 +1,37 @@
+@startuml pattern-exceptions
+!include style.iuml
+' One exception class per broken rule, all under ItsmException.
+
+set separator none
+left to right direction
+hide empty members
+skinparam nodesep 6
+skinparam ranksep 40
+
+class RuntimeException
+abstract class ItsmException
+class InvalidStateTransitionException
+class TechnicianUnavailableException
+class WorkloadExceededException
+class MissingSlaConfigurationException
+class DuplicateIncidentException
+class UnauthorizedOperationException
+class InvalidInputException
+class EmailAlreadyRegisteredException
+class NotFoundException
+class IncidentNotFoundException
+class ServiceNotFoundException
+
+RuntimeException <|-- ItsmException
+ItsmException <|-- InvalidStateTransitionException
+ItsmException <|-- TechnicianUnavailableException
+ItsmException <|-- WorkloadExceededException
+ItsmException <|-- MissingSlaConfigurationException
+ItsmException <|-- DuplicateIncidentException
+ItsmException <|-- UnauthorizedOperationException
+ItsmException <|-- InvalidInputException
+ItsmException <|-- NotFoundException
+InvalidInputException <|-- EmailAlreadyRegisteredException
+NotFoundException <|-- IncidentNotFoundException
+NotFoundException <|-- ServiceNotFoundException
+@enduml

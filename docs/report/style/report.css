@@ -1,0 +1,517 @@
+/*
+ * Quell project report: print stylesheet ("Graphite").
+ * Monochrome, Geist and Geist Mono, thin rules, colour only for status dots.
+ * Rendered to PDF by Chromium (see render.js); A4, page numbers in the margin boxes.
+ */
+
+:root {
+  --ink: #0a0a0a;
+  --text: #262626;
+  --soft: #404040;
+  --muted: #737373;
+  --faint: #a3a3a3;
+  --line: #e5e5e5;
+  --line-strong: #d4d4d4;
+  --mist: #f5f5f5;
+  --paper: #ffffff;
+  --red: #e5484d;
+  --amber: #f5a524;
+  --green: #30a46c;
+  --blue: #3e63dd;
+  --sans: "Geist", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* ---------- pages ---------- */
+
+@page {
+  size: A4;
+  margin: 18mm 20mm 20mm 20mm;
+  @bottom-left {
+    content: "Quell  ·  Project report";
+    font: 400 7pt var(--sans);
+    color: var(--faint);
+    vertical-align: top;
+    padding-top: 6mm;
+  }
+  @bottom-right {
+    content: "Group 94  ·  " counter(page);
+    font: 400 7pt var(--mono);
+    color: var(--faint);
+    vertical-align: top;
+    padding-top: 6mm;
+  }
+}
+
+@page cover {
+  margin: 0;
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+@page wide {
+  size: A4 landscape;
+  margin: 14mm 16mm 16mm 16mm;
+  @bottom-left {
+    content: "Quell  ·  Project report";
+    font: 400 7pt var(--sans);
+    color: var(--faint);
+    vertical-align: top;
+    padding-top: 4mm;
+  }
+  @bottom-right {
+    content: "Group 94  ·  " counter(page);
+    font: 400 7pt var(--mono);
+    color: var(--faint);
+    vertical-align: top;
+    padding-top: 4mm;
+  }
+}
+
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 9.4pt;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--paper);
+  font-feature-settings: "ss01" 0, "tnum" 0;
+  counter-reset: chapter appendix figure;
+  text-rendering: geometricPrecision;
+  hyphens: manual;
+}
+
+/* ---------- type ---------- */
+
+h1, h2, h3, h4 {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+p { margin: 0 0 7pt; orphans: 3; widows: 3; }
+strong, b { font-weight: 600; color: var(--ink); }
+em { font-style: italic; }
+a { color: inherit; text-decoration: none; }
+p a, li a, td a { border-bottom: 0.6pt solid var(--line-strong); }
+ul, ol { margin: 0 0 8pt; padding-left: 14pt; }
+li { margin: 0 0 3pt; }
+li::marker { color: var(--faint); }
+hr { border: 0; border-top: 0.6pt solid var(--line); margin: 14pt 0; }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  color: var(--ink);
+  background: var(--mist);
+  border-radius: 3px;
+  padding: 0.5pt 3pt;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  font-family: var(--mono);
+  font-size: 7.6pt;
+  line-height: 1.5;
+  background: #fafafa;
+  border: 0.6pt solid var(--line);
+  border-radius: 6px;
+  padding: 8pt 10pt;
+  margin: 0 0 10pt;
+  white-space: pre-wrap;
+  break-inside: avoid;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.mono { font-family: var(--mono); letter-spacing: -0.01em; }
+.muted { color: var(--muted); }
+
+/* ---------- sections ---------- */
+
+section.level1 { break-before: page; page-break-before: always; }
+
+section.level1 > h1 {
+  font-size: 23pt;
+  letter-spacing: -0.03em;
+  margin: 0 0 9pt;
+  padding-top: 9pt;
+  border-top: 1.2pt solid var(--ink);
+}
+
+section.level1 > h1::before {
+  display: block;
+  font: 500 7.5pt/1 var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 15pt;
+  text-transform: uppercase;
+}
+
+section.level1.chapter { counter-increment: chapter; }
+section.level1.chapter > h1::before { content: counter(chapter, decimal-leading-zero); }
+section.level1.appendix { counter-increment: appendix; }
+section.level1.appendix > h1::before { content: "Appendix " counter(appendix, upper-alpha); }
+
+/* the first paragraph of every section is its summary */
+section.level1 > h1 + p {
+  font-size: 11.2pt;
+  line-height: 1.5;
+  color: var(--soft);
+  letter-spacing: -0.005em;
+  margin: 0 0 16pt;
+  max-width: 150mm;
+}
+
+section.level1 { counter-reset: sub; }
+section.level2 > h2 {
+  font-size: 12.5pt;
+  margin: 17pt 0 6pt;
+  counter-increment: sub;
+}
+section.level1.chapter section.level2 > h2::before {
+  content: counter(chapter) "." counter(sub);
+  font: 500 8pt var(--mono);
+  color: var(--faint);
+  margin-right: 9pt;
+  letter-spacing: 0;
+  vertical-align: 1.5pt;
+}
+section.level1.appendix section.level2 > h2::before {
+  content: counter(appendix, upper-alpha) "." counter(sub);
+  font: 500 8pt var(--mono);
+  color: var(--faint);
+  margin-right: 9pt;
+  vertical-align: 1.5pt;
+}
+
+h3 {
+  font-size: 9.6pt;
+  margin: 12pt 0 4pt;
+}
+
+.eyebrow {
+  font: 500 7.2pt/1.2 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6pt;
+}
+
+/* ---------- tables ---------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2pt 0 12pt;
+  font-size: 8.3pt;
+  line-height: 1.42;
+  font-variant-numeric: tabular-nums;
+}
+thead { display: table-header-group; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+th {
+  text-align: left;
+  font: 500 6.6pt/1.3 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 8pt 5pt 0;
+  border-bottom: 0.9pt solid var(--ink);
+  vertical-align: bottom;
+}
+td {
+  padding: 4.6pt 8pt 4.6pt 0;
+  border-bottom: 0.5pt solid var(--line);
+  vertical-align: top;
+}
+td:last-child, th:last-child { padding-right: 0; }
+td code { font-size: 0.84em; padding: 0 2pt; }
+table caption { display: none; }
+
+/* first column holds an identifier: keep it on one line, in mono */
+.ids td:first-child { font-family: var(--mono); font-size: 7.6pt; white-space: nowrap; color: var(--ink); padding-top: 5.3pt; }
+/* first column is a name: bold */
+.keys td:first-child { font-weight: 600; color: var(--ink); }
+.nowrap1 td:first-child { white-space: nowrap; }
+.compact table { font-size: 7.8pt; }
+.compact td { padding: 3.4pt 7pt 3.4pt 0; }
+.right td:last-child, .right th:last-child { text-align: right; }
+
+/* ---------- figures ---------- */
+
+figure {
+  margin: 8pt 0 14pt;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+figure img { display: block; margin: 0 auto; max-width: 100%; }
+figcaption {
+  counter-increment: figure;
+  font-size: 7.8pt;
+  line-height: 1.45;
+  color: var(--muted);
+  margin-top: 7pt;
+  padding-top: 6pt;
+  border-top: 0.5pt solid var(--line);
+}
+figcaption::before {
+  content: "Figure " counter(figure);
+  font: 600 7.8pt var(--sans);
+  color: var(--ink);
+  margin-right: 6pt;
+}
+
+.shot img {
+  border: 0.6pt solid var(--line-strong);
+  border-radius: 6px;
+}
+
+/* image widths, set with {.w60} etc. on a div around the figure */
+.w45 img { width: 45%; } .w50 img { width: 50%; } .w55 img { width: 55%; }
+.w60 img { width: 60%; } .w65 img { width: 65%; } .w70 img { width: 70%; }
+.w75 img { width: 75%; } .w80 img { width: 80%; } .w85 img { width: 85%; }
+.w90 img { width: 90%; } .full img { width: 100%; }
+
+/* landscape pages for wide diagrams and tables */
+/* pandoc copies a heading's classes to both the section and the heading: style the section only */
+section.landscape { page: wide; break-before: page; page-break-before: always; }
+section.level2.landscape { break-inside: avoid; }
+section.landscape figure { margin: 0; }
+section.landscape figure img { max-height: 146mm; width: auto; max-width: 100%; }
+section.landscape > h2 { margin-top: 0; }
+section.landscape + section { break-before: page; page-break-before: always; }
+
+/* two columns: text beside a figure */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16pt; align-items: start; }
+.split.wide-left { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.split.wide-right { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+.split > * { min-width: 0; }
+.split figure { margin-top: 0; }
+
+/* ---------- callouts ---------- */
+
+.note {
+  border-left: 2pt solid var(--ink);
+  background: #fafafa;
+  padding: 8pt 11pt;
+  margin: 4pt 0 12pt;
+  break-inside: avoid;
+}
+.note p:last-child { margin-bottom: 0; }
+.note .eyebrow { margin-bottom: 4pt; }
+
+.formula {
+  font: 500 10.5pt/1.5 var(--mono);
+  color: var(--ink);
+  background: #fafafa;
+  border: 0.6pt solid var(--line);
+  border-radius: 6px;
+  padding: 10pt 12pt;
+  margin: 2pt 0 12pt;
+  letter-spacing: -0.01em;
+  break-inside: avoid;
+}
+.formula p { margin: 0; }
+.formula .muted { font-weight: 400; }
+
+/* key figures */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 0.9pt solid var(--ink);
+  border-bottom: 0.5pt solid var(--line);
+  margin: 4pt 0 16pt;
+}
+.stats > div { padding: 10pt 10pt 11pt 0; }
+.stats > div + div { padding-left: 12pt; border-left: 0.5pt solid var(--line); }
+.stats .value {
+  font: 600 25pt/1 var(--sans);
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  margin-bottom: 6pt;
+}
+.stats .value small { font-size: 13pt; letter-spacing: -0.02em; color: var(--muted); font-weight: 500; }
+.stats .label { font-size: 7.8pt; line-height: 1.35; color: var(--muted); }
+
+/* status dots, the only colour in the report */
+.dot { display: inline-block; width: 5.5pt; height: 5.5pt; border-radius: 50%; margin-right: 4pt; vertical-align: 0.3pt; }
+.dot.red { background: var(--red); } .dot.amber { background: var(--amber); }
+.dot.green { background: var(--green); } .dot.blue { background: var(--blue); }
+.dot.gray { background: var(--faint); }
+
+.check { font-family: var(--sans); color: var(--green); font-weight: 600; }
+.cross { color: var(--faint); }
+
+/* small labelled lists: label in mono, value beside */
+dl.facts { display: grid; grid-template-columns: 17mm minmax(0, 1fr); gap: 5pt 8pt; margin: 0 0 10pt; font-size: 8.4pt; line-height: 1.45; }
+dl.facts dt { font: 500 7pt/1.6 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+dl.facts dd { margin: 0; overflow-wrap: anywhere; }
+
+/* ---------- cover ---------- */
+
+.cover {
+  page: cover;
+  position: relative;
+  width: 210mm;
+  height: 296.6mm;
+  overflow: hidden;
+  background: var(--ink);
+  color: #fafafa;
+  break-after: page;
+}
+.cover .logo { position: absolute; left: 22mm; top: 22mm; width: 30mm; }
+.cover .ring {
+  position: absolute;
+  right: -72mm;
+  bottom: -50mm;
+  width: 190mm;
+  opacity: 1;
+}
+.cover .title-block { position: absolute; left: 22mm; top: 92mm; right: 30mm; }
+.cover .kicker {
+  font: 500 7.5pt/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8f8f8f;
+  margin: 0 0 16pt;
+}
+.cover h1.cover-title {
+  font: 600 30pt/1.08 var(--sans);
+  letter-spacing: -0.035em;
+  color: #fafafa;
+  margin: 0 0 14pt;
+  max-width: 150mm;
+  border: 0;
+  padding: 0;
+}
+.cover .subtitle { font-size: 11.5pt; line-height: 1.5; color: #a3a3a3; max-width: 128mm; margin: 0; }
+.cover .meta {
+  position: absolute;
+  left: 22mm;
+  bottom: 22mm;
+  width: 120mm;
+  display: grid;
+  grid-template-columns: 26mm 1fr;
+  gap: 5.5pt 8pt;
+  font-size: 8.6pt;
+  line-height: 1.45;
+  color: #e5e5e5;
+}
+.cover .meta .k { font: 500 6.8pt/1.75 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: #7a7a7a; }
+.cover .meta .v { color: #f5f5f5; }
+.cover .meta .rule { grid-column: 1 / -1; border-top: 0.5pt solid #2e2e2e; margin: 4pt 0; }
+
+/* ---------- front matter ---------- */
+
+section.front > h1 { border-top: 1.2pt solid var(--ink); }
+section.front > h1::before { content: attr(data-kicker); }
+
+.glance-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22pt; margin-top: 2pt; }
+.glance-grid h3 { margin-top: 0; font-size: 9.6pt; }
+.glance-grid table { font-size: 8pt; }
+.glance-grid td { padding: 3.6pt 6pt 3.6pt 0; }
+.flows { list-style: none; padding: 0; margin: 0 0 12pt; counter-reset: flow; }
+.flows li { counter-increment: flow; position: relative; padding: 0 0 7pt 18pt; margin: 0 0 7pt; border-bottom: 0.5pt solid var(--line); font-size: 8.4pt; line-height: 1.45; }
+.flows li::before { content: counter(flow); position: absolute; left: 0; top: 0; font: 600 8pt var(--mono); color: var(--ink); }
+.flows li b { display: block; font-size: 8.6pt; }
+
+/* contents */
+.toc { columns: 1; }
+.toc-entry {
+  display: grid;
+  grid-template-columns: 13mm 1fr auto;
+  align-items: baseline;
+  padding: 3.6pt 0;
+  border-bottom: 0.5pt solid var(--line);
+  break-inside: avoid;
+}
+.toc-entry .n { font: 500 7.6pt var(--mono); color: var(--muted); }
+.toc-entry .t { font-size: 9.6pt; font-weight: 600; color: var(--ink); }
+.toc-entry .p { font: 500 7.6pt var(--mono); color: var(--muted); }
+.toc-entry .subs { grid-column: 2 / 3; font-size: 7.6pt; line-height: 1.5; color: var(--muted); margin-top: 1.5pt; }
+.toc-entry.appx .n { letter-spacing: 0.02em; }
+.toc-part { font: 500 7pt var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 14pt 0 4pt; }
+
+/* ---------- product tour ---------- */
+
+.tour-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; }
+.tour-pair figure { margin: 0 0 10pt; }
+.tour-trio { display: grid; grid-template-columns: 1fr 1fr 0.55fr; gap: 12pt; align-items: start; }
+.tour-trio figure { margin: 0 0 10pt; }
+
+/* ---------- architecture figure (HTML) ---------- */
+
+.arch { font-size: 7.6pt; line-height: 1.35; margin: 4pt 0 6pt; break-inside: avoid; }
+.arch .row { display: grid; grid-template-columns: 24mm 1fr; gap: 0 8pt; align-items: stretch; margin-bottom: 5pt; }
+.arch .row > .lbl { font: 500 6.4pt/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-top: 7pt; }
+.arch .boxes { display: grid; gap: 5pt; }
+.arch .c2 { grid-template-columns: repeat(2, 1fr); }
+.arch .c3 { grid-template-columns: repeat(3, 1fr); }
+.arch .c4 { grid-template-columns: repeat(4, 1fr); }
+.arch .c5 { grid-template-columns: repeat(5, 1fr); }
+.arch .c6 { grid-template-columns: repeat(6, 1fr); }
+.arch .box {
+  border: 0.7pt solid var(--ink);
+  border-radius: 5px;
+  padding: 5pt 6pt 5.5pt;
+  background: #fff;
+}
+.arch .box b { display: block; font-size: 7.9pt; font-weight: 600; color: var(--ink); margin-bottom: 1.5pt; }
+.arch .box span { color: var(--muted); display: block; }
+.arch .box.soft { border-color: var(--line-strong); background: #fafafa; }
+.arch .box.dark { background: var(--ink); border-color: var(--ink); color: #d4d4d4; }
+.arch .box.dark b { color: #fff; }
+.arch .box.dark span { color: #a3a3a3; }
+.arch .flow { text-align: center; font: 500 6.4pt var(--mono); letter-spacing: 0.06em; color: var(--faint); margin: -1pt 0 4pt 32mm; text-transform: uppercase; }
+.arch .span2 { grid-column: span 2; }
+.arch .span3 { grid-column: span 3; }
+
+/* steps: numbered process strip */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 4pt 0 14pt; border-top: 0.9pt solid var(--ink); break-inside: avoid; }
+.steps > div { padding: 7pt 8pt 8pt 0; font-size: 7.9pt; line-height: 1.42; color: var(--soft); border-bottom: 0.5pt solid var(--line); }
+.steps > div:nth-child(4n+2), .steps > div:nth-child(4n+3), .steps > div:nth-child(4n+4) { padding-left: 9pt; border-left: 0.5pt solid var(--line); }
+.steps .k { display: block; font: 600 7.4pt var(--mono); color: var(--ink); margin-bottom: 2pt; }
+
+/* appendix tables can be denser */
+section.appendix table { font-size: 7.7pt; }
+section.appendix td { padding: 3.6pt 7pt 3.6pt 0; }
+section.appendix .ids td:first-child { font-size: 7.1pt; }
+
+.pagebreak { break-before: page; page-break-before: always; }
+.keep { break-inside: avoid; page-break-inside: avoid; }
+
+/* ---------- additions ---------- */
+
+/* questions and answers: the bold lead-in carries the question */
+.qa p { margin: 0 0 9pt; }
+.qa p strong:first-child { font-weight: 600; }
+
+/* six small figures (test kinds) */
+.stats.kinds { grid-template-columns: repeat(6, 1fr); margin-top: 2pt; }
+.stats.kinds .value { font-size: 17pt; margin-bottom: 3pt; }
+.stats.kinds > div { padding-top: 7pt; padding-bottom: 8pt; }
+
+/* the central table's schema, in two columns */
+.schema pre { column-count: 2; column-gap: 20pt; column-rule: 0.5pt solid var(--line); font-size: 7pt; line-height: 1.55; break-inside: avoid; }
+
+/* a diagram alone on a portrait page */
+section.fullpage { break-before: page; page-break-before: always; }
+section.fullpage > h2 { margin-top: 0; }
+section.fullpage figure img { max-height: 226mm; width: auto; max-width: 100%; }
+
+/* the documented test cases, on landscape pages */
+.tc table { font-size: 7.1pt; line-height: 1.38; }
+.tc td { padding: 3.6pt 6pt 3.6pt 0; }
+.tc td:last-child code { font-size: 6.6pt; background: none; padding: 0; color: var(--soft); }
+
+dl.facts.wide { grid-template-columns: 30mm minmax(0, 1fr); margin-top: 6pt; }
+
+/* a table of two side-by-side lists: the third column is a name too */
+.pairs td:nth-child(3) { font-weight: 600; color: var(--ink); padding-left: 10pt; border-left: 0.5pt solid var(--line); }
+.pairs th:nth-child(3) { padding-left: 10pt; }

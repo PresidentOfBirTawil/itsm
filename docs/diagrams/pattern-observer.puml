@@ -1,0 +1,45 @@
+@startuml pattern-observer
+!include style.iuml
+' Observer: everything that must happen when an incident changes is a listener.
+' The hidden links only arrange the five listeners in two rows.
+
+set separator none
+hide empty members
+skinparam nodesep 18
+skinparam ranksep 36
+
+class IncidentService <<service>> {
+  + report(…) : Incident
+  + changeStatus(…)
+}
+
+class IncidentEvent <<record>> {
+  incident, actor, action
+  oldStatus, newStatus, note
+}
+
+class IncidentEventPublisher {
+  + publish(event)
+}
+
+interface IncidentEventListener {
+  + onIncidentEvent(event)
+}
+
+class AuditTrailListener
+class NotificationListener
+class LiveUpdateListener
+class CategoryClassifier
+class WebhookListener
+
+IncidentService --> IncidentEventPublisher : publish
+IncidentEventPublisher .right.> IncidentEvent
+IncidentEventPublisher o-- "*" IncidentEventListener : listeners
+IncidentEventListener <|.. AuditTrailListener
+IncidentEventListener <|.. NotificationListener
+IncidentEventListener <|.. LiveUpdateListener
+IncidentEventListener <|.. CategoryClassifier
+IncidentEventListener <|.. WebhookListener
+AuditTrailListener -[hidden]down- CategoryClassifier
+NotificationListener -[hidden]down- WebhookListener
+@enduml
