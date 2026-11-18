@@ -1,16 +1,10 @@
 @startuml class-diagram
+!include style.iuml
 ' The domain model, drawn from the classes in com.itsm.domain.
 ' Legend:  <|--  inheritance    -->  association    *--  composition    ..>  uses
 title Quell · Class diagram 1: the domain model (com.itsm.domain)
 
 set separator none
-skinparam shadowing false
-skinparam classAttributeIconSize 0
-skinparam class {
-  BackgroundColor #F7F9FC
-  BorderColor #4A5568
-  ArrowColor #2D3748
-}
 hide empty members
 
 abstract class User {

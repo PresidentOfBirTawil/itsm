@@ -6,15 +6,14 @@
     <div class="row justify-content-center align-items-center g-4 g-xl-5 py-lg-4">
         <!-- Left: what the product is, for someone who has never seen it -->
         <div class="col-lg-6 col-xl-5 d-none d-lg-block">
-            <img th:src="@{/img/logo.svg}" width="56" height="56" alt="" class="mb-3 rounded-3">
-            <h1 class="display-6 fw-semibold mb-2" th:text="${@brand.name}">Quell</h1>
-            <p class="lead text-body-secondary mb-4">Report an IT problem in seconds. It is prioritised, routed to the
-                right technician and tracked against its deadline, automatically.</p>
+            <svg th:replace="~{fragments/brand :: mark(30)}"></svg>
+            <h1 class="auth-title mt-4 mb-3">Calm for your<br>service desk.</h1>
+            <p class="lead mb-4">Report an IT problem in seconds. <span th:text="${@brand.name}">Quell</span> prioritises it,
+                routes it to the right technician and watches the deadline, automatically.</p>
             <ul class="list-unstyled login-points">
-                <li><i class="bi bi-stars text-primary me-2"></i>Learns from every incident: suggests the category,
-                    the fix and the likely finish time</li>
-                <li><i class="bi bi-stopwatch text-primary me-2"></i>Watches every deadline and warns before it is missed</li>
-                <li><i class="bi bi-lightning-charge text-primary me-2"></i>Dashboards and queues update live</li>
+                <li><span class="eyebrow">01</span><span>Suggests the category, the fix and the likely finish time, learned from your own history</span></li>
+                <li><span class="eyebrow">02</span><span>Warns before a deadline is missed and escalates what nobody picks up</span></li>
+                <li><span class="eyebrow">03</span><span>Dashboards, queues and notifications update live</span></li>
             </ul>
         </div>
 

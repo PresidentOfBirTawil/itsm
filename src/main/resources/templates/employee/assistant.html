@@ -27,7 +27,7 @@
                         <div class="chat-row" th:each="message : ${conversation.transcript}"
                              th:classappend="${message.fromAssistant} ? 'chat-in' : 'chat-out'">
                             <div class="chat-avatar" th:if="${message.fromAssistant}" aria-hidden="true">
-                                <img th:src="@{/img/logo.svg}" alt="" width="18" height="18">
+                                <svg th:replace="~{fragments/brand :: mark(11)}"></svg>
                             </div>
                             <div class="chat-bubble">
                                 <span class="chat-text"><th:block th:each="part : ${message.parts()}"><strong th:if="${part.bold}" th:text="${part.text}">INC-0001</strong><th:block th:unless="${part.bold}" th:text="${part.text}">Text</th:block></th:block></span>

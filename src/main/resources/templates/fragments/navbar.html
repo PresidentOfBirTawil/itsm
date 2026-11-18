@@ -13,7 +13,7 @@
     <!-- Visitor: not signed in -->
     <nav class="navbar navbar-expand app-nav navbar-guest" sec:authorize="isAnonymous()">
         <div class="container">
-            <a class="navbar-brand" th:href="@{/}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
+            <a class="navbar-brand" th:href="@{/}"><svg th:replace="~{fragments/brand :: mark(18)}"></svg><span th:text="${@brand.name}">Quell</span></a>
             <ul class="navbar-nav ms-auto align-items-center gap-1">
                 <li class="nav-item d-none d-sm-block">
                     <a class="nav-link" th:href="@{/#download}">Download</a>
@@ -34,7 +34,7 @@
     <!-- Employee -->
     <nav class="navbar navbar-expand-lg app-nav navbar-employee" sec:authorize="hasRole('EMPLOYEE')">
         <div class="container">
-            <a class="navbar-brand" th:href="@{/employee/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
+            <a class="navbar-brand" th:href="@{/employee/dashboard}"><svg th:replace="~{fragments/brand :: mark(18)}"></svg><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -74,7 +74,7 @@
     <!-- Technician -->
     <nav class="navbar navbar-expand-lg app-nav navbar-technician" sec:authorize="hasRole('TECHNICIAN')">
         <div class="container">
-            <a class="navbar-brand" th:href="@{/technician/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
+            <a class="navbar-brand" th:href="@{/technician/dashboard}"><svg th:replace="~{fragments/brand :: mark(18)}"></svg><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -110,7 +110,7 @@
     <!-- Administrator -->
     <nav class="navbar navbar-expand-lg app-nav navbar-admin" sec:authorize="hasRole('ADMIN')">
         <div class="container">
-            <a class="navbar-brand" th:href="@{/admin/dashboard}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt="" class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
+            <a class="navbar-brand" th:href="@{/admin/dashboard}"><svg th:replace="~{fragments/brand :: mark(18)}"></svg><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>

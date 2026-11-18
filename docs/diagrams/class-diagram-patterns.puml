@@ -1,19 +1,10 @@
 @startuml class-diagram-patterns
+!include style.iuml
 ' The interfaces and the classes behind each design pattern, drawn from the real code.
 title Quell · Class diagram 2: interfaces and design patterns
 
 set separator none
 left to right direction
-skinparam shadowing false
-skinparam classAttributeIconSize 0
-skinparam class {
-  BackgroundColor #F7F9FC
-  BorderColor #4A5568
-  ArrowColor #2D3748
-}
-skinparam package {
-  BorderColor #A0AEC0
-}
 hide empty members
 
 class Incident <<entity>>

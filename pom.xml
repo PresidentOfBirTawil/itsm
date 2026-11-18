@@ -90,12 +90,6 @@
             <groupId>org.webjars</groupId>
             <artifactId>webjars-locator-lite</artifactId>
         </dependency>
-        <!-- Inter, the interface typeface, served from the app so it also works offline -->
-        <dependency>
-            <groupId>org.webjars.npm</groupId>
-            <artifactId>fontsource-variable__inter</artifactId>
-            <version>5.0.15</version>
-        </dependency>
 
         <!-- Tests -->
         <dependency>

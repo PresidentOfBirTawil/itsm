@@ -1,13 +1,8 @@
 @startuml state-machine
+!include style.iuml
 ' The incident lifecycle. One class per state in com.itsm.domain.state (State pattern).
 title Quell · Incident state machine
 
-skinparam shadowing false
-skinparam state {
-  BackgroundColor #F7F9FC
-  BorderColor #4A5568
-  ArrowColor #2D3748
-}
 hide empty description
 
 [*] --> NEW : employee reports\nthe incident

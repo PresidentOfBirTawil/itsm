@@ -1,16 +1,11 @@
 @startuml er-diagram
+!include style.iuml
 ' The tables as Hibernate creates them from the entities (H2).
 title Quell · Entity-relationship diagram
 
 hide circle
 hide methods
-skinparam shadowing false
 skinparam linetype ortho
-skinparam class {
-  BackgroundColor #F7F9FC
-  BorderColor #4A5568
-}
-
 entity "users" as users {
   * id : bigint <<PK>>
   --

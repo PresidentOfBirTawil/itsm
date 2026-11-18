@@ -1,10 +1,8 @@
 @startuml sequence-report-incident
+!include style.iuml
 ' What happens, class by class, when an employee presses "Report incident".
 title Quell · Sequence: an employee reports an incident
 
-skinparam shadowing false
-skinparam sequenceMessageAlign center
-skinparam ParticipantPadding 8
 autonumber
 
 actor Employee

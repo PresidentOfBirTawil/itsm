@@ -5,26 +5,25 @@
 <main class="flex-grow-1">
 
     <!-- Site header -->
-    <nav class="navbar navbar-expand-md app-nav navbar-guest">
+    <nav class="navbar navbar-expand-lg app-nav site-nav navbar-guest">
         <div class="container">
-            <a class="navbar-brand" th:href="@{/}"><img th:src="@{/img/logo.svg}" width="26" height="26" alt=""
-                    class="me-2 navbar-logo"><span th:text="${@brand.name}">Quell</span></a>
+            <a class="navbar-brand" th:href="@{/}"><svg th:replace="~{fragments/brand :: mark(18)}"></svg><span th:text="${@brand.name}">Quell</span></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#siteNav"
                     aria-controls="siteNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="siteNav">
-                <ul class="navbar-nav mx-auto gap-md-1">
-                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                <ul class="navbar-nav ms-lg-3 me-auto">
+                    <li class="nav-item"><a class="nav-link" href="#product">Product</a></li>
                     <li class="nav-item"><a class="nav-link" href="#how">How it works</a></li>
                     <li class="nav-item"><a class="nav-link" href="#pricing">Pricing</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
                     <li class="nav-item"><a class="nav-link" href="#download">Download</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
                 </ul>
-                <div class="d-flex align-items-center gap-2 py-2 py-md-0">
+                <div class="d-flex align-items-center gap-2 py-2 py-lg-0">
                     <button type="button" class="app-icon-button" data-theme-toggle title="Switch theme"><i class="bi bi-sun"></i></button>
                     <a class="btn btn-sm btn-outline-secondary" th:href="@{/login}">Sign in</a>
-                    <a class="btn btn-sm btn-contrast" th:href="@{/login}">Try the demo</a>
+                    <a class="btn btn-sm btn-primary" th:href="@{/login}">Try the demo</a>
                 </div>
             </div>
         </div>
@@ -33,174 +32,113 @@
     <!-- Hero -->
     <section class="hero text-center">
         <div class="container">
-            <a class="hero-eyebrow mb-4" href="#features">
-                <span class="badge text-bg-primary">New</span>
-                Predicts SLA breaches before they happen <i class="bi bi-arrow-right"></i>
-            </a>
-            <h1 class="hero-title mx-auto mb-4" style="max-width: 15ch">IT incidents, resolved before they escalate.</h1>
-            <p class="hero-subtitle mb-5">
-                <span th:text="${@brand.name}">Quell</span> is the intelligent service desk that triages, routes and
-                tracks every IT problem automatically, and learns from each fix so the next one is faster.
-            </p>
-            <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                <a class="btn btn-lg btn-contrast" data-os-download th:href="${windowsDownload}"
+            <a class="hero-pill" href="#product"><span class="tag">New</span>A reporting assistant, webhooks and a REST API
+                <i class="bi bi-arrow-right"></i></a>
+            <h1 class="hero-title">IT incidents, resolved before they escalate.</h1>
+            <p class="hero-subtitle"><span th:text="${@brand.name}">Quell</span> is the service desk that triages, routes
+                and tracks every IT problem on its own, learns from each fix, and keeps everyone informed.</p>
+            <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+                <a class="btn btn-lg btn-primary" data-os-download th:href="${windowsDownload}"
                    th:data-windows="${windowsDownload}" th:data-mac="${macDownload}" th:data-linux="${linuxDownload}">
-                    <i class="bi bi-download me-2"></i><span>Download for Windows</span></a>
-                <a class="btn btn-lg btn-outline-secondary" th:href="@{/login}">
-                    <i class="bi bi-play-circle me-2"></i>Try the live demo</a>
+                    <i class="bi bi-windows me-2"></i><span>Download for Windows</span></a>
+                <a class="btn btn-lg btn-outline-secondary" th:href="@{/login}">Try the live demo</a>
             </div>
-            <p class="small text-body-secondary mb-0">
-                Windows, Mac and Linux · Free for small teams · Works offline · Nothing to configure
-            </p>
-        </div>
-
-        <div class="container mt-5 pt-lg-3">
-            <div class="position-relative mx-auto" style="max-width: 72rem">
-                <div class="product-glow"></div>
-                <div class="product-frame">
-                    <img th:src="@{/img/product-dashboard.jpg}" width="2560" height="1600" loading="eager"
-                         alt="The Quell overview: open incidents, critical incidents, SLA breaches, the incidents most likely to breach next, and technician workload.">
-                </div>
+            <p class="hero-note">Free for small teams · Windows, macOS and Linux · Works offline</p>
+            <div class="product-frame">
+                <img th:src="@{/img/product-dashboard.jpg}" width="2560" height="1600" loading="eager"
+                     alt="The Quell overview: service health, the probable root cause, the incidents waiting and those most likely to miss their deadline">
             </div>
         </div>
     </section>
 
-    <!-- For each kind of user -->
-    <section class="site-section pt-4">
+    <!-- Three roles -->
+    <section class="site-section" id="roles">
         <div class="container">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-person"></i></div>
-                        <h3>For everyone at work</h3>
-                        <p>Report a problem in seconds, by typing or speaking. Quell suggests the category, spots
-                            known outages and offers fixes before a ticket is even needed.</p>
-                    </div>
+            <div class="eyebrow mb-3">One desk, three ways in</div>
+            <h2 class="section-title mb-5">Everyone sees exactly what they need, and nothing they don't.</h2>
+            <div class="role-grid">
+                <div>
+                    <span class="step-number">For employees</span>
+                    <h3>Report it in seconds</h3>
+                    <p>Type or speak the problem, or chat with the assistant. Quell recognises the service, points to a
+                        known outage and suggests a fix before a ticket is even needed.</p>
                 </div>
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-tools"></i></div>
-                        <h3>For technicians</h3>
-                        <p>One queue, ordered by deadline. Every incident comes with similar past fixes, the
-                            likely finish time and the full history. Nothing to chase.</p>
-                    </div>
+                <div>
+                    <span class="step-number">For technicians</span>
+                    <h3>One queue, ordered by deadline</h3>
+                    <p>Every incident arrives with similar past fixes, the likely finish time and its full history.
+                        Nothing to chase, nothing to re-type.</p>
                 </div>
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
-                        <h3>For IT managers</h3>
-                        <p>A live overview of the whole desk: what is critical, what will breach next, who is
-                            overloaded. Reports, an audit trail and settings that change routing instantly.</p>
-                    </div>
+                <div>
+                    <span class="step-number">For IT managers</span>
+                    <h3>The whole desk at a glance</h3>
+                    <p>What is critical, what breaches next, who is overloaded, and where an outage really started. Live,
+                        with reports and an audit trail nobody can edit.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Features -->
-    <section class="site-section" id="features">
+    <section class="site-section" id="product">
         <div class="container">
-            <div class="text-center mb-5">
-                <div class="section-eyebrow mb-2">Intelligence built in</div>
-                <h2 class="section-title mx-auto" style="max-width: 22ch">Every step that used to be manual now
-                    happens on its own.</h2>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-sort-down"></i></div>
-                        <h3>Automatic triage</h3>
-                        <p>Priority from impact, urgency and how critical the service is, with the reasoning shown.
-                            Response and resolution deadlines are set the moment a problem is reported.</p>
-                    </div>
+            <div class="eyebrow mb-3">Intelligence built in</div>
+            <h2 class="section-title">Every step that used to be manual now happens on its own.</h2>
+            <p class="section-lead mb-5">All of it runs inside your installation. No incident text is sent to an outside AI service.</p>
+            <div class="feature-grid">
+                <div>
+                    <i class="bi bi-sort-down"></i>
+                    <h3>Automatic triage</h3>
+                    <p>Priority from impact, urgency and how critical the service is, with the reasoning shown. Deadlines set the
+                        moment a problem is reported.</p>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-signpost-split"></i></div>
-                        <h3>Smart routing</h3>
-                        <p>Each incident goes to a technician with the right skills and room in their queue.
-                            Switch between skill-based, least-loaded and round-robin at any time.</p>
-                    </div>
+                <div>
+                    <i class="bi bi-signpost-split"></i>
+                    <h3>Smart routing</h3>
+                    <p>To a technician with the right skills and room in their queue. Switch between skill-based, least-loaded and
+                        round-robin at any time.</p>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
-                        <h3>Predictive SLAs</h3>
-                        <p>Learns how long similar incidents take and predicts which ones will miss their
-                            deadline, so you act before the breach, not after.</p>
-                    </div>
+                <div>
+                    <i class="bi bi-hourglass-split"></i>
+                    <h3>Predictive SLAs</h3>
+                    <p>Learns how long similar incidents take and flags the ones that will miss their deadline, so you act before
+                        the breach.</p>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-lightbulb"></i></div>
-                        <h3>Suggested fixes</h3>
-                        <p>Every incident is matched against the knowledge base and every past resolution.
-                            The best fixes are one click away, ranked by similarity.</p>
-                    </div>
+                <div>
+                    <i class="bi bi-lightbulb"></i>
+                    <h3>Suggested fixes</h3>
+                    <p>Each incident is matched against the knowledge base and every past resolution. The best fixes are one click
+                        away.</p>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-cpu"></i></div>
-                        <h3>A classifier that learns</h3>
-                        <p>Machine learning trained on your own history picks the category and flags incidents
-                            filed in the wrong place. It improves with every correction.</p>
-                    </div>
+                <div>
+                    <i class="bi bi-diagram-3"></i>
+                    <h3>Root cause, found for you</h3>
+                    <p>When several services fail at once, Quell points to the one they all depend on, and a live status page
+                        tells everyone what is known.</p>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-lightning-charge"></i></div>
-                        <h3>Live everything</h3>
-                        <p>Dashboards, queues and notifications update the instant something changes.
-                            No refreshing, no stale screens.</p>
-                    </div>
+                <div>
+                    <i class="bi bi-chat-dots"></i>
+                    <h3>A reporting assistant</h3>
+                    <p>A short conversation, typed or spoken, that ends in a complete, correctly classified incident, or in a fix
+                        that makes it unnecessary.</p>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-chat-dots"></i></div>
-                        <h3>A reporting assistant</h3>
-                        <p>Employees report by chatting or speaking. The assistant recognises the service, offers
-                            to join a known outage, suggests articles and files a complete incident.</p>
-                    </div>
+                <div>
+                    <i class="bi bi-cpu"></i>
+                    <h3>A classifier that learns</h3>
+                    <p>Trained on your own history, it picks the category and questions incidents filed in the wrong place. Every
+                        correction makes it better.</p>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
-                        <h3>Root cause, found for you</h3>
-                        <p>Quell knows which services depend on which. When several fail at once it points to
-                            the one they share, and a live status page tells everyone what is known.</p>
-                    </div>
+                <div>
+                    <i class="bi bi-broadcast"></i>
+                    <h3>Live everywhere</h3>
+                    <p>Dashboards, queues and notifications update the instant something changes, with desktop alerts when Quell is
+                        in the background.</p>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-plug"></i></div>
-                        <h3>Connects to your tools</h3>
-                        <p>Post incidents to Slack or Microsoft Teams, send signed webhooks to any app, and
-                            automate anything with the documented REST API.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-intersect"></i></div>
-                        <h3>Duplicates and escalation</h3>
-                        <p>Reports of the same outage are linked automatically, and a critical incident nobody has
-                            picked up is escalated to the managers.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
-                        <h3>Secure by default</h3>
-                        <p>Role-based access on every request, hashed passwords and API keys, CSRF protection, a
-                            strict content security policy, sign-in lockout and an audit trail nobody can edit.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="bi bi-command"></i></div>
-                        <h3>Fast to use</h3>
-                        <p>Press <kbd><span data-shortcut-mod>Ctrl</span> K</kbd> anywhere to find any incident or
-                            article and jump to any page. Dark and light themes.</p>
-                    </div>
+                <div>
+                    <i class="bi bi-plug"></i>
+                    <h3>Connects to your tools</h3>
+                    <p>Incidents in Slack or Microsoft Teams, signed webhooks to any app, and a documented REST API for
+                        everything else.</p>
                 </div>
             </div>
         </div>
@@ -209,40 +147,26 @@
     <!-- How it works -->
     <section class="site-section" id="how">
         <div class="container">
-            <div class="text-center mb-5">
-                <div class="section-eyebrow mb-2">How it works</div>
-                <h2 class="section-title">From "it's broken" to fixed, in three steps.</h2>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="d-flex gap-3">
-                        <div class="step-number flex-shrink-0">1</div>
-                        <div>
-                            <h3 class="h5">Someone reports it</h3>
-                            <p class="text-body-secondary">In plain words. Quell suggests the category, impact and urgency
-                                as they type, and points to a known fix if there is one.</p>
-                        </div>
-                    </div>
+            <div class="eyebrow mb-3">How it works</div>
+            <h2 class="section-title mb-5">From "it's broken" to fixed, without a single hand-off.</h2>
+            <div class="step-grid">
+                <div>
+                    <span class="step-number">01</span>
+                    <h3>Someone reports it</h3>
+                    <p>On the form, by voice, through the assistant or from another system. A known outage is joined instead of
+                        reported twice.</p>
                 </div>
-                <div class="col-md-4">
-                    <div class="d-flex gap-3">
-                        <div class="step-number flex-shrink-0">2</div>
-                        <div>
-                            <h3 class="h5">Quell triages and routes it</h3>
-                            <p class="text-body-secondary">Priority, deadlines and the right technician in under a second.
-                                Everyone involved is told, in the app and by email.</p>
-                        </div>
-                    </div>
+                <div>
+                    <span class="step-number">02</span>
+                    <h3>Quell triages and routes it</h3>
+                    <p>Category, priority and deadlines are worked out, duplicates linked, and the right technician assigned and
+                        notified, in under a second.</p>
                 </div>
-                <div class="col-md-4">
-                    <div class="d-flex gap-3">
-                        <div class="step-number flex-shrink-0">3</div>
-                        <div>
-                            <h3 class="h5">It gets fixed, and Quell learns</h3>
-                            <p class="text-body-secondary">The technician resolves it with suggested fixes at hand. The
-                                fix becomes knowledge for the next time.</p>
-                        </div>
-                    </div>
+                <div>
+                    <span class="step-number">03</span>
+                    <h3>It gets fixed, and Quell learns</h3>
+                    <p>The technician works from suggested fixes, deadlines are watched for them, and every resolution makes the
+                        next one faster.</p>
                 </div>
             </div>
         </div>
@@ -251,60 +175,46 @@
     <!-- Pricing -->
     <section class="site-section" id="pricing">
         <div class="container">
-            <div class="text-center mb-5">
-                <div class="section-eyebrow mb-2">Pricing</div>
-                <h2 class="section-title">Simple pricing that grows with your team.</h2>
-                <p class="text-body-secondary mt-3">Pay only for technicians. Everyone who reports problems is free.</p>
-            </div>
-            <div class="row g-4 justify-content-center">
-                <div class="col-md-6 col-lg-4">
-                    <div class="price-card">
-                        <h3 class="h5 mb-1">Starter</h3>
-                        <p class="text-body-secondary small">For small teams getting organised.</p>
-                        <div class="my-3"><span class="price-amount">$0</span></div>
-                        <p class="small text-body-secondary mb-0">Free forever, up to 3 technicians</p>
-                        <ul>
-                            <li><i class="bi bi-check2"></i>Unlimited employees and incidents</li>
-                            <li><i class="bi bi-check2"></i>Automatic triage and routing</li>
-                            <li><i class="bi bi-check2"></i>SLA tracking and notifications</li>
-                            <li><i class="bi bi-check2"></i>Knowledge base</li>
-                        </ul>
-                        <a class="btn btn-outline-secondary mt-auto" href="#download">Get started</a>
-                    </div>
+            <div class="eyebrow mb-3">Pricing</div>
+            <h2 class="section-title mb-5">Free to start. Fair as you grow.</h2>
+            <div class="price-grid">
+                <div class="price-card">
+                    <div class="fw-semibold">Starter</div>
+                    <div class="price-amount">$0</div>
+                    <div class="text-body-secondary small">For small IT teams</div>
+                    <ul>
+                        <li><i class="bi bi-check2"></i>Up to 3 technicians</li>
+                        <li><i class="bi bi-check2"></i>Automatic triage, routing and SLAs</li>
+                        <li><i class="bi bi-check2"></i>Knowledge base and status page</li>
+                        <li><i class="bi bi-check2"></i>Desktop app for Windows, macOS and Linux</li>
+                    </ul>
+                    <a class="btn btn-outline-secondary mt-auto" th:href="@{/login}">Start for free</a>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="price-card featured">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h3 class="h5 mb-1">Team</h3>
-                            <span class="badge text-bg-primary">Most popular</span>
-                        </div>
-                        <p class="text-body-secondary small">The full intelligent service desk.</p>
-                        <div class="my-3"><span class="price-amount">$15</span>
-                            <span class="text-body-secondary">/ technician / month</span></div>
-                        <p class="small text-body-secondary mb-0">Billed yearly, or $19 month to month</p>
-                        <ul>
-                            <li><i class="bi bi-check2"></i>Everything in Starter</li>
-                            <li><i class="bi bi-check2"></i>Predictive SLAs and suggested fixes</li>
-                            <li><i class="bi bi-check2"></i>Learning classifier and duplicate detection</li>
-                            <li><i class="bi bi-check2"></i>Reports, audit log and live dashboards</li>
-                        </ul>
-                        <a class="btn btn-primary mt-auto" th:href="@{/login}">Try it now</a>
+                <div class="price-card featured">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Team</span><span class="eyebrow">Most popular</span>
                     </div>
+                    <div class="price-amount">$15</div>
+                    <div class="text-body-secondary small">per technician per month · employees free</div>
+                    <ul>
+                        <li><i class="bi bi-check2"></i>Unlimited technicians</li>
+                        <li><i class="bi bi-check2"></i>Learning classifier and suggested fixes</li>
+                        <li><i class="bi bi-check2"></i>Predictive SLAs and root-cause analysis</li>
+                        <li><i class="bi bi-check2"></i>Slack and Microsoft Teams</li>
+                    </ul>
+                    <a class="btn btn-primary mt-auto" th:href="@{/login}">Try it now</a>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="price-card">
-                        <h3 class="h5 mb-1">Enterprise</h3>
-                        <p class="text-body-secondary small">For larger organisations with special needs.</p>
-                        <div class="my-3"><span class="price-amount">Custom</span></div>
-                        <p class="small text-body-secondary mb-0">Annual agreement</p>
-                        <ul>
-                            <li><i class="bi bi-check2"></i>Everything in Team</li>
-                            <li><i class="bi bi-check2"></i>REST API and webhooks for your tools</li>
-                            <li><i class="bi bi-check2"></i>Your own servers or private cloud</li>
-                            <li><i class="bi bi-check2"></i>Priority support and onboarding</li>
-                        </ul>
-                        <a class="btn btn-outline-secondary mt-auto" href="#faq">Talk to us</a>
-                    </div>
+                <div class="price-card">
+                    <div class="fw-semibold">Enterprise</div>
+                    <div class="price-amount">Custom</div>
+                    <div class="text-body-secondary small">For large and regulated organisations</div>
+                    <ul>
+                        <li><i class="bi bi-check2"></i>Your own server or cloud, PostgreSQL</li>
+                        <li><i class="bi bi-check2"></i>REST API and webhooks for your tools</li>
+                        <li><i class="bi bi-check2"></i>Custom SLA policies and service maps</li>
+                        <li><i class="bi bi-check2"></i>Priority support</li>
+                    </ul>
+                    <a class="btn btn-outline-secondary mt-auto" th:href="@{/login}">Talk to us</a>
                 </div>
             </div>
         </div>
@@ -313,111 +223,99 @@
     <!-- Download -->
     <section class="site-section" id="download">
         <div class="container">
-            <div class="text-center mb-5">
-                <div class="section-eyebrow mb-2">Download</div>
-                <h2 class="section-title">Install in a minute. No setup.</h2>
-                <p class="text-body-secondary mt-3">Everything is included. Double-click, follow the wizard, done.</p>
-            </div>
-            <div class="row g-4 justify-content-center">
+            <div class="eyebrow mb-3">Download</div>
+            <h2 class="section-title">Install it like any other app.</h2>
+            <p class="section-lead mb-5">Everything is included, Java too. Double-click, follow the setup, and Quell opens in your
+                browser.</p>
+            <div class="row g-3">
                 <div class="col-md-4">
-                    <a class="feature-card d-block text-decoration-none text-body text-center"
-                       th:href="${windowsDownload}">
-                        <i class="bi bi-windows fs-1 d-block mb-3"></i>
-                        <h3>Windows</h3>
-                        <p>Windows 10 and 11 · setup wizard</p>
+                    <a class="download-row" th:href="${windowsDownload}">
+                        <i class="bi bi-windows"></i>
+                        <span><span class="d-block fw-semibold">Windows</span><span class="meta">Quell-Setup-Windows.exe</span></span>
+                        <i class="bi bi-arrow-down ms-auto text-body-secondary"></i>
                     </a>
                 </div>
                 <div class="col-md-4">
-                    <a class="feature-card d-block text-decoration-none text-body text-center"
-                       th:href="${macDownload}">
-                        <i class="bi bi-apple fs-1 d-block mb-3"></i>
-                        <h3>Mac</h3>
-                        <p>Apple silicon · drag to Applications</p>
+                    <a class="download-row" th:href="${macDownload}">
+                        <i class="bi bi-apple"></i>
+                        <span><span class="d-block fw-semibold">macOS</span><span class="meta">Quell-Mac.dmg</span></span>
+                        <i class="bi bi-arrow-down ms-auto text-body-secondary"></i>
                     </a>
                 </div>
                 <div class="col-md-4">
-                    <a class="feature-card d-block text-decoration-none text-body text-center"
-                       th:href="${linuxDownload}">
-                        <i class="bi bi-ubuntu fs-1 d-block mb-3"></i>
-                        <h3>Linux</h3>
-                        <p>Ubuntu and Debian · .deb package</p>
+                    <a class="download-row" th:href="${linuxDownload}">
+                        <i class="bi bi-ubuntu"></i>
+                        <span><span class="d-block fw-semibold">Linux</span><span class="meta">Quell-Linux.deb</span></span>
+                        <i class="bi bi-arrow-down ms-auto text-body-secondary"></i>
                     </a>
                 </div>
             </div>
-            <p class="text-center small text-body-secondary mt-4 mb-0">
-                Prefer not to install? Portable versions are on the
-                <a th:href="${downloadsPage}">downloads page</a>.
-            </p>
+            <p class="small text-body-secondary mt-3 mb-0">Portable versions and servers (Docker with PostgreSQL): see the
+                <a th:href="${downloadsPage}">downloads page</a>.</p>
         </div>
     </section>
 
     <!-- FAQ -->
     <section class="site-section" id="faq">
         <div class="container" style="max-width: 46rem">
-            <div class="text-center mb-4">
-                <div class="section-eyebrow mb-2">FAQ</div>
-                <h2 class="section-title">Questions, answered.</h2>
-            </div>
+            <div class="eyebrow mb-3">Questions</div>
+            <h2 class="section-title mb-4">Frequently asked</h2>
             <div class="faq">
-                <details open>
+                <details>
                     <summary>Does it need an internet connection?</summary>
-                    <p>No. Quell runs on your computer or your own server and works offline. Your data never leaves
-                        your organisation.</p>
+                    <p>No. The desktop app runs entirely on your computer, and a server installation only needs your own network.
+                        Webhooks to Slack or Teams need the internet, of course.</p>
+                </details>
+                <details>
+                    <summary>Is our incident text sent to an AI service?</summary>
+                    <p>Never. The classifier, the suggested fixes and the predictions are computed inside Quell from your own
+                        history. Nothing leaves your installation unless you connect a webhook.</p>
                 </details>
                 <details>
                     <summary>How does Quell decide the priority?</summary>
-                    <p>Impact × urgency × how critical the affected service is, each from 1 to 3. The score maps to
-                        P1 (critical) to P4 (low), and every incident shows the calculation, so nobody has to trust
-                        a black box.</p>
+                    <p>Impact × urgency × how critical the service is, each from 1 to 3. The calculation is shown on every incident,
+                        and more people affected raises the impact automatically.</p>
                 </details>
                 <details>
-                    <summary>What does "learns from every incident" mean?</summary>
-                    <p>Quell trains a classifier on your past incidents to suggest categories, ranks past fixes by
-                        similarity to suggest solutions, and uses real resolution times to predict which incidents
-                        will miss their deadline. Every suggestion shows why it was made.</p>
+                    <summary>Can it work with the tools we already use?</summary>
+                    <p>Yes: webhooks post to Slack, Microsoft Teams or any app (signed, retried), and the REST API lets your
+                        monitoring report incidents and your scripts read them.</p>
                 </details>
                 <details>
                     <summary>Can I try it without installing anything?</summary>
-                    <p>Yes. Click "Try the demo" and sign in with one of the demo accounts: an employee, a technician or
-                        an administrator. Load realistic sample data from the administrator's settings.</p>
-                </details>
-                <details>
-                    <summary>Where is my data stored?</summary>
-                    <p>In a database file on your own computer or server. On the desktop app, the tray icon's
-                        "Show data folder" opens it.</p>
+                    <p>Yes. Open the live demo and sign in with one of the demo accounts on the sign-in page.</p>
                 </details>
             </div>
         </div>
     </section>
 
-    <!-- Final call to action -->
-    <section class="site-section pt-0">
+    <!-- Call to action -->
+    <section class="site-section">
         <div class="container">
-            <div class="cta-panel text-center">
-                <h2 class="section-title mb-3">Calm IT starts today.</h2>
-                <p class="text-body-secondary mb-4">Free for small teams. Ready in a minute.</p>
+            <div class="cta-band text-center">
+                <h2 class="section-title mx-auto mb-3">Calm your service desk.</h2>
+                <p class="text-body-secondary mb-4">Set up in minutes. Free for small teams.</p>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <a class="btn btn-lg btn-contrast" href="#download"><i class="bi bi-download me-2"></i>Download</a>
+                    <a class="btn btn-lg btn-primary" href="#download">Download</a>
                     <a class="btn btn-lg btn-outline-secondary" th:href="@{/login}">Try the live demo</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <footer class="site-footer py-5">
-        <div class="container d-flex flex-wrap justify-content-between gap-3">
-            <div>
-                <img th:src="@{/img/logo.svg}" width="20" height="20" alt="" class="me-2 align-text-bottom">
+    <footer class="site-footer">
+        <div class="container d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <span class="d-inline-flex align-items-center gap-2 text-body">
+                <svg th:replace="~{fragments/brand :: mark(14)}"></svg>
                 <span class="fw-semibold" th:text="${@brand.name}">Quell</span>
-                <span class="ms-2" th:text="${@brand.tagline}">Intelligent IT service management</span>
-            </div>
-            <div class="d-flex flex-wrap gap-4">
-                <a href="#features">Features</a>
-                <a href="#pricing">Pricing</a>
+                <span class="text-body-secondary" th:text="${@brand.tagline}">Intelligent IT service management</span>
+            </span>
+            <span class="d-flex gap-4">
                 <a href="#download">Download</a>
+                <a th:href="@{/api/docs}">API</a>
                 <a th:href="@{/login}">Sign in</a>
                 <span th:text="|© 2026 ${@brand.name}|">© 2026 Quell</span>
-            </div>
+            </span>
         </div>
     </footer>
 

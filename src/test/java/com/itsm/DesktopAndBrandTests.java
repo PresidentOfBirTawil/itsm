@@ -38,7 +38,7 @@ class DesktopAndBrandTests {
         mvc.perform(get("/login"))
                 .andExpect(content().string(containsString("<title>Sign in · Quell</title>")))
                 .andExpect(content().string(containsString("<meta name=\"application-name\" content=\"Quell\">")))
-                .andExpect(content().string(containsString("/img/logo.svg")))
+                .andExpect(content().string(containsString("class=\"brand-mark\"")))
                 .andExpect(content().string(not(containsString("I-ITSM"))));
     }
 

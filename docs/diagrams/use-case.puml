@@ -1,16 +1,10 @@
 @startuml use-case
+!include style.iuml
 ' Use case diagram: who can do what in Quell.
 title Quell · Use cases
 
 left to right direction
 skinparam packageStyle rectangle
-skinparam shadowing false
-skinparam defaultFontName Helvetica
-skinparam usecase {
-  BackgroundColor #F7F9FC
-  BorderColor #4A5568
-}
-
 actor "Visitor" as Visitor
 actor "Employee" as Employee
 actor "Technician" as Technician

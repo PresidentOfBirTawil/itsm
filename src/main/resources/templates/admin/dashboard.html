@@ -95,7 +95,7 @@
             <span class="small fw-normal text-body-secondary">open incidents, least time left first</span>
         </div>
         <div class="text-center text-body-secondary py-4" th:if="${#lists.isEmpty(slaRisks)}">
-            <i class="bi bi-emoji-smile fs-2 d-block mb-1"></i>
+            <i class="bi bi-check2-circle fs-4 d-block mb-2"></i>
             No open incident has a deadline coming up.
         </div>
         <div class="table-responsive" th:unless="${#lists.isEmpty(slaRisks)}">

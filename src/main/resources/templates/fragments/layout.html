@@ -36,7 +36,7 @@
 
 <footer class="app-footer py-3">
     <div class="container d-flex flex-wrap justify-content-between gap-2">
-        <span><img th:src="@{/img/logo.svg}" width="16" height="16" alt="" class="me-1 align-text-bottom"><span
+        <span><svg th:replace="~{fragments/brand :: mark(12)}"></svg> <span
                 th:text="|${@brand.name} · ${@brand.tagline}|">Quell · Intelligent IT service management</span></span>
         <span>
             <a class="link-secondary text-decoration-none me-3" th:href="@{/kb}" sec:authorize="isAuthenticated()">Help</a>
@@ -75,7 +75,7 @@
     <script th:src="@{/js/theme.js}"></script>
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
     <link rel="apple-touch-icon" th:href="@{/img/logo-180.png}">
-    <link rel="stylesheet" th:href="@{/webjars/fontsource-variable__inter/index.css}">
+    <link rel="stylesheet" th:href="@{/css/fonts.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/app.css}">

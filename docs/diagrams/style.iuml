@@ -1,0 +1,119 @@
+' Quell diagram style ("Graphite"): monochrome, Geist, 1px lines, no shadows.
+' Every diagram includes this file, so all of them look the same.
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Geist
+skinparam defaultFontSize 12
+skinparam defaultFontColor #0A0A0A
+skinparam roundCorner 8
+skinparam padding 2
+skinparam titleFontName Geist SemiBold
+skinparam titleFontSize 16
+skinparam titleFontColor #0A0A0A
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1
+skinparam ArrowFontName Geist
+skinparam ArrowFontSize 11
+skinparam ArrowFontColor #555555
+skinparam stereotypeFontName Geist Mono
+skinparam stereotypeFontSize 10
+skinparam stereotypeFontColor #737373
+skinparam circledCharacterFontName Geist Mono
+skinparam circledCharacterFontSize 10
+skinparam circledCharacterRadius 8
+skinparam stereotypeCBackgroundColor #F2F2F2
+skinparam stereotypeIBackgroundColor #FFFFFF
+skinparam stereotypeEBackgroundColor #F2F2F2
+skinparam stereotypeABackgroundColor #FFFFFF
+skinparam stereotypeCBorderColor #0A0A0A
+skinparam stereotypeIBorderColor #0A0A0A
+skinparam stereotypeEBorderColor #0A0A0A
+skinparam stereotypeABorderColor #0A0A0A
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #0A0A0A
+  BorderThickness 1
+  HeaderBackgroundColor #F7F7F7
+  FontName Geist SemiBold
+  FontSize 12
+  AttributeFontName Geist Mono
+  AttributeFontSize 11
+  AttributeFontColor #333333
+}
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #D4D4D4
+  FontName Geist SemiBold
+  FontSize 12
+  FontColor #0A0A0A
+}
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #D4D4D4
+  FontName Geist SemiBold
+  RoundCorner 10
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #0A0A0A
+  FontName Geist
+  FontSize 12
+}
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #0A0A0A
+  FontName Geist SemiBold
+}
+skinparam cloud {
+  BackgroundColor #FFFFFF
+  BorderColor #0A0A0A
+  FontName Geist SemiBold
+}
+skinparam database {
+  BackgroundColor #FFFFFF
+  BorderColor #0A0A0A
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #0A0A0A
+}
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #0A0A0A
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #F7F7F7
+  BorderColor #D4D4D4
+  FontColor #333333
+  FontSize 11
+}
+skinparam state {
+  BackgroundColor #FFFFFF
+  BorderColor #0A0A0A
+  StartColor #0A0A0A
+  EndColor #0A0A0A
+  FontName Geist SemiBold
+  AttributeFontName Geist
+}
+skinparam sequence {
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #0A0A0A
+  ParticipantFontName Geist SemiBold
+  ActorBackgroundColor #FFFFFF
+  ActorBorderColor #0A0A0A
+  LifeLineBorderColor #BDBDBD
+  LifeLineBackgroundColor #F2F2F2
+  GroupBackgroundColor #F7F7F7
+  GroupBorderColor #D4D4D4
+  GroupHeaderFontName Geist SemiBold
+  DividerBackgroundColor #F7F7F7
+  DividerBorderColor #D4D4D4
+  BoxBackgroundColor #FAFAFA
+  BoxBorderColor #D4D4D4
+}
+skinparam legend {
+  BackgroundColor #F7F7F7
+  BorderColor #D4D4D4
+}

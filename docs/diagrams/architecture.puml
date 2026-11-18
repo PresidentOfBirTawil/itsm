@@ -1,30 +1,10 @@
 @startuml architecture
+!include style.iuml
 ' Layers and packages, and which way the dependencies point.
 title Quell · System architecture
 
-skinparam shadowing false
 skinparam componentStyle rectangle
 skinparam defaultTextAlignment center
-skinparam defaultFontName Helvetica
-skinparam ArrowColor #4A5568
-skinparam rectangle {
-  BackgroundColor #F7F9FC
-  BorderColor #4A5568
-  RoundCorner 12
-}
-skinparam component {
-  BackgroundColor #FFFFFF
-  BorderColor #4A5568
-}
-skinparam node {
-  BackgroundColor #EEF2FF
-  BorderColor #4F46E5
-}
-skinparam cloud {
-  BackgroundColor #ECFEFF
-  BorderColor #0891B2
-}
-
 actor "Employee\nTechnician\nAdministrator" as User
 
 node "Browser or installed app (PWA / desktop launcher)" as Browser {

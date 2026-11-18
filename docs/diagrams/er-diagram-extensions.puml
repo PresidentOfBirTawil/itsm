@@ -1,17 +1,11 @@
 @startuml er-diagram-extensions
+!include style.iuml
 ' The tables added for the intelligent features and integrations (H2 types; PostgreSQL uses bytea/varchar).
 title Quell · Entity-relationship diagram (2): knowledge, service map, files, API and webhooks
 
 hide circle
 hide methods
-skinparam shadowing false
 skinparam linetype ortho
-skinparam defaultFontName Helvetica
-skinparam class {
-  BackgroundColor #F7F9FC
-  BorderColor #4A5568
-}
-
 entity "users" as users {
   * id : bigint <<PK>>
   --

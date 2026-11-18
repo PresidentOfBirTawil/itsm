@@ -1,21 +1,10 @@
 @startuml class-diagram-integrations
+!include style.iuml
 ' Class diagram 3: the intelligent features, the assistant and the integrations.
 ' Every class, attribute and method here exists in src/main/java/com/itsm.
 title Quell · Class diagram (4): integrations, security and files
 
-skinparam shadowing false
-skinparam defaultFontName Helvetica
-skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
-skinparam class {
-  BackgroundColor #FFFFFF
-  BorderColor #4A5568
-}
-skinparam package {
-  BackgroundColor #F7F9FC
-  BorderColor #A0AEC0
-}
-
 interface IncidentEventListener <<Observer>> {
   + onIncidentEvent(event : IncidentEvent) : void
 }

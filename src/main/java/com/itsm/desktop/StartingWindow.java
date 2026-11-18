@@ -29,19 +29,19 @@ final class StartingWindow {
         JPanel panel = new JPanel(new BorderLayout(0, 12));
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(0xD0D5DD)),
+                BorderFactory.createLineBorder(new Color(0xEAEAEA)),
                 BorderFactory.createEmptyBorder(28, 36, 24, 36)));
 
         JLabel title = new JLabel(product, SwingConstants.CENTER);
         title.setFont(title.getFont().deriveFont(Font.BOLD, 26f));
-        title.setForeground(new Color(0x111827));
+        title.setForeground(new Color(0x0A0A0A));
         Image logo = DesktopWindows.logo(64);
         if (logo != null) {
             title.setIcon(new ImageIcon(logo));
             title.setIconTextGap(14);
         }
         JLabel message = new JLabel("Starting… your browser opens in a few seconds.", SwingConstants.CENTER);
-        message.setForeground(new Color(0x4B5563));
+        message.setForeground(new Color(0x666666));
         JProgressBar progress = new JProgressBar();
         progress.setIndeterminate(true);
 

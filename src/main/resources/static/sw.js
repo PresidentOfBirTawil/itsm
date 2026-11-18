@@ -12,7 +12,7 @@
  */
 'use strict';
 
-var CACHE = 'quell-shell-v2';
+var CACHE = 'quell-shell-v3';
 var OFFLINE_PAGE = '/offline.html';
 var SHELL = [
     OFFLINE_PAGE,
@@ -24,7 +24,8 @@ var SHELL = [
     '/favicon.svg',
     '/webjars/bootstrap/css/bootstrap.min.css',
     '/webjars/bootstrap-icons/font/bootstrap-icons.min.css',
-    '/webjars/fontsource-variable__inter/index.css'
+    '/css/fonts.css',
+    '/fonts/geist-latin-wght-normal.woff2'
 ];
 var STATIC = /^\/(css|js|img|webjars)\/|^\/favicon\.svg$/;
 
