@@ -10,10 +10,10 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.itsm</groupId>
-    <artifactId>itsm</artifactId>
+    <groupId>com.quell</groupId>
+    <artifactId>quell</artifactId>
     <version>1.2.0</version>
-    <name>quell</name>
+    <name>Quell</name>
     <description>Quell: intelligent IT service management and incident resolution</description>
 
     <properties>

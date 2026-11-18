@@ -1,0 +1,15 @@
+package com.quell.assignment;
+
+import com.quell.domain.Technician;
+
+/**
+ * A technician together with the number of open incidents they hold right now.
+ * This is what an assignment strategy looks at when it chooses.
+ */
+public record TechnicianLoad(Technician technician, long openIncidents) {
+
+    /** True if the technician's account is enabled, they are available and still below their maximum workload. */
+    public boolean canTakeMore() {
+        return technician.isEnabled() && technician.isAvailable() && openIncidents < technician.getMaxWorkload();
+    }
+}

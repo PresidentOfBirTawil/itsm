@@ -23,7 +23,7 @@ lang: en
     <span class="k">Course</span><span class="v">CS F213 / MAC F212 &nbsp;·&nbsp; Semester I, 2026–2027</span>
     <span class="rule"></span>
     <span class="k">Product</span><span class="v">Quell 1.2.0</span>
-    <span class="k">Source</span><span class="v">github.com/PresidentOfBirTawil/itsm</span>
+    <span class="k">Source</span><span class="v">github.com/PresidentOfBirTawil/quell</span>
     <span class="k">Date</span><span class="v">November 2026</span>
   </div>
 </div>
@@ -78,9 +78,9 @@ Quell is an IT service management product. An employee reports a problem in seco
 
 ```{=html}
 <dl class="facts">
-  <dt>Download</dt><dd>github.com/PresidentOfBirTawil/itsm/<wbr>releases/latest<br><span class="muted">Windows, macOS, Linux; Java included</span></dd>
-  <dt>Source</dt><dd>github.com/PresidentOfBirTawil/itsm</dd>
-  <dt>Sign in</dt><dd><code>admin@itsm.local</code> / <code>admin12345</code></dd>
+  <dt>Download</dt><dd>github.com/PresidentOfBirTawil/quell/<wbr>releases/latest<br><span class="muted">Windows, macOS, Linux; Java included</span></dd>
+  <dt>Source</dt><dd>github.com/PresidentOfBirTawil/quell</dd>
+  <dt>Sign in</dt><dd><code>admin@quell.local</code> / <code>admin12345</code></dd>
   <dt>Video</dt><dd>94_OOP_S1_2025-2026_Project</dd>
 </dl>
 ```

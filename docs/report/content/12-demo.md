@@ -26,11 +26,11 @@ The recorded video, **94_OOP_S1_2025-2026_Project**, shows the running product w
 
 ```{=html}
 <dl class="facts wide">
-  <dt>Source code</dt><dd>https://github.com/PresidentOfBirTawil/itsm</dd>
-  <dt>Downloads</dt><dd>https://github.com/PresidentOfBirTawil/itsm/releases/latest</dd>
-  <dt>Administrator</dt><dd><code>admin@itsm.local</code> / <code>admin12345</code></dd>
-  <dt>Technicians</dt><dd><code>tech1@itsm.local</code> … <code>tech4@itsm.local</code> / <code>tech12345</code></dd>
-  <dt>Employees</dt><dd><code>emp1@itsm.local</code> … <code>emp4@itsm.local</code> / <code>emp12345</code></dd>
+  <dt>Source code</dt><dd>https://github.com/PresidentOfBirTawil/quell</dd>
+  <dt>Downloads</dt><dd>https://github.com/PresidentOfBirTawil/quell/releases/latest</dd>
+  <dt>Administrator</dt><dd><code>admin@quell.local</code> / <code>admin12345</code></dd>
+  <dt>Technicians</dt><dd><code>tech1@quell.local</code> … <code>tech4@quell.local</code> / <code>tech12345</code></dd>
+  <dt>Employees</dt><dd><code>emp1@quell.local</code> … <code>emp4@quell.local</code> / <code>emp12345</code></dd>
 </dl>
 ```
 

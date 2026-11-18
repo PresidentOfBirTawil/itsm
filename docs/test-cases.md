@@ -10,7 +10,7 @@ Awaitility). They run with one command and need nothing installed except Java 25
 This document describes **36 of them in full**, chosen so that every area of the brief and every kind
 of test is represented: TC-01 to TC-20 cover the mandatory modules, TC-21 to TC-36 the intelligent
 features, the assistant, attachments, the REST API, webhooks and security hardening. Each case names the test method that carries it out, so the document can be
-checked against the code. All test classes are in `src/test/java/com/itsm/`.
+checked against the code. All test classes are in `src/test/java/com/quell/`.
 
 The six kinds of test:
 
@@ -40,8 +40,8 @@ The six kinds of test:
 | TC-11 | SLA | The SLA check runs when exactly 75% of the response time has been used. | Same incident; checks at +45 min and again at +50 min. (`SlaTests.justUnderSeventyFivePercentIsStillOnTrack` covers +44 min.) | At +45 min the status becomes AT_RISK and one warning is raised for the response deadline. At +50 min the status is still AT_RISK and no second warning is raised. | Boundary | `SlaTests.atSeventyFivePercentOfTheResponseTimeTheIncidentIsAtRiskAndAWarningIsRaisedOnce` |
 | TC-12 | SLA | The technician asks the reporter for information and waits two days. | Incident IN_PROGRESS; moved to AWAITING_INFO at +100 min; checks at +100 min and +2880 min. | The status is PAUSED both times, nothing is breached, and the time used stays at 100 minutes. | Business rule | `SlaTests.waitingForInformationPausesTheResolutionClock` |
 | TC-13 | SLA configuration | An incident is reported while its priority has no SLA policy. | The P1 policy has been deleted; a P1 incident is reported. | `MissingSlaConfigurationException` that names P1. No incident is stored. | Exception | `IncidentWorkflowTests.reportingFailsCleanlyWhenThePriorityHasNoSlaPolicy` |
-| TC-14 | Access by role | An employee types the address of an administrator page. | Signed in as `emp1@itsm.local`; GET `/admin`, `/admin/dashboard`, `/admin/users`. | HTTP 403 Forbidden for all three. | Authorization | `SecurityTests.employeeCannotOpenAdmin` |
-| TC-15 | Sign-in | Someone signs in with the wrong password. | Email `emp1@itsm.local`, password `not-the-password`. | Not signed in; sent back to `/login?error`. | Invalid input | `SecurityTests.wrongPasswordFails` |
+| TC-14 | Access by role | An employee types the address of an administrator page. | Signed in as `emp1@quell.local`; GET `/admin`, `/admin/dashboard`, `/admin/users`. | HTTP 403 Forbidden for all three. | Authorization | `SecurityTests.employeeCannotOpenAdmin` |
+| TC-15 | Sign-in | Someone signs in with the wrong password. | Email `emp1@quell.local`, password `not-the-password`. | Not signed in; sent back to `/login?error`. | Invalid input | `SecurityTests.wrongPasswordFails` |
 | TC-16 | Access to actions | A user sends a request by hand for a move that belongs to another role or another technician. | An ASSIGNED incident. (a) The reporter posts "ACKNOWLEDGED" to the employee address; (b) the reporter posts it to the technician address; (c) a technician who is not the assignee posts it. | HTTP 403 for all three; the status is still ASSIGNED. | Authorization | `IncidentWebTests.aUserCannotMakeAnotherRolesMoveEvenByCraftingTheRequest` |
 | TC-17 | Incident reporting | The report form is sent almost empty. | Title one space, description empty, no service, impact or urgency. | The form is shown again with an error on each of the five fields ("Please choose the affected service", …). The number of incidents is unchanged. | Invalid input | `IncidentWebTests.aReportWithMissingAnswersShowsTheErrorsAndCreatesNothing` |
 | TC-18 | Duplicate detection | The same person reports the same thing twice. | Priya reports "Payment application unavailable", then "  payment APPLICATION unavailable " for the same service while the first is open. | `DuplicateIncidentException` naming the first incident's code and "still open"; nothing is stored. A different person reporting the same title is accepted and linked to the first as a possible duplicate. | Exception | `IntelligenceTests.theSamePersonReportingTheSameThingAgainIsRefused` |
@@ -96,14 +96,14 @@ The six kinds of test:
 | Database failure | Spring's `DataAccessException` | `DatabaseFailureTests.aPageThatCannotReachTheDatabaseShowsAReadableMessage`, `DatabaseFailureTests.anIncidentThatCannotBeSavedIsReportedToTheUserAndNothingIsStored` |
 | Network failure | any exception inside a notification channel | `NotificationTests.aFailingEmailChannelDoesNotBlockTheAppChannelOrUndoTheIncident` (TC-19), `NotificationTests.aFailingAppChannelDoesNotBlockTheEmailChannelOrUndoTheIncident` |
 
-`ErrorHandlingTests.everyErrorOfTheApplicationIsAnItsmException` checks that all the application's own
-exception classes extend the one abstract `ItsmException`.
+`ErrorHandlingTests.everyErrorOfTheApplicationIsAQuellException` checks that all the application's own
+exception classes extend the one abstract `QuellException`.
 
 ## All test classes
 
 | Test class | Tests | What it covers |
 |---|---:|---|
-| `ItsmApplicationTests` | 1 | The application starts. |
+| `QuellApplicationTests` | 1 | The application starts. |
 | `SecurityTests` | 16 | Sign-in, wrong password, each role's pages and navbar, every URL protected by role, sign-out. |
 | `RegistrationTests` | 5 | Employee self-registration, BCrypt hashing, duplicate email, bad input, CSRF. |
 | `SeedDataTests` | 8 | The seed data: users, skills, services, categories, the brief's four SLA policies. |

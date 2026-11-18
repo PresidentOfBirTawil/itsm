@@ -1,6 +1,6 @@
 @startuml state-machine
 !include style.iuml
-' The incident lifecycle. One class per state in com.itsm.domain.state (State pattern).
+' The incident lifecycle. One class per state in com.quell.domain.state (State pattern).
 title Quell · Incident state machine
 
 hide empty description

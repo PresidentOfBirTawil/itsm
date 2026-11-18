@@ -1,6 +1,6 @@
 # Requirements and business rules {#appendix-a .appendix}
 
-Every functional requirement and business rule, with the class or package that implements it. The fourteen non-functional requirements are complete in 2.3. Class names are in `src/main/java/com/itsm`.
+Every functional requirement and business rule, with the class or package that implements it. The fourteen non-functional requirements are complete in 2.3. Class names are in `src/main/java/com/quell`.
 
 ## Functional requirements
 
@@ -75,7 +75,7 @@ Every functional requirement and business rule, with the class or package that i
 | BR-18 | A resolution can be rated once, from 1 to 5, by the reporter, after they have confirmed the fix. | `Incident.rate`, `IncidentState.allowsRating` |
 | BR-19 | Nobody is notified about their own action (except the confirmation that a report was received). | `NotificationListener` |
 | BR-20 | Changing the classification is allowed only while the incident is open, by its technician or an administrator. | `Incident.reclassify`, `IncidentService.reclassify` |
-| BR-21 | A disabled account cannot sign in and its open sessions end at once. An administrator cannot disable their own account. | `ItsmUserDetails`, `SignedInSessions`, `AdminTechnicianController` |
+| BR-21 | A disabled account cannot sign in and its open sessions end at once. An administrator cannot disable their own account. | `QuellUserDetails`, `SignedInSessions`, `AdminTechnicianController` |
 | BR-22 | An email address belongs to at most one account, whatever the letter case. | `User.normaliseEmail`, unique column |
 | BR-23 | When 3 people are affected (the reporter plus those who said "I'm affected too") the impact is at least Medium, at 5 it is High; the priority and deadlines are recalculated. The reporter cannot join their own incident, nobody can join twice, and a finished incident cannot be joined. | `IncidentService.joinAsAffected`, `Incident.addAffectedUser` |
 | BR-24 | A probable root cause is a service that at least two services with serious problems (open P1 or P2 incidents from the last 3 hours) depend on, directly or indirectly. Security incidents are left out. Most affected services first, then a service with its own serious incident, then the smallest reach. | `RootCauseAnalyzer` |

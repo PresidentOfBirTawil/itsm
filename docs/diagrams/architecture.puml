@@ -21,7 +21,7 @@ cloud "Your tools" as Tools {
 
 node "Quell server: one Spring Boot 4.1 application (Java 25, embedded Tomcat)" as App {
 
-  rectangle "Security · com.itsm.security, com.itsm.api" as Sec {
+  rectangle "Security · com.quell.security, com.quell.api" as Sec {
     [Web chain: form login · BCrypt · CSRF\nsessions · lockout · CSP headers] as WebChain
     [API chain: bearer API keys (SHA-256)\nstateless · rate limit · problem JSON] as ApiChain
   }
@@ -42,14 +42,14 @@ node "Quell server: one Spring Boot 4.1 application (Java 25, embedded Tomcat)" 
     [ApiTokenService\nWebhookService] as Integrations
   }
 
-  rectangle "Intelligence · com.itsm.intelligence, priority, sla" as Intel {
+  rectangle "Intelligence · com.quell.intelligence, priority, sla" as Intel {
     [PriorityCalculator\nimpact × urgency × criticality] as Prio
     [CategoryClassifier\nnaive Bayes] as NB
     [ResolutionRecommender\nDuplicateDetector · TF-IDF] as TfIdf
     [SlaPredictor\nTriageAdvisor · ServiceDetector] as Predict
   }
 
-  rectangle "Events (Observer) · com.itsm.event" as Events {
+  rectangle "Events (Observer) · com.quell.event" as Events {
     [IncidentEventPublisher] as Publisher
     [AuditTrailListener] as AuditL
     [NotificationListener\nin-app · live · email] as NotifL
@@ -58,13 +58,13 @@ node "Quell server: one Spring Boot 4.1 application (Java 25, embedded Tomcat)" 
     [WebhookDispatcher\nsigned · retried] as HookD
   }
 
-  rectangle "Domain model · com.itsm.domain" as Domain {
+  rectangle "Domain model · com.quell.domain" as Domain {
     [Incident + 9 state classes] as IncidentD
     [User · Employee · Technician · Administrator] as UsersD
     [ITService · Category · SlaPolicy · KnowledgeArticle\nAttachment · ApiToken · Webhook · AuditEntry] as OtherD
   }
 
-  rectangle "Persistence · com.itsm.repository" as Persistence {
+  rectangle "Persistence · com.quell.repository" as Persistence {
     [Spring Data JPA repositories\nSpecifications · Hibernate 7] as Repos
   }
 }

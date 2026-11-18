@@ -1,7 +1,7 @@
 @startuml class-diagram-integrations
 !include style.iuml
 ' Class diagram 3: the intelligent features, the assistant and the integrations.
-' Every class, attribute and method here exists in src/main/java/com/itsm.
+' Every class, attribute and method here exists in src/main/java/com/quell.
 title Quell · Class diagram (4): integrations, security and files
 
 skinparam packageStyle rectangle

@@ -1,7 +1,7 @@
 # Diagrams
 
 Every diagram is written in [PlantUML](https://plantuml.com) and drawn from the real code: each class,
-method and relationship exists in `src/main/java/com/itsm`. Each `.puml` file is the source; the `.svg`
+method and relationship exists in `src/main/java/com/quell`. Each `.puml` file is the source; the `.svg`
 (vector, used by the report) and `.png` next to it are the rendered pictures. All of them include
 [`style.iuml`](style.iuml), so they share one monochrome style set in Geist.
 

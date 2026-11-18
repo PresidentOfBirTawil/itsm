@@ -9,7 +9,7 @@ Group 94 has one member, who analysed, designed, built, tested and documented th
 ::: {.keys .compact}
 | Member                      | Responsibility                                                                                                       | Main packages                                              |
 |-----------------------------|----------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
-| Yatharth Soni, 2025ADPS1461H | Problem analysis and requirements; domain model and OOP design; services and REST API; interface and design system; intelligent features; database; testing; installers, Docker and CI; report and video. | All of `com.itsm`, the templates and scripts, `src/test`, `packaging`, `.github` |
+| Yatharth Soni, 2025ADPS1461H | Problem analysis and requirements; domain model and OOP design; services and REST API; interface and design system; intelligent features; database; testing; installers, Docker and CI; report and video. | All of `com.quell`, the templates and scripts, `src/test`, `packaging`, `.github` |
 :::
 
 ## Limitations and future work

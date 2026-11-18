@@ -1,0 +1,265 @@
+package com.quell.web;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.quell.error.TechnicianUnavailableException;
+import com.quell.intelligence.SlaRiskRanker;
+import com.quell.live.LiveUpdates;
+import com.quell.assignment.AssignmentService;
+import com.quell.assignment.AssignmentStrategy;
+import com.quell.domain.Administrator;
+import com.quell.domain.AuditEntry;
+import com.quell.domain.Incident;
+import com.quell.domain.IncidentAction;
+import com.quell.domain.Priority;
+import com.quell.domain.SlaStatus;
+import com.quell.domain.Status;
+import com.quell.repository.AdministratorRepository;
+import com.quell.repository.AuditEntryRepository;
+import com.quell.repository.EmailMessageRepository;
+import com.quell.repository.IncidentRepository;
+import com.quell.repository.ServiceIncidentCount;
+import com.quell.search.IncidentSearchCriteria;
+import com.quell.security.QuellUserDetails;
+import com.quell.seed.DemoDataService;
+import com.quell.service.IncidentService;
+import com.quell.sla.SlaPredictor;
+import com.quell.sla.SlaService;
+import com.quell.status.StatusService;
+import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+/**
+ * The administrator's dashboard, incidents, settings and email outbox.
+ * Everything under /admin needs the ADMIN role (see SecurityConfig).
+ */
+@Controller
+@RequestMapping("/admin")
+public class AdminController {
+
+    private static final String INCIDENTS = "/admin/incidents";
+
+    private final AdministratorRepository administrators;
+    private final IncidentRepository incidents;
+    private final AuditEntryRepository auditEntries;
+    private final EmailMessageRepository emails;
+    private final IncidentService incidentService;
+    private final AssignmentService assignmentService;
+    private final SlaService slaService;
+    private final IncidentPages incidentPages;
+    private final SlaRiskRanker slaRiskRanker;
+    private final DemoDataService demoDataService;
+    private final LiveUpdates liveUpdates;
+    private final StatusService statusService;
+    private final SlaPredictor slaPredictor;
+
+    public AdminController(AdministratorRepository administrators, IncidentRepository incidents,
+                           AuditEntryRepository auditEntries, EmailMessageRepository emails,
+                           IncidentService incidentService, AssignmentService assignmentService,
+                           SlaService slaService, IncidentPages incidentPages, SlaRiskRanker slaRiskRanker,
+                           DemoDataService demoDataService, LiveUpdates liveUpdates, StatusService statusService,
+                           SlaPredictor slaPredictor) {
+        this.administrators = administrators;
+        this.incidents = incidents;
+        this.auditEntries = auditEntries;
+        this.emails = emails;
+        this.incidentService = incidentService;
+        this.assignmentService = assignmentService;
+        this.slaService = slaService;
+        this.incidentPages = incidentPages;
+        this.slaRiskRanker = slaRiskRanker;
+        this.demoDataService = demoDataService;
+        this.liveUpdates = liveUpdates;
+        this.statusService = statusService;
+        this.slaPredictor = slaPredictor;
+    }
+
+    @GetMapping
+    public String index() {
+        return "redirect:/admin/dashboard";
+    }
+
+    // ---- dashboard ----
+
+    @GetMapping("/dashboard")
+    public String dashboard(Model model) {
+        // The totals at the top.
+        model.addAttribute("totalCount", incidents.count());
+        model.addAttribute("openCount", incidents.countByStatusIn(Status.openStatuses()));
+        model.addAttribute("criticalCount", incidents.countByPriorityAndStatusIn(Priority.P1, Status.openStatuses()));
+        model.addAttribute("resolvedCount", incidents.countByStatusIn(Status.finishedStatuses()));
+        model.addAttribute("breachCount", incidents.countBySlaStatus(SlaStatus.BREACHED));
+
+        // Technician workload and incidents per service.
+        model.addAttribute("loads", assignmentService.technicianLoads());
+        List<ServiceIncidentCount> perService = incidents.countIncidentsPerService();
+        model.addAttribute("perService", perService);
+        model.addAttribute("busiestService",
+                perService.stream().mapToLong(ServiceIncidentCount::incidents).max().orElse(0));
+
+        model.addAttribute("waiting", assignmentService.waitingForTechnician());
+        model.addAttribute("activeStrategy", assignmentService.getActiveStrategy());
+
+        // Intelligent features: who is likely to miss a deadline next, and what has been escalated.
+        model.addAttribute("status", statusService.overview());
+        model.addAttribute("forecasts", slaPredictor.forecastAll(incidents.findByStatusIn(Status.openStatuses()),
+                LocalDateTime.now()));
+        model.addAttribute("slaRisks", slaRiskRanker.rank(incidents.findByStatusIn(Status.openStatuses()),
+                LocalDateTime.now(), 5));
+        model.addAttribute("escalated", incidents.findByEscalatedAtIsNotNullAndStatusInOrderByEscalatedAtDescIdDesc(
+                Status.openStatuses()));
+        return "admin/dashboard";
+    }
+
+    // ---- incidents ----
+
+    /** The incident list. With no filters it shows everything; the form above the list narrows it down. */
+    @GetMapping("/incidents")
+    public String incidents(@Valid @ModelAttribute("criteria") IncidentSearchCriteria criteria,
+                            BindingResult result, Model model) {
+        model.addAttribute("heading", "Incidents");
+        return incidentPages.search(model, criteria, result, INCIDENTS, INCIDENTS);
+    }
+
+    @GetMapping("/incidents/{code}")
+    public String incident(@AuthenticationPrincipal QuellUserDetails user, @PathVariable String code, Model model) {
+        String view = incidentPages.show(model, code, currentAdministrator(user), INCIDENTS);
+
+        // Extra for administrators: the assignment box.
+        Incident incident = (Incident) model.getAttribute("incident");
+        model.addAttribute("loads", assignmentService.technicianLoads());
+        model.addAttribute("activeStrategy", assignmentService.getActiveStrategy());
+        if (incident.getAssignee() == null) {
+            AuditEntry lastFailure = auditEntries.findFirstByIncidentIdAndActionOrderByOccurredAtDescIdDesc(
+                    incident.getId(), IncidentAction.ASSIGNMENT_FAILED);
+            model.addAttribute("assignmentWarning", lastFailure == null ? null : lastFailure.getNote());
+        }
+        return view;
+    }
+
+    @PostMapping("/incidents/{code}/transition")
+    public String changeStatus(@AuthenticationPrincipal QuellUserDetails user, @PathVariable String code,
+                               @Valid @ModelAttribute TransitionForm form, RedirectAttributes redirect) {
+        return incidentPages.changeStatus(code, form, currentAdministrator(user), INCIDENTS, redirect);
+    }
+
+    @PostMapping("/incidents/{code}/classification")
+    public String reclassify(@AuthenticationPrincipal QuellUserDetails user, @PathVariable String code,
+                             @Valid @ModelAttribute ClassificationForm form, RedirectAttributes redirect) {
+        return incidentPages.reclassify(code, form, currentAdministrator(user), INCIDENTS, redirect);
+    }
+
+    @PostMapping("/incidents/{code}/notes")
+    public String addNote(@AuthenticationPrincipal QuellUserDetails user, @PathVariable String code,
+                          @Valid @ModelAttribute NoteForm form, RedirectAttributes redirect) {
+        return incidentPages.addNote(code, form, currentAdministrator(user), INCIDENTS, redirect);
+    }
+
+    /** Assign, or reassign, by hand. */
+    @PostMapping("/incidents/{code}/assign")
+    public String assign(@AuthenticationPrincipal QuellUserDetails user, @PathVariable String code,
+                         @Valid @ModelAttribute AssignForm form, BindingResult result,
+                         RedirectAttributes redirect) {
+        if (result.hasErrors()) {
+            redirect.addFlashAttribute("error", "Please choose a technician.");
+            return "redirect:" + INCIDENTS + "/" + code;
+        }
+        return incidentPages.perform(INCIDENTS + "/" + code, redirect, () -> {
+            Incident incident = incidentService.assign(code, form.getTechnicianId(), currentAdministrator(user));
+            return "%s is now assigned to %s.".formatted(code, incident.getAssignee().getName());
+        });
+    }
+
+    /** Let the active strategy try again for an incident that has no technician. */
+    @PostMapping("/incidents/{code}/auto-assign")
+    public String autoAssign(@AuthenticationPrincipal QuellUserDetails user, @PathVariable String code,
+                             RedirectAttributes redirect) {
+        return incidentPages.perform(INCIDENTS + "/" + code, redirect, () -> {
+            Incident incident = incidentService.autoAssign(code, currentAdministrator(user));
+            if (incident.getAssignee() == null) {
+                throw new TechnicianUnavailableException(
+                        "No technician could be found for %s. The timeline shows why.".formatted(code));
+            }
+            return "%s is now assigned to %s.".formatted(code, incident.getAssignee().getName());
+        });
+    }
+
+    // ---- settings ----
+
+    @GetMapping("/settings")
+    public String settings(Model model) {
+        model.addAttribute("strategies", assignmentService.getStrategies());
+        model.addAttribute("activeStrategy", assignmentService.getActiveStrategy());
+        model.addAttribute("demoSla", slaService.isDemoMode());
+        model.addAttribute("demoPolicies", slaService.demoPolicies());
+        return "admin/settings";
+    }
+
+    /** Switches the assignment strategy. It applies to the very next incident; no restart is needed. */
+    @PostMapping("/settings/assignment-strategy")
+    public String useStrategy(@Valid @ModelAttribute SettingsForms.Strategy form, RedirectAttributes redirect) {
+        return incidentPages.perform("/admin/settings", redirect, () -> {
+            AssignmentStrategy strategy = assignmentService.useStrategy(form.getKey());
+            return "New incidents are now assigned with the %s strategy.".formatted(strategy.getName());
+        });
+    }
+
+    /** Switches the short demo SLA deadlines on or off. */
+    @PostMapping("/settings/demo-sla")
+    public String demoSla(@Valid @ModelAttribute SettingsForms.DemoSla form, RedirectAttributes redirect) {
+        slaService.setDemoMode(form.getEnabled());
+        redirect.addFlashAttribute("success", form.getEnabled()
+                ? "Demo SLA is on. Incidents reported from now on get the short demo deadlines."
+                : "Demo SLA is off. Incidents reported from now on get the normal SLA policies.");
+        return "redirect:/admin/settings";
+    }
+
+    /** Runs the SLA check now instead of waiting for the next minute. Handy while recording a demo. */
+    @PostMapping("/settings/check-sla")
+    public String checkSlaNow(RedirectAttributes redirect) {
+        int checked = slaService.checkOpenIncidents(LocalDateTime.now());
+        redirect.addFlashAttribute("success", checked == 1
+                ? "The SLA check has run: 1 open incident checked."
+                : "The SLA check has run: %d open incidents checked.".formatted(checked));
+        return "redirect:/admin/settings";
+    }
+
+    /**
+     * Resets the demo data: removes every incident and, unless "empty" was
+     * asked for, adds the sample incidents.
+     */
+    @PostMapping("/settings/reset-demo-data")
+    public String resetDemoData(@RequestParam(defaultValue = "true") boolean samples, RedirectAttributes redirect) {
+        return incidentPages.perform("/admin/settings", redirect, () -> {
+            int added = demoDataService.reset(samples);
+            liveUpdates.everythingChanged(); // every open page fetches its content again
+            return samples
+                    ? "The demo data has been reset: %d sample incidents were added.".formatted(added)
+                    : "All incidents have been removed. The next incident will be INC-0001.";
+        });
+    }
+
+    // ---- email outbox ----
+
+    /** The emails the system would have sent. They are simulated, so this page is where they can be read. */
+    @GetMapping("/emails")
+    public String emails(Model model) {
+        model.addAttribute("emails", emails.findTop200ByOrderByCreatedAtDescIdDesc());
+        return "admin/emails";
+    }
+
+    private Administrator currentAdministrator(QuellUserDetails user) {
+        return administrators.findById(user.getId()).orElseThrow();
+    }
+}

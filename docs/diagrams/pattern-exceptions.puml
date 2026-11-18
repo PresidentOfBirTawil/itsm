@@ -1,6 +1,6 @@
 @startuml pattern-exceptions
 !include style.iuml
-' One exception class per broken rule, all under ItsmException.
+' One exception class per broken rule, all under QuellException.
 
 set separator none
 left to right direction
@@ -9,7 +9,7 @@ skinparam nodesep 6
 skinparam ranksep 40
 
 class RuntimeException
-abstract class ItsmException
+abstract class QuellException
 class InvalidStateTransitionException
 class TechnicianUnavailableException
 class WorkloadExceededException
@@ -22,15 +22,15 @@ class NotFoundException
 class IncidentNotFoundException
 class ServiceNotFoundException
 
-RuntimeException <|-- ItsmException
-ItsmException <|-- InvalidStateTransitionException
-ItsmException <|-- TechnicianUnavailableException
-ItsmException <|-- WorkloadExceededException
-ItsmException <|-- MissingSlaConfigurationException
-ItsmException <|-- DuplicateIncidentException
-ItsmException <|-- UnauthorizedOperationException
-ItsmException <|-- InvalidInputException
-ItsmException <|-- NotFoundException
+RuntimeException <|-- QuellException
+QuellException <|-- InvalidStateTransitionException
+QuellException <|-- TechnicianUnavailableException
+QuellException <|-- WorkloadExceededException
+QuellException <|-- MissingSlaConfigurationException
+QuellException <|-- DuplicateIncidentException
+QuellException <|-- UnauthorizedOperationException
+QuellException <|-- InvalidInputException
+QuellException <|-- NotFoundException
 InvalidInputException <|-- EmailAlreadyRegisteredException
 NotFoundException <|-- IncidentNotFoundException
 NotFoundException <|-- ServiceNotFoundException

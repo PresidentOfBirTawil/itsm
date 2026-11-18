@@ -24,13 +24,13 @@ Errors use RFC 9457 problem details: 400 invalid input, 401 no or bad key, 403 n
 
 # Repository layout {#appendix-e .appendix}
 
-The complete source code is at **https://github.com/PresidentOfBirTawil/itsm**; the installers of every release are at **https://github.com/PresidentOfBirTawil/itsm/releases/latest**.
+The complete source code is at **https://github.com/PresidentOfBirTawil/quell**; the installers of every release are at **https://github.com/PresidentOfBirTawil/quell/releases/latest**.
 
 ```text
 .github/workflows/build.yml     tests, installers for three systems, release
 docs/                           report, diagrams, test cases, install guide
 packaging/                      installer scripts, icons, release notes
-src/main/java/com/itsm/
+src/main/java/com/quell/
   domain/, domain/state/        entities, enumerations, the nine states
   service/                      use cases: report, move, reclassify, join
   assignment/, sla/, priority/  assignment strategies, SLA rules, priority
@@ -48,7 +48,7 @@ src/main/resources/
   templates/                    42 Thymeleaf pages and fragments
   static/                       design system, scripts, fonts, offline page
   application*.properties       development, desktop and production settings
-src/test/java/com/itsm/         41 test classes, 617 tests
+src/test/java/com/quell/         41 test classes, 617 tests
 Dockerfile, docker-compose.yml  server image with PostgreSQL
 Start Quell.bat, .command       one-click start from a source checkout
 pom.xml, mvnw, mvnw.cmd         Maven build and wrapper

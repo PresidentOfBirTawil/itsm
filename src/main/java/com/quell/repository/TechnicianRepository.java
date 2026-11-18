@@ -1,0 +1,22 @@
+package com.quell.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import com.quell.domain.Technician;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TechnicianRepository extends JpaRepository<Technician, Long> {
+
+    /** Loads the technicians together with their skills in one query. */
+    @EntityGraph(attributePaths = "skills")
+    List<Technician> findAllByOrderByNameAsc();
+
+    /** In id order: the turn order used by the round-robin assignment strategy. */
+    @EntityGraph(attributePaths = "skills")
+    List<Technician> findAllByOrderByIdAsc();
+
+    @EntityGraph(attributePaths = "skills")
+    Optional<Technician> findWithSkillsById(Long id);
+}

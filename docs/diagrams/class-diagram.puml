@@ -1,8 +1,8 @@
 @startuml class-diagram
 !include style.iuml
-' The domain model, drawn from the classes in com.itsm.domain.
+' The domain model, drawn from the classes in com.quell.domain.
 ' Legend:  <|--  inheritance    -->  association    *--  composition    ..>  uses
-title Quell · Class diagram 1: the domain model (com.itsm.domain)
+title Quell · Class diagram 1: the domain model (com.quell.domain)
 
 set separator none
 hide empty members
@@ -135,7 +135,7 @@ class SlaTarget <<record, value>> {
   + isLate(now) : boolean
 }
 
-interface IncidentState <<com.itsm.domain.state>> {
+interface IncidentState <<com.quell.domain.state>> {
   + transitions() : List<Transition>
   + canTransitionTo(status) : boolean
   + onEnter(incident, from, now)

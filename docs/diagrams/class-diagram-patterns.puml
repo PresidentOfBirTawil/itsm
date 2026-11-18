@@ -15,7 +15,7 @@ class IncidentService <<service>> {
   + addNote(…)  + rate(…)  + assign(…)
 }
 
-package "State · com.itsm.domain.state" {
+package "State · com.quell.domain.state" {
   interface IncidentState {
     + status() : Status
     + transitions() : List<Transition>
@@ -62,7 +62,7 @@ package "State · com.itsm.domain.state" {
 }
 Incident ..> IncidentStates : getState()
 
-package "Strategy + Template Method · com.itsm.assignment" {
+package "Strategy + Template Method · com.quell.assignment" {
   interface AssignmentStrategy {
     + getKey() : String
     + getName() : String
@@ -96,7 +96,7 @@ package "Strategy + Template Method · com.itsm.assignment" {
   AssignmentStrategy ..> TechnicianLoad
 }
 
-package "Strategy · com.itsm.priority" {
+package "Strategy · com.quell.priority" {
   interface PriorityCalculator {
     + calculate(incident) : PriorityAssessment
     + describeRule() : String
@@ -107,14 +107,14 @@ package "Strategy · com.itsm.priority" {
   PriorityCalculator <|.. WeightedPriorityCalculator
 }
 
-package "Factory · com.itsm.service" {
+package "Factory · com.quell.service" {
   class IncidentFactory {
     + create(reporter, title, description,\n   service, category, impact, urgency) : Incident
   }
 }
 IncidentFactory ..> Incident : <<creates>>
 
-package "Observer · com.itsm.event" {
+package "Observer · com.quell.event" {
   class IncidentEvent <<record>> {
     incident, actor, action
     oldStatus, newStatus, note, occurredAt
@@ -132,7 +132,7 @@ package "Observer · com.itsm.event" {
   IncidentEventPublisher ..> IncidentEvent
 }
 
-package "Strategy + Factory · com.itsm.notification" {
+package "Strategy + Factory · com.quell.notification" {
   class NotificationListener {
     + messagesFor(event) : List<NotificationMessage>
   }
@@ -162,7 +162,7 @@ package "Strategy + Factory · com.itsm.notification" {
 }
 IncidentEventListener <|.. NotificationListener
 
-package "Live updates · com.itsm.live" {
+package "Live updates · com.quell.live" {
   class LiveUpdateListener {
     + onIncidentEvent(event)
   }
@@ -182,8 +182,8 @@ package "Live updates · com.itsm.live" {
 IncidentEventListener <|.. LiveUpdateListener
 LiveChannel --> LiveUpdates : bell count
 
-package "Exceptions · com.itsm.error" {
-  abstract class ItsmException
+package "Exceptions · com.quell.error" {
+  abstract class QuellException
   class InvalidStateTransitionException
   class TechnicianUnavailableException
   class WorkloadExceededException
@@ -192,27 +192,27 @@ package "Exceptions · com.itsm.error" {
   class UnauthorizedOperationException
   class InvalidInputException
   class NotFoundException
-  class EmailAlreadyRegisteredException <<com.itsm.service>>
+  class EmailAlreadyRegisteredException <<com.quell.service>>
   class IncidentNotFoundException
   class ServiceNotFoundException
-  ItsmException <|-- InvalidStateTransitionException
-  ItsmException <|-- TechnicianUnavailableException
-  ItsmException <|-- WorkloadExceededException
-  ItsmException <|-- MissingSlaConfigurationException
-  ItsmException <|-- DuplicateIncidentException
-  ItsmException <|-- UnauthorizedOperationException
-  ItsmException <|-- InvalidInputException
-  ItsmException <|-- NotFoundException
+  QuellException <|-- InvalidStateTransitionException
+  QuellException <|-- TechnicianUnavailableException
+  QuellException <|-- WorkloadExceededException
+  QuellException <|-- MissingSlaConfigurationException
+  QuellException <|-- DuplicateIncidentException
+  QuellException <|-- UnauthorizedOperationException
+  QuellException <|-- InvalidInputException
+  QuellException <|-- NotFoundException
   InvalidInputException <|-- EmailAlreadyRegisteredException
   NotFoundException <|-- IncidentNotFoundException
   NotFoundException <|-- ServiceNotFoundException
 }
-RuntimeException <|-- ItsmException
+RuntimeException <|-- QuellException
 
 IncidentService --> IncidentFactory
 IncidentService --> PriorityCalculator
 IncidentService --> AssignmentService
 IncidentService --> IncidentEventPublisher
 AssignmentService --> IncidentEventPublisher
-IncidentService ..> ItsmException : throws
+IncidentService ..> QuellException : throws
 @enduml

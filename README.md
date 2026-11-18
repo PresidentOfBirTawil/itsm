@@ -8,7 +8,7 @@
 <p align="center"><b>Intelligent IT service management.</b> IT incidents, resolved before they escalate.</p>
 
 <p align="center">
-  <a href="https://github.com/PresidentOfBirTawil/itsm/releases/latest"><b>Download for Windows, macOS or Linux</b></a> ·
+  <a href="https://github.com/PresidentOfBirTawil/quell/releases/latest"><b>Download for Windows, macOS or Linux</b></a> ·
   <a href="docs/report/Quell-Project-Report.pdf">Project report (PDF)</a> ·
   <a href="docs/video-script.md">Video script</a> ·
   <a href="docs/INSTALL.md">Install guide</a>
@@ -39,7 +39,7 @@ as desktop alerts, and in Slack or Microsoft Teams.
 ## Get it running
 
 **Easiest: the installer.** Download `Quell-Setup-Windows.exe`, `Quell-Mac.dmg` or `Quell-Linux.deb`
-from the [releases page](https://github.com/PresidentOfBirTawil/itsm/releases/latest), install it and
+from the [releases page](https://github.com/PresidentOfBirTawil/quell/releases/latest), install it and
 open Quell. Nothing else is needed; your browser opens by itself. Details: [docs/INSTALL.md](docs/INSTALL.md).
 
 **On a server, with PostgreSQL:**
@@ -63,9 +63,9 @@ The sign-in page has one-click buttons for these.
 
 | Role | E-mail | Password |
 |---|---|---|
-| Administrator | `admin@itsm.local` | `admin12345` |
-| Technicians | `tech1@itsm.local` … `tech4@itsm.local` | `tech12345` |
-| Employees | `emp1@itsm.local` … `emp4@itsm.local` | `emp12345` |
+| Administrator | `admin@quell.local` | `admin12345` |
+| Technicians | `tech1@quell.local` … `tech4@quell.local` | `tech12345` |
+| Employees | `emp1@quell.local` … `emp4@quell.local` | `emp12345` |
 
 To fill the app with 83 realistic incidents, sign in as the administrator and press *System → Settings
 → Reset and add sample incidents*. *Switch demo SLA on* shortens the deadlines to minutes for
@@ -112,7 +112,7 @@ A layered Spring Boot application with an object-oriented domain model at its ce
 | Delivery | jpackage installers for Windows, macOS and Linux; Docker |
 
 ```text
-src/main/java/com/itsm/
+src/main/java/com/quell/
   domain/ domain/state/     entities and the nine incident states        api/          REST API and API keys
   service/ assignment/      reporting, lifecycle, assignment strategies  webhook/      webhooks (outbox, signing, retries)
   sla/ priority/            SLA policies, monitoring, priority           assistant/    the reporting assistant

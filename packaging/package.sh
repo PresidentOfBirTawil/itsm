@@ -14,7 +14,7 @@ set -euo pipefail
 KIND="${1:-installer}"
 cd "$(dirname "$0")/.."
 
-VERSION="$(sed -n '/<artifactId>itsm<\/artifactId>/{n;s/.*<version>\(.*\)<\/version>.*/\1/p;}' pom.xml)"
+VERSION="$(sed -n '/<artifactId>quell<\/artifactId>/{n;s/.*<version>\(.*\)<\/version>.*/\1/p;}' pom.xml)"
 NAME="Quell"
 # Everything in Java SE, plus the JDK parts the libraries use (crypto, locales, zip file systems, Unsafe).
 MODULES="java.se,jdk.unsupported,jdk.unsupported.desktop,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.charsets,jdk.localedata,jdk.zipfs,jdk.management,jdk.net,jdk.naming.dns,jdk.httpserver,jdk.accessibility,jdk.security.auth,jdk.security.jgss"
