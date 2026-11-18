@@ -1,6 +1,6 @@
 # Test cases
 
-The project has **617 automated tests** in 41 test classes (JUnit 6, AssertJ, Mockito, Spring's MockMvc,
+The project has **619 automated tests** in 41 test classes (JUnit 6, AssertJ, Mockito, Spring's MockMvc,
 Awaitility). They run with one command and need nothing installed except Java 25:
 
 ```bash
@@ -106,7 +106,7 @@ exception classes extend the one abstract `QuellException`.
 | `QuellApplicationTests` | 1 | The application starts. |
 | `SecurityTests` | 16 | Sign-in, wrong password, each role's pages and navbar, every URL protected by role, sign-out. |
 | `RegistrationTests` | 5 | Employee self-registration, BCrypt hashing, duplicate email, bad input, CSRF. |
-| `SeedDataTests` | 8 | The seed data: users, skills, services, categories, the brief's four SLA policies. |
+| `SeedDataTests` | 10 | The seed data: users, skills, services, categories, the brief's four SLA policies; demo accounts from earlier versions get today's address. |
 | `DomainModelTests` | 10 | Inheritance, associations and the incident code in the database. |
 | `WeightedPriorityCalculatorTests` | 32 | The priority formula, every band edge, all 27 input combinations. |
 | `IncidentLifecycleTests` | 116 | The State pattern: all 81 moves, one class per status, what each role may do. |
@@ -144,7 +144,7 @@ exception classes extend the one abstract `QuellException`.
 | `SecurityHardeningTests` | 6 | Content security policy and other headers, no inline scripts, sign-in lockout and its expiry. |
 | `AppShellTests` | 3 | The installable app: manifest, service worker, offline page, desktop alert controls. |
 | `DesktopAndBrandTests` | 7 | The desktop launcher's data folder, single instance and port, and the product name everywhere. |
-| **Total** | **617** | |
+| **Total** | **619** | |
 
 ## How the tests are built
 

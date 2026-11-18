@@ -1,6 +1,6 @@
 # Testing {#testing .chapter}
 
-617 automated tests in 41 test classes, all passing. They run with one command (`./mvnw test`) in about four minutes, need nothing but Java, and run again on every push. Thirty-six of them are documented as test cases; the sixteen below cover every kind the brief asks for, and Appendix B lists all thirty-six with their inputs and test methods.
+619 automated tests in 41 test classes, all passing. They run with one command (`./mvnw test`) in about four minutes, need nothing but Java, and run again on every push. Thirty-six of them are documented as test cases; the sixteen below cover every kind the brief asks for, and Appendix B lists all thirty-six with their inputs and test methods.
 
 ## Approach
 

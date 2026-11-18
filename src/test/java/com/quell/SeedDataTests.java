@@ -52,6 +52,34 @@ class SeedDataTests {
     private DataSeeder seeder;
 
     @Test
+    void demoPeopleFromAnEarlierVersionGetTodaysAddress() {
+        User admin = users.findByEmail("admin@quell.local").orElseThrow();
+        admin.changeEmail("admin@old-name.local");
+        User employee = users.findByEmail("emp2@quell.local").orElseThrow();
+        employee.changeEmail("emp2@old-name.local");
+        users.saveAllAndFlush(List.of(admin, employee));
+
+        seeder.run(new DefaultApplicationArguments());
+
+        assertThat(users.findByEmail("admin@quell.local")).get().extracting(User::getName).isEqualTo("Neha Kapoor");
+        assertThat(users.findByEmail("emp2@quell.local")).get().extracting(User::getName).isEqualTo("Rahul Verma");
+        assertThat(users.findByEmail("admin@old-name.local")).isEmpty();
+        assertThat(users.count()).isEqualTo(9);
+    }
+
+    @Test
+    void anAccountThatOnlySharesTheNameOfADemoPersonIsLeftAlone() {
+        User employee = users.findByEmail("emp3@quell.local").orElseThrow();
+        employee.changeEmail("ananya.iyer@company.example");
+        users.saveAndFlush(employee);
+
+        seeder.run(new DefaultApplicationArguments());
+
+        assertThat(users.findByEmail("ananya.iyer@company.example")).isPresent();
+        assertThat(users.findByEmail("emp3@quell.local")).isEmpty();
+    }
+
+    @Test
     void oneAdminFourTechniciansFourEmployees() {
         assertThat(administrators.count()).isEqualTo(1);
         assertThat(technicians.count()).isEqualTo(4);

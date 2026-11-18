@@ -14,6 +14,7 @@ import com.quell.domain.KnowledgeArticle;
 import com.quell.domain.Priority;
 import com.quell.domain.SlaPolicy;
 import com.quell.domain.Technician;
+import com.quell.domain.User;
 import com.quell.repository.CategoryRepository;
 import com.quell.repository.ITServiceRepository;
 import com.quell.repository.KnowledgeArticleRepository;
@@ -65,6 +66,7 @@ public class DataSeeder implements ApplicationRunner {
         seedSlaPolicies();
         seedServices();
         seedUsers();
+        alignDemoAccounts();
         seedKnowledgeBase();
         seedServiceDetails();
     }
@@ -189,6 +191,45 @@ public class DataSeeder implements ApplicationRunner {
                 new Employee("Karan Mehta", "emp4@quell.local", employeeHash)));
 
         log.info("Seeded {} users (demo logins are listed in README.md)", users.count());
+    }
+
+    /** The demo people and the address each one signs in with (the one-click demo sign-in uses them too). */
+    private record DemoLogin(String name, String email) {
+    }
+
+    private static final List<DemoLogin> DEMO_LOGINS = List.of(
+            new DemoLogin("Neha Kapoor", "admin@quell.local"),
+            new DemoLogin("Ravi Kumar", "tech1@quell.local"),
+            new DemoLogin("Meera Nair", "tech2@quell.local"),
+            new DemoLogin("Arjun Singh", "tech3@quell.local"),
+            new DemoLogin("Sara Thomas", "tech4@quell.local"),
+            new DemoLogin("Priya Sharma", "emp1@quell.local"),
+            new DemoLogin("Rahul Verma", "emp2@quell.local"),
+            new DemoLogin("Ananya Iyer", "emp3@quell.local"),
+            new DemoLogin("Karan Mehta", "emp4@quell.local"));
+
+    /**
+     * Databases made by earlier versions hold the demo people under an older {@code .local}
+     * address with the same name before the @. Give them today's address, so that the one-click
+     * demo sign-in and the sample incidents find them. Only a demo person is matched: the same
+     * name, the same part before the @, a {@code .local} address, and nobody using today's address.
+     */
+    private void alignDemoAccounts() {
+        List<User> everyone = users.findAll();
+        for (DemoLogin login : DEMO_LOGINS) {
+            if (users.findByEmail(login.email()).isPresent()) {
+                continue;
+            }
+            String before = login.email().substring(0, login.email().indexOf('@') + 1);
+            everyone.stream()
+                    .filter(user -> login.name().equals(user.getName()))
+                    .filter(user -> user.getEmail().startsWith(before) && user.getEmail().endsWith(".local"))
+                    .findFirst()
+                    .ifPresent(user -> {
+                        log.info("Demo account {} now signs in as {}", user.getEmail(), login.email());
+                        user.changeEmail(login.email());
+                    });
+        }
     }
 
     /** Starter articles for the problems every organisation has, so suggestions work from the first day. */

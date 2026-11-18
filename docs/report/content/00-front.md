@@ -35,7 +35,7 @@ Quell is an IT service management product. An employee reports a problem in seco
 
 ```{=html}
 <div class="stats">
-  <div><div class="value">617</div><div class="label">automated tests,<br>all passing</div></div>
+  <div><div class="value">619</div><div class="label">automated tests,<br>all passing</div></div>
   <div><div class="value">15<small>&thinsp;/&thinsp;16</small></div><div class="label">innovation challenges<br>of the brief built in</div></div>
   <div><div class="value">41</div><div class="label">functional requirements,<br>each traced to its class</div></div>
   <div><div class="value">222</div><div class="label">Java classes in 28 packages,<br>16,700 lines</div></div>

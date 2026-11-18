@@ -42,7 +42,7 @@ Three roles, 41 functional requirements, 14 quality requirements and 32 business
 | NFR-06 | Usability         | Only permitted actions are shown; feedback after every action; works on a phone; dark and light themes.         |
 | NFR-07 | Persistence       | An H2 file on a desktop, PostgreSQL on a server.                                                                |
 | NFR-08 | Performance       | Indexed lookups, related objects fetched in one query, paged API lists; the SLA check takes milliseconds.         |
-| NFR-09 | Testability       | Rules live in plain classes; 617 automated tests run in about four minutes.                                     |
+| NFR-09 | Testability       | Rules live in plain classes; 619 automated tests run in about four minutes.                                     |
 | NFR-10 | Portability       | Installers with Java included for Windows, macOS and Linux; a container image for servers.                       |
 | NFR-11 | Error tolerance   | No stack trace ever reaches a user; API errors use RFC 9457 problem details.                                     |
 | NFR-12 | Upgradability     | New columns are nullable and enums are stored as text, so a new version runs on an existing database.            |

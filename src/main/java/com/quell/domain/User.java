@@ -98,6 +98,11 @@ public abstract class User {
         return email;
     }
 
+    /** Gives the account another sign-in address, stored the same way as a new one. */
+    public void changeEmail(String email) {
+        this.email = normaliseEmail(email);
+    }
+
     /** True unless an administrator has disabled the account. */
     public boolean isEnabled() {
         return enabled == null || enabled;

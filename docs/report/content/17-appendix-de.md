@@ -48,7 +48,7 @@ src/main/resources/
   templates/                    42 Thymeleaf pages and fragments
   static/                       design system, scripts, fonts, offline page
   application*.properties       development, desktop and production settings
-src/test/java/com/quell/         41 test classes, 617 tests
+src/test/java/com/quell/         41 test classes, 619 tests
 Dockerfile, docker-compose.yml  server image with PostgreSQL
 Start Quell.bat, .command       one-click start from a source checkout
 pom.xml, mvnw, mvnw.cmd         Maven build and wrapper

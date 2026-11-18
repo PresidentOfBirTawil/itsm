@@ -108,7 +108,7 @@ A layered Spring Boot application with an object-oriented domain model at its ce
 | Pages | Thymeleaf, Bootstrap 5.3 under Quell's own design system, Geist and Geist Mono; plain JavaScript (live updates over server-sent events, chat, voice, service worker) |
 | API | REST with springdoc-openapi (Swagger UI), RFC 9457 problem details |
 | Data | H2 (desktop, development, tests), PostgreSQL (servers) |
-| Quality | 617 automated tests in 41 classes (JUnit, AssertJ, Mockito, MockMvc), GitHub Actions |
+| Quality | 619 automated tests in 41 classes (JUnit, AssertJ, Mockito, MockMvc), GitHub Actions |
 | Delivery | jpackage installers for Windows, macOS and Linux; Docker |
 
 ```text
@@ -137,7 +137,7 @@ Object-Oriented Programming** project *Intelligent IT Service Management & Incid
 | 5. Technology stack and the nine questions | report section 7 |
 | 6. Source code | this repository |
 | 7. Database design | report section 8 |
-| 8. Testing (36 documented cases, 617 automated tests) | report section 9 and appendix B · [docs/test-cases.md](docs/test-cases.md) |
+| 8. Testing (36 documented cases, 619 automated tests) | report section 9 and appendix B · [docs/test-cases.md](docs/test-cases.md) |
 | 9. Project demonstration (three workflows) | report section 12 · [video script](docs/video-script.md) |
 
 The report is written in Markdown (`docs/report/content`) and built into a PDF with `docs/report/build.sh`
