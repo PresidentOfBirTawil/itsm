@@ -10,7 +10,7 @@ The domain is modelled as objects with behaviour, not as tables with procedures 
 | Encapsulation              | `Incident`                                                                                | Private fields and no `setStatus`: the status changes only through `transitionTo`, `prioritise` and `assignTo`, which check the rules first. |
 | Abstraction                | Abstract `User`, `QuellException`; interfaces `IncidentState`, `AssignmentStrategy`, `PriorityCalculator`, `NotificationChannel`, `IncidentEventListener` | Callers depend on "a strategy" or "a channel", never on which one.                     |
 | Inheritance                | `Employee`, `Technician`, `Administrator` extend `User`; three strategies extend `AbstractAssignmentStrategy`; eleven exceptions extend `QuellException` | Used only for true "is a" relations. All users share one table (single-table inheritance). |
-| Polymorphism               | `user.canWorkOn(incident)`, `state.transitions()`, `strategy.choose(…)`                     | "Is it mine?" for an employee, "is it assigned to me?" for a technician, "yes" for an administrator, with no `if (role == …)` anywhere. |
+| Polymorphism               | `user.canWorkOn(incident)`, `state.transitions()`, `strategy.choose(…)`                     | "Is it mine?" for an employee, "is it assigned to me?" for a technician, "yes" for an administrator: each class answers in its own way, instead of one chain of `if (role == …)` checks. |
 | Interfaces                 | The five above                                                                            | Each has two or more implementations that can be exchanged.                                                     |
 | Association                | Incident → reporter, assignee, service, category; technician ↔ skills                     | Objects that know each other but live independently.                                                           |
 | Composition                | An incident owns its `PriorityAssessment`, audit history and attachments                  | The parts have no meaning without the incident.                                                                 |
@@ -35,7 +35,7 @@ There are several reasonable ways to choose a technician, and the administrator 
 
 ## Observer, Factory and Strategy: reacting to a change
 
-A service that changes an incident publishes an `IncidentEvent` and does not know who listens. Five listeners react: the audit trail, notifications, live screen updates, the learning classifier and webhooks. Live updates, learning and webhooks were all added after the core was finished, and not one line of the incident services changed.
+A service that changes an incident publishes an `IncidentEvent` and does not know who listens. Five listeners react: the audit trail, notifications, live screen updates, the learning classifier and webhooks. Live updates and webhooks were both added after the core was finished, as new listeners, and not one line of the incident services changed for them.
 
 ![Observer. The publisher holds a list of listeners that Spring fills with every class implementing `IncidentEventListener`.](../diagrams/pattern-observer.svg){width=72%}
 

@@ -99,7 +99,8 @@ A layered Spring Boot application with an object-oriented domain model at its ce
 - **Strategy**: assignment rules, the priority rule and notification channels are interchangeable classes
   behind interfaces; the administrator switches the assignment rule while the app runs.
 - **Observer**: every change is an event; the audit trail, notifications, live updates, the learning
-  classifier and webhooks are listeners, added without touching the incident logic.
+  classifier and webhooks are listeners. Live updates and webhooks were added this way, without
+  touching the incident logic.
 - **Factory, Template Method, Decorator, Repository, Specification, transactional outbox**.
 
 | Layer | Technology |
