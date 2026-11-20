@@ -228,7 +228,7 @@ class StatusAndAffectedTests {
     // ---- reporting with known problems in mind ----
 
     @Test
-    void theReportFormPointsToAKnownProblemAndRecognisesTheService() throws Exception {
+    void theReportFormPointsToAKnownProblemRecognisesTheServiceAndSaysWhoFollowsIt() throws Exception {
         Incident outage = report(employee(1), "Database is down", "Database Cluster", "Database", Impact.HIGH, Urgency.HIGH);
         MockHttpSession rahul = signIn("emp2@quell.local", DataSeeder.EMPLOYEE_PASSWORD);
 
@@ -238,12 +238,28 @@ class StatusAndAffectedTests {
                         .param("serviceId", service("Payment Application").getId().toString()))
                 .andExpect(jsonPath("$.knownIssues", hasSize(1)))
                 .andExpect(jsonPath("$.knownIssues[0].code").value(outage.getCode()))
+                .andExpect(jsonPath("$.knownIssues[0].following").value(false))
                 .andExpect(jsonPath("$.service.label").value("Payment Application"));
         mvc.perform(get("/employee/incidents/assist").session(rahul)
                         .param("title", "VPN drops").param("description", "")
                         .param("serviceId", service("Corporate Network").getId().toString()))
                 .andExpect(jsonPath("$.knownIssues", hasSize(0)))
                 .andExpect(jsonPath("$.service.label").value("Corporate Network"));
+
+        // The reporter and anyone who said "I'm affected too" are shown that they follow it, not offered to join.
+        incidentService.joinAsAffected(outage.getCode(), employee(2));
+        String payment = service("Payment Application").getId().toString();
+        assertFollowing("emp1@quell.local", payment, outage, true);    // reported it
+        assertFollowing("emp2@quell.local", payment, outage, true);    // said "I'm affected too"
+        assertFollowing("emp3@quell.local", payment, outage, false);   // can still join
+    }
+
+    private void assertFollowing(String email, String serviceId, Incident outage, boolean following) throws Exception {
+        mvc.perform(get("/employee/incidents/assist").session(signIn(email, DataSeeder.EMPLOYEE_PASSWORD))
+                        .param("title", "Checkout fails").param("description", "").param("serviceId", serviceId))
+                .andExpect(jsonPath("$.knownIssues", hasSize(1)))
+                .andExpect(jsonPath("$.knownIssues[0].code").value(outage.getCode()))
+                .andExpect(jsonPath("$.knownIssues[0].following").value(following));
     }
 
     // ---- managing the map ----

@@ -25,9 +25,12 @@ public record ReportAdvice(Suggestion service, Suggestion category, Suggestion i
     /**
      * A serious open incident on the chosen service, or on a service it needs:
      * probably the same problem, which the employee can join instead of reporting it again.
+     *
+     * @param following true when the employee asking reported it or already said "I'm affected too",
+     *                  so the form shows that they follow it instead of offering to join
      */
     public record KnownIssue(String code, String title, String service, String since, int affected,
-                             String priority) {
+                             String priority, boolean following) {
     }
 
     /** A knowledge article that may answer the problem. */

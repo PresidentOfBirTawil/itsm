@@ -234,7 +234,8 @@ kbd, .app-kbd {
 }
 
 /* Codes such as INC-0042 read best in the monospace face. */
-a[href*="/incidents/INC-"], .code {
+/* incident codes in mono; a button that links to an incident keeps the normal type */
+a[href*="/incidents/INC-"]:not(.btn), .code {
     font-family: var(--mono);
     font-size: .92em;
     letter-spacing: -.01em;

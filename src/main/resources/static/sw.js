@@ -12,7 +12,7 @@
  */
 'use strict';
 
-var CACHE = 'quell-shell-v3';
+var CACHE = 'quell-shell-v4';
 var OFFLINE_PAGE = '/offline.html';
 var SHELL = [
     OFFLINE_PAGE,

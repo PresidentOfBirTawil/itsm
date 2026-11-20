@@ -171,10 +171,11 @@ public class EmployeeController {
     /** Live hints for the report form, as JSON: see {@link ReportAssistant}. */
     @GetMapping("/incidents/assist")
     @ResponseBody
-    public ReportAdvice assist(@RequestParam(defaultValue = "") String title,
+    public ReportAdvice assist(@AuthenticationPrincipal QuellUserDetails user,
+                               @RequestParam(defaultValue = "") String title,
                                @RequestParam(defaultValue = "") String description,
                                @RequestParam(required = false) Long serviceId) {
-        return reportAssistant.advise(title, description, serviceId);
+        return reportAssistant.advise(title, description, serviceId, currentEmployee(user));
     }
 
     /** "I'm affected too": the employee follows a known problem instead of reporting it again. */

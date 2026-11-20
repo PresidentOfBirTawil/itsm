@@ -22,6 +22,7 @@
     var lastQuery = '';
 
     var knownBox = panel.querySelector('[data-assist-known]');
+    var suggestionsHeading = panel.querySelector('[data-assist-heading]');
     var csrf = document.querySelector('input[name="_csrf"]');
     var targets = {
         service: { select: document.getElementById('serviceId'), name: 'Service' },
@@ -72,7 +73,8 @@
         var hasKnown = knownBox.children.length > 0;
         articlesBox.classList.toggle('d-none', !hasArticles);
         knownBox.classList.toggle('d-none', !hasKnown);
-        fields.parentElement.querySelector('.fw-semibold').classList.toggle('d-none', !hasFields && !hasArticles);
+        // Only the "Suggestions" heading: the known problems above it have bold headings of their own.
+        suggestionsHeading.classList.toggle('d-none', !hasFields && !hasArticles);
         panel.classList.toggle('d-none', !hasFields && !hasArticles && !hasKnown);
     }
 
@@ -85,6 +87,16 @@
         box.appendChild(heading);
         box.appendChild(element('div', 'small', issue.code + ' · ' + issue.priority + ' · reported ' + issue.since
             + ' · ' + issue.affected + (issue.affected === 1 ? ' person' : ' people') + ' affected'));
+        if (issue.following) {
+            // The employee reported it or already said "I'm affected too": nothing to join.
+            var following = element('div', 'mt-2 d-flex flex-wrap align-items-center gap-2');
+            var link = element('a', 'btn btn-sm btn-outline-secondary py-0', 'Following');
+            link.href = '/employee/incidents/' + encodeURIComponent(issue.code);
+            following.appendChild(link);
+            following.appendChild(element('span', 'small', 'You are already on it and will be told when it is fixed.'));
+            box.appendChild(following);
+            return box;
+        }
         var form = element('form', 'mt-2 d-flex flex-wrap align-items-center gap-2');
         form.method = 'post';
         form.action = '/employee/incidents/' + encodeURIComponent(issue.code) + '/affected';

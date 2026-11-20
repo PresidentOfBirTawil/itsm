@@ -76,7 +76,7 @@
                                           th:unless="${incident.reporter.id == viewerId or #lists.contains(incident.affectedUsers.![id], viewerId)}">
                                         <button type="submit" class="btn btn-sm btn-outline-primary py-0">I'm affected too</button>
                                     </form>
-                                    <a class="ms-auto" th:if="${incident.reporter.id == viewerId or #lists.contains(incident.affectedUsers.![id], viewerId)}"
+                                    <a class="ms-auto btn btn-sm btn-outline-secondary py-0" th:if="${incident.reporter.id == viewerId or #lists.contains(incident.affectedUsers.![id], viewerId)}"
                                        th:href="@{|/employee/incidents/${incident.code}|}">Following</a>
                                 </th:block>
                             </div>

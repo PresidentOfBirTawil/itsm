@@ -3,6 +3,8 @@ package com.quell.intelligence;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import com.quell.domain.Incident;
+import com.quell.domain.User;
 import com.quell.repository.CategoryRepository;
 import com.quell.repository.ITServiceRepository;
 import com.quell.status.StatusService;
@@ -45,13 +47,19 @@ public class ReportAssistant {
         this.statusService = statusService;
     }
 
+    /**
+     * The advice for what the employee has written so far.
+     *
+     * @param viewer the employee writing the report: known problems they already follow are marked as such
+     */
     @Transactional(readOnly = true)
-    public ReportAdvice advise(String title, String description, Long serviceId) {
+    public ReportAdvice advise(String title, String description, Long serviceId, User viewer) {
         String text = (title == null ? "" : title) + " " + (description == null ? "" : description);
         List<ReportAdvice.KnownIssue> knownIssues = statusService.knownIssuesFor(serviceId).stream()
                 .map(incident -> new ReportAdvice.KnownIssue(incident.getCode(), incident.getTitle(),
                         incident.getService().getName(), SINCE.format(incident.getCreatedAt()),
-                        incident.getAffectedCount(), String.valueOf(incident.getPriority())))
+                        incident.getAffectedCount(), String.valueOf(incident.getPriority()),
+                        follows(viewer, incident)))
                 .toList();
         if (text.isBlank()) {
             return new ReportAdvice(null, null, null, null, List.of(), knownIssues);
@@ -86,5 +94,10 @@ public class ReportAssistant {
                         match.item().getTitle(), match.percent(), "/kb/" + match.item().getId()))
                 .toList();
         return new ReportAdvice(service, category, impact, urgency, articles, knownIssues);
+    }
+
+    /** The viewer reported the incident or already said they are affected by it. */
+    private static boolean follows(User viewer, Incident incident) {
+        return viewer != null && (viewer.equals(incident.getReporter()) || incident.isAffecting(viewer));
     }
 }
