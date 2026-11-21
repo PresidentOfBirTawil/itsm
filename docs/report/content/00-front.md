@@ -68,9 +68,9 @@ Quell is an IT service management product. An employee reports a problem in seco
 
 ```{=html}
 <ol class="flows">
-  <li><b>Report → prioritise → assign → notify</b>A payment outage reported by chat becomes P1 (3 × 3 × 3 = 27), gets its deadlines and a skilled technician, who is alerted live.</li>
-  <li><b>Investigate → SLA → resolve → notify</b>The technician acknowledges, asks a question (the SLA clock pauses), applies a suggested fix; the employee confirms and rates.</li>
-  <li><b>Duplicates → correlate → escalate</b>Similar reports are linked, people join the known problem, two failing services are traced to the network they share, and an ignored P1 is escalated.</li>
+  <li><b>Report → prioritise → assign → notify</b>The brief's payment scenario, reported on the form, becomes P1 (3 × 3 × 3 = 27), gets its deadlines and the skilled technician, whose screen updates live.</li>
+  <li><b>Investigate → SLA → resolve → notify</b>The technician acknowledges, asks a question (the SLA clock pauses), applies a suggested fix; the employee confirms and rates, and the fix becomes an article.</li>
+  <li><b>Duplicates → correlate → escalate</b>A spoken report to the assistant joins the known outage, two failing services are traced to the network they share, and an ignored P1 is escalated.</li>
 </ol>
 ```
 

@@ -225,7 +225,7 @@ public class AdminController {
         return "redirect:/admin/settings";
     }
 
-    /** Runs the SLA check now instead of waiting for the next minute. Handy while recording a demo. */
+    /** Runs the SLA check now instead of waiting for the next minute. Handy during a live demonstration. */
     @PostMapping("/settings/check-sla")
     public String checkSlaNow(RedirectAttributes redirect) {
         int checked = slaService.checkOpenIncidents(LocalDateTime.now());

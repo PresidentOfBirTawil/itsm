@@ -35,7 +35,7 @@ public class SlaService {
 
     /**
      * Demo deadlines in minutes (response, resolution). Short enough to show an
-     * "at risk" warning and a breach while recording a video.
+     * "at risk" warning and a breach during a live demonstration.
      */
     private static final Map<Priority, int[]> DEMO_TARGETS = Map.of(
             Priority.P1, new int[] {1, 3},

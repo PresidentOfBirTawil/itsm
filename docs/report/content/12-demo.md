@@ -1,17 +1,16 @@
 # Demonstration and running {#demo .chapter}
 
-The recorded video, **94_OOP_S1_2025-2026_Project**, shows the running product with its sample data. It demonstrates the three workflows the brief asks for, then administration and the integrations.
+The recorded video, **94_OOP_S1_2025-2026_Project**, demonstrates the running product with its sample data: the three workflows the brief asks for, then a tour of the remaining features.
 
 ## Workflows in the video
 
 ::: {.ids .compact}
 | #  | Workflow                                                        | What the video shows                                                                                                                                       |
 |----|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1  | Employee reports → system prioritises → technician assigned → notification generated | An employee reports a payment outage by chatting with the assistant, and a second problem on the form with a screenshot. P1 is calculated (3 × 3 × 3 = 27, shown on the page), deadlines are set, the skilled technician is assigned, and the technician's bell and a desktop alert appear live. |
-| 2  | Technician investigates → SLA monitored → incident resolved → user notified | The technician acknowledges, reads the suggested fixes and the predicted finish time, asks for information (the SLA clock pauses), resolves with a suggested fix; the employee is notified, confirms and rates; the fix becomes a knowledge article. |
-| 3  | Multiple incidents → duplicates and related incidents identified → correlated, escalated | Several people report the same outage: duplicates are linked, others join with "I'm affected too" and the impact rises; failures on two services are traced to the network they share; an unacknowledged P1 is escalated to the administrators. |
-| 4  | Administration and analytics                                    | The live overview, reports, the audit trail, switching the assignment strategy, services and their dependencies.                                           |
-| 5  | Integrations                                                    | A webhook posting to a chat channel, the REST API called with a personal key from its documentation, and the installed app.                               |
+| 1  | Employee reports → system prioritises → technician assigned → notification generated | An employee reports the brief's payment scenario on the form, which shows the known problems with that service as she types. The category is chosen from her words, P1 is calculated (3 × 3 × 3 = 27, shown on the page), the five- and thirty-minute deadlines are set, a finish time is predicted, and the technician with the right skill is assigned; her screen updates live. |
+| 2  | Technician investigates → SLA monitored → incident resolved → user notified | The technician acknowledges, which meets the response target, and asks the employee a question, which pauses the SLA clock. The employee answers; the technician applies a fix suggested from similar past incidents and resolves within the SLA. The employee confirms and rates the fix, and the technician publishes it as a knowledge article. |
+| 3  | Multiple incidents → duplicates and related incidents identified → correlated, escalated | A second employee describes the problem to the chat assistant, which recognises the service and adds her to the known outage instead of creating a duplicate. The status page traces the failures of two services to the network they share, and the administrator's live overview shows the root cause, an unacknowledged P1 escalated automatically, and the incidents most likely to breach next. |
+| 4  | Feature tour                                                    | Reports and analytics, the audit log, switching the assignment strategy, services and their dependencies, the knowledge base, webhooks to Slack, Microsoft Teams or any app, the REST API documentation, the command palette, and the dark and light themes. |
 :::
 
 ## Running Quell

@@ -10,7 +10,6 @@
 <p align="center">
   <a href="https://github.com/PresidentOfBirTawil/quell/releases/latest"><b>Download for Windows, macOS or Linux</b></a> ·
   <a href="docs/report/Quell-Project-Report.pdf">Project report (PDF)</a> ·
-  <a href="docs/video-script.md">Video script</a> ·
   <a href="docs/INSTALL.md">Install guide</a>
 </p>
 
@@ -59,7 +58,7 @@ On Windows (PowerShell or Command Prompt) use `.\mvnw.cmd spring-boot:run`. Then
 
 ### Demo accounts
 
-The sign-in page has one-click buttons for these.
+The sign-in page has one-click buttons for an employee, a technician and the administrator.
 
 | Role | E-mail | Password |
 |---|---|---|
@@ -139,7 +138,7 @@ Object-Oriented Programming** project *Intelligent IT Service Management & Incid
 | 6. Source code | this repository |
 | 7. Database design | report section 8 |
 | 8. Testing (36 documented cases, 619 automated tests) | report section 9 and appendix B · [docs/test-cases.md](docs/test-cases.md) |
-| 9. Project demonstration (three workflows) | report section 12 · [video script](docs/video-script.md) |
+| 9. Project demonstration (three workflows) | report section 12 and the recorded video |
 
 The report is written in Markdown (`docs/report/content`) and built into a PDF with `docs/report/build.sh`
 (pandoc, Chromium and PlantUML diagrams).
