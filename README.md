@@ -125,8 +125,7 @@ Run the tests with `./mvnw test` (Windows: `.\mvnw.cmd test`).
 ## Course project
 
 Quell is the submission of **Group 94** (Yatharth Soni, 2025ADPS1461H) for the **CS F213 / MAC F212
-Object-Oriented Programming** project *Intelligent IT Service Management & Incident Resolution System*
-(brief: [docs/brief.pdf](docs/brief.pdf)).
+Object-Oriented Programming** project *Intelligent IT Service Management & Incident Resolution System*.
 
 | Deliverable in the brief | Where |
 |---|---|
